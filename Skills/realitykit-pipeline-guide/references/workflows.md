@@ -7,7 +7,7 @@ Use this when the task mentions Blender, USDZ, UVs, texture maps, materials, sca
 Steps:
 
 1. Define the gameplay need in one sentence.
-2. Scaffold the asset with `python3 Tools/rkp.py new-asset <asset_id> --type <asset_type>` when it is new, or use `python3 Tools/rkp.py prompt-asset <asset_id> --type <asset_type> --prompt "<brief>"` for a prompt-backed procedural draft.
+2. Prefer `python3 Tools/rkp.py make-asset <asset_id> --type <asset_type> --prompt "<brief>"` for prompt-backed assets. Use `new-asset` only when the asset should start from a blank contract.
 3. Edit the asset brief and Blender starter script.
 4. Build the USDZ with `python3 Tools/rkp.py build-asset <asset_id>`.
 5. Update `Tools/asset_manifest.json` notes, but keep `status: planned` until visual acceptance.

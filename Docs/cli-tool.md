@@ -47,10 +47,21 @@ Create a prompt-backed procedural Blender draft:
 python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
-Build immediately when Blender is available:
+Run the same loop through one command:
 
 ```bash
-python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
+Add build, screenshot acceptance, and release gate as the asset moves forward:
+
+```bash
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red bullseye drone target" \
+  --build \
+  --screenshot Docs/screenshots/enemy_drone_imported.jpg \
+  --release-check
 ```
 
 Build the asset through Blender:
@@ -90,6 +101,7 @@ Prefer direct CLI commands when building automation, agents, or future MCP-style
 
 - `new-asset` may create manifest entries, asset briefs, and Blender starter scripts.
 - `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
+- `make-asset` orchestrates prompt scaffolding, optional USDZ build, optional screenshot acceptance, and optional release check.
 - `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files.

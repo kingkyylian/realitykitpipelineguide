@@ -138,6 +138,54 @@ def run_release_check() -> int:
     return 0
 
 
+def run_make_asset(args: argparse.Namespace) -> int:
+    steps = [
+        (
+            "prompt-asset",
+            [
+                sys.executable,
+                "Tools/prompt_asset.py",
+                args.id,
+                "--prompt",
+                args.prompt,
+                "--type",
+                args.type,
+            ],
+        )
+    ]
+
+    if args.force:
+        steps[0][1].append("--force")
+    if args.build:
+        steps.append(("build-asset", [sys.executable, "Tools/build_asset.py", "--id", args.id]))
+    if args.screenshot:
+        if not args.build:
+            print("error: --screenshot requires --build because acceptance needs a built USDZ", file=sys.stderr)
+            return 2
+        steps.append(
+            (
+                "accept-asset",
+                [sys.executable, "Tools/accept_asset.py", "--id", args.id, "--screenshot", args.screenshot],
+            )
+        )
+    if args.release_check:
+        steps.append(("release-check", [sys.executable, "Tools/rkp.py", "release-check"]))
+
+    for label, command in steps:
+        print(f"==> {label}", flush=True)
+        status = run(command)
+        if status != 0:
+            print(f"make-asset stopped at step: {label}", file=sys.stderr)
+            return status
+
+    print(f"make-asset done: {args.id}")
+    if not args.build:
+        print(f"next: python3 Tools/rkp.py build-asset {args.id}")
+    elif not args.screenshot:
+        print(f"next: python3 Tools/rkp.py accept-asset {args.id} --screenshot Docs/screenshots/{args.id}_imported.jpg")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="rkp",
@@ -165,6 +213,15 @@ def main() -> int:
     prompt_asset.add_argument("--type", default="prop", help="Asset type, for example gameplay_target or environment")
     prompt_asset.add_argument("--build", action="store_true", help="Run Blender build after generating the script")
     prompt_asset.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
+
+    make_asset = subparsers.add_parser("make-asset", help="Run prompt, optional build, optional accept, and optional release gate")
+    make_asset.add_argument("id", help="Asset id in snake_case")
+    make_asset.add_argument("--prompt", required=True, help="Asset prompt or short art brief")
+    make_asset.add_argument("--type", default="prop", help="Asset type, for example gameplay_target or environment")
+    make_asset.add_argument("--build", action="store_true", help="Run Blender build after prompt scaffolding")
+    make_asset.add_argument("--screenshot", help="Accept the asset with required simulator screenshot evidence")
+    make_asset.add_argument("--release-check", action="store_true", help="Run the full release gate after prior steps")
+    make_asset.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
 
     build_asset = subparsers.add_parser("build-asset", help="Run the Blender build script for one asset")
     build_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
@@ -209,6 +266,8 @@ def main() -> int:
         if args.force:
             command.append("--force")
         return run(command)
+    if args.command == "make-asset":
+        return run_make_asset(args)
     if args.command == "build-asset":
         return run([sys.executable, "Tools/build_asset.py", "--id", args.id])
     if args.command == "accept-asset":

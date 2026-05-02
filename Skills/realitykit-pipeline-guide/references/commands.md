@@ -16,6 +16,7 @@ python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py build-asset enemy_drone
 python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 python3 Tools/rkp.py release-check
@@ -78,6 +79,25 @@ python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "r
 ```
 
 This creates the asset contract, writes a prompt-backed procedural Blender generator, records the prompt in the asset brief, and can optionally run the USDZ build. It does not mark the asset imported; visual acceptance still requires `accept-asset`.
+
+## One-Command Asset Loop
+
+```bash
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
+With Blender, screenshot evidence, and final gate:
+
+```bash
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red bullseye drone target" \
+  --build \
+  --screenshot Docs/screenshots/enemy_drone_imported.jpg \
+  --release-check
+```
+
+This command orchestrates `prompt-asset`, optional `build-asset`, optional `accept-asset`, and optional `release-check`. Screenshot acceptance remains explicit.
 
 ## Asset Build
 

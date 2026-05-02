@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 24: One-Command Asset Loop
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 00:34 +03
+**Amaç:** Hiç bilmeyen kullanıcı için prompt-to-asset akışını tek üst komuta bağlamak.
+
+**Yapılanlar:**
+
+- `python3 Tools/rkp.py make-asset <id> --type <type> --prompt "<brief>"` komutu eklendi.
+- `make-asset` prompt scaffolding, opsiyonel build, opsiyonel screenshot acceptance ve opsiyonel release-check adımlarını orkestre ediyor.
+- `--screenshot` için `--build` zorunlu hale getirildi; acceptance yine built USDZ gerektiriyor.
+- `make make-asset id=<id> type=<type> prompt="<brief>"` wrapper'ı eklendi.
+- README, CLI docs ve skill command reference tek komut akışına göre güncellendi.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/rkp.py: ok
+python3 Tools/rkp.py make-asset smoke_make --type gameplay_target --prompt "red bullseye drone target" --force: ok, archetype=drone
+python3 -m py_compile Tools/blender/create_smoke_make.py: ok
+python3 Tools/rkp.py status --json: ok, smoke_make archetype=drone
+python3 Tools/rkp.py make-asset smoke_make_accept --type gameplay_target --prompt "red bullseye drone target" --screenshot Docs/screenshots/missing.jpg: blocked as expected because --screenshot requires --build
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Tek komut rahatlık sağlamalı ama pipeline sınırlarını gizlememeli. Bu yüzden build, screenshot acceptance ve release-check bayraklarla açıkça istenir.
+
 ### Sprint 23: Prompt Archetype Status Surface
 
 **Durum:** Tamamlandı

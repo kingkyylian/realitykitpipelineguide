@@ -46,10 +46,7 @@ This repo is designed to be used as a small pipeline tool first. The guide is su
 ```bash
 python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
-python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
-python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
-python3 Tools/rkp.py build-asset enemy_drone
-python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py release-check
 ```
 
@@ -64,27 +61,40 @@ The same flow is available through `make` for shorter local commands:
 
 ```bash
 make status
-make new-asset id=enemy_drone type=gameplay_target
-make build-asset id=enemy_drone
-make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+make make-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 make release-check
 ```
 
 ### Prompt To Asset
 
-`prompt-asset` turns a short asset prompt into a Blender generator script and records the inferred archetype in the asset manifest.
+`make-asset` is the one-command asset loop. It turns a short prompt into an asset contract and Blender generator script, then can optionally build, accept, and run the release gate.
 
 ```bash
-python3 Tools/rkp.py prompt-asset enemy_drone \
+python3 Tools/rkp.py make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target"
 ```
 
-For this prompt the tool infers `drone`, then writes a procedural Blender draft with a central body, four arms, rotor discs, Smart UV projection, and an `st` UV layer for USDZ export. Build and acceptance still stay explicit:
+For this prompt the tool infers `drone`, then writes a procedural Blender draft with a central body, four arms, rotor discs, Smart UV projection, and an `st` UV layer for USDZ export.
+
+If Blender is available, add `--build`:
 
 ```bash
-python3 Tools/rkp.py build-asset enemy_drone
-python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red bullseye drone target" \
+  --build
+```
+
+After verifying the result in the simulator and saving a screenshot, run the same command with acceptance:
+
+```bash
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red bullseye drone target" \
+  --build \
+  --screenshot Docs/screenshots/enemy_drone_imported.jpg \
+  --release-check
 ```
 
 Use status JSON when an agent or script needs to inspect the inferred archetype:
@@ -104,36 +114,23 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 
 ### First Asset Loop
 
-1. Scaffold the asset contract:
+1. Start the asset loop:
 
    ```bash
-   python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
    ```
 
-2. Or start from a prompt-backed procedural Blender draft:
+2. If Blender is available, build the USDZ in the same command:
 
    ```bash
-   python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+   BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
    ```
 
-3. Edit the generated Blender script or source art.
-4. Build the USDZ:
+3. Verify the asset in the simulator and capture a screenshot.
+4. Accept it and run the release gate:
 
    ```bash
-   python3 Tools/rkp.py build-asset enemy_drone
-   ```
-
-5. Verify the asset in the simulator and capture a screenshot.
-6. Accept it into the production pipeline:
-
-   ```bash
-   python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
-   ```
-
-7. Run the final gate:
-
-   ```bash
-   python3 Tools/rkp.py release-check
+   BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build --screenshot Docs/screenshots/enemy_drone_imported.jpg --release-check
    ```
 
 ### About `rtk`
@@ -228,6 +225,12 @@ Create a prompt-backed procedural Blender draft:
 
 ```bash
 python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
+Run the one-command asset loop:
+
+```bash
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
 Run the Blender build script for an asset:

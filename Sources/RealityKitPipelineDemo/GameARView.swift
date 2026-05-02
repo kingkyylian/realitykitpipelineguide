@@ -87,6 +87,10 @@ final class GameARView: ARView {
             self?.handleCollision(event)
         }
         subscriptions.append(collision)
+
+        if ProcessInfo.processInfo.arguments.contains("--demo-mode") {
+            scheduleDemoPlayback()
+        }
     }
 
     func apply(spawnToken: Int, resetToken: Int) {
@@ -284,6 +288,33 @@ final class GameARView: ARView {
             age: 0
         ))
         gameSession.recordShot()
+    }
+
+    private func scheduleDemoPlayback() {
+        let steps: [(delay: TimeInterval, targetIndex: Int)] = [
+            (1.60, 0),
+            (3.20, 1),
+            (4.80, 0),
+        ]
+
+        for step in steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + step.delay) { [weak self] in
+                self?.fireDemoProjectile(atTargetIndex: step.targetIndex)
+            }
+        }
+    }
+
+    private func fireDemoProjectile(atTargetIndex index: Int) {
+        guard targets.indices.contains(index) else { return }
+
+        let target = targets[index]
+        let direction = simd_normalize(target.position - playerOrigin)
+        fireProjectile(
+            from: playerOrigin,
+            direction: direction,
+            intendedTargetID: ObjectIdentifier(target),
+            scoreOverride: (points: 5, zone: "Bullseye")
+        )
     }
 
     private func updateProjectiles(deltaTime: TimeInterval) {

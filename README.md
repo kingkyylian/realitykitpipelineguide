@@ -4,7 +4,7 @@ Build a tiny iOS RealityKit game while learning the real Blender -> USDZ -> Xcod
 
 Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, simulator screenshot, and learning note.
 
-![Ring scoring gameplay screenshot](Docs/screenshots/ring_scoring_inner_hit.jpg)
+![RealityKit pipeline gameplay demo](Docs/screenshots/demo.gif)
 
 ## What You Learn
 

@@ -12,6 +12,30 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 14: Reproducible Demo GIF
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:25 +03  
+**Amaç:** Public README için manuel tıklamaya bağlı olmayan, tekrar üretilebilir kısa gameplay GIF'i üretmek.
+
+**Yapılanlar:**
+
+- `--demo-mode` launch argument eklendi.
+- Demo mode normal app davranışını değiştirmiyor; sadece launch arg varsa deterministic hedeflere otomatik projectile atıyor.
+- `Docs/screenshots/demo.gif` eklendi ve README hero görseli olarak bağlandı.
+
+**Verification:**
+
+```text
+make release-check: ok
+simulator demo frames: ok
+README GIF: ok
+```
+
+**Öğrenme notu:**
+
+README GIF'i tek seferlik manuel kayıt olmamalı. İyi public repo'da demo medyası da tekrar üretilebilir olmalı; böylece gameplay değiştikçe aynı akış yeniden kaydedilebilir.
+
 ### Sprint 13: Pipeline Doctor
 
 **Durum:** Tamamlandı  

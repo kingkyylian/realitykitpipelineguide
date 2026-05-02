@@ -4,11 +4,7 @@ This file is the fast orientation page for any AI agent opening the repository.
 
 ## Project Status
 
-Current state: local Git repo on `main`, with three commits:
-
-1. `Initial RealityKit asset pipeline demo`
-2. `Upgrade pipeline guide for teaching`
-3. `Document remaining learning modules`
+Current state: local Git repo on `main`. Use `git log --oneline --decorate -6` for the latest commit list instead of relying on a fixed count in this document.
 
 No remote is configured yet.
 

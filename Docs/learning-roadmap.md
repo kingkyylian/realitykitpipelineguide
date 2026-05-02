@@ -1,47 +1,28 @@
 # Learning Roadmap
 
-## Principle
+Canonical roadmap: `Docs/guide.md`.
 
-Kyylian and Mehmet both learn the whole asset/texture system. Work can be split during a session, but every handoff should end with a shared review of what changed, what broke, and how it was verified.
+This file is only a quick index so sprint numbering does not drift from `Docs/WORKLOG.md`.
 
-## Sprint 1: Running Sandbox
+## Completed Worklog Sprints
 
-- Generate the Xcode project.
-- Build and run on simulator.
-- Understand `ContentView`, `RealityKitGameView`, and `GameARView`.
-- Change spawn positions and projectile speed.
+| Worklog Sprint | Status | Topic |
+| --- | --- | --- |
+| Sprint 0 | Complete | Demo pipeline setup |
+| Sprint 1 | Complete | First imported target asset |
+| Sprint 2 | Complete | Imported target scale and spawn tuning |
+| Sprint 3 | Complete | First textured target asset |
+| Sprint 4 | Complete | Ring-based scoring and texture-gameplay link |
 
-## Sprint 2: First Blender Asset
+## Active Worklog Sprint
 
-- Create `target_basic.blend`.
-- Export `target_basic.usdz`.
-- Add it to `Assets/Imported`.
-- Replace the procedural sphere target.
+| Worklog Sprint | Status | Topic |
+| --- | --- | --- |
+| Sprint 5 | Active | Arena floor environment asset |
 
-## Sprint 3: First Textured Asset
+## Full Curriculum
 
-- Understand what base color texture means.
-- UV unwrap a simple target asset.
-- Export `target_basic_textured.usdz`.
-- Confirm RealityKit loads the textured asset before the fallback asset.
-- Compare simulator screenshots against the untextured target.
+For the complete learning coverage matrix and planned modules, read:
 
-## Sprint 4: Gameplay Loop
-
-- Add target health.
-- Add wave timer.
-- Add miss penalty.
-- Add simple hit VFX.
-
-## Sprint 5: Mobile Polish
-
-- Add sound.
-- Add haptics.
-- Profile with Instruments.
-- Reduce asset cost until frame time is stable.
-
-## Sprint 6: visionOS Branch
-
-- Add a separate visionOS target.
-- Move interaction from screen tap to spatial gesture.
-- Test comfort, scale, and placement rules.
+- `Docs/guide.md`
+- `Docs/pdf/realitykit-pipeline-guide.pdf`

@@ -2,6 +2,8 @@
 
 Small learning project for building a mobile RealityKit game pipeline with AI-assisted production.
 
+![Ring scoring gameplay screenshot](Docs/screenshots/ring_scoring_inner_hit.jpg)
+
 The demo starts with procedural RealityKit objects so the app can compile before any Blender assets exist. The asset pipeline is still present: export `.usdz` files from Blender into `Assets/Imported`, register them in `Tools/asset_manifest.json`, then load or replace procedural placeholders from code.
 
 Start each session from `Docs/WORKLOG.md`. It tracks the current sprint, decisions, verification results, and the asset/code contracts we agree on.
@@ -38,15 +40,26 @@ Build with workspace-local DerivedData, which avoids writing into the default Xc
 rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
 ```
 
-## First Learning Sprint
+## Current Learning State
 
-1. Run the procedural sandbox.
-2. Make one Blender target asset with correct scale and origin.
-3. Export it as `.usdz` to `Assets/Imported/target_basic.usdz`.
-4. Add it to `Tools/asset_manifest.json`.
-5. Run `rtk xcodegen generate` after adding new resource files.
-6. Build the app. The loader searches `target_basic.usdz` in the app bundle and `Imported/`.
-7. Profile frame time after adding real assets.
+Completed:
+
+- Procedural RealityKit sandbox.
+- First imported USDZ target: `target_basic.usdz`.
+- Scale/orientation tuning with deterministic spawn slots.
+- First base color textured target: `target_basic_textured.usdz`.
+- UV primvar lesson: source USDZ uses `st`.
+- Ring-based scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
+- Arena floor loader fallback prepared.
+
+Active:
+
+- Sprint 5: `arena_floor.usdz` environment asset pipeline.
+
+Canonical course material:
+
+- `Docs/guide.md`
+- `Docs/pdf/realitykit-pipeline-guide.pdf`
 
 ## Folder Map
 

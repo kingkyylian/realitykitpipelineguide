@@ -2,6 +2,14 @@
 
 Run from the repository root.
 
+Before running RKP commands, verify this is the repository root:
+
+```bash
+test -f Tools/rkp.py && test -f Tools/asset_manifest.json
+```
+
+If this fails, do not invent a local `Tools/` pipeline. Use the real RKP repo or ask for bootstrap permission.
+
 ## Generate and Build
 
 ```bash

@@ -4,6 +4,14 @@
 
 Use this when the task mentions Blender, USDZ, UVs, texture maps, materials, scale, origin, or asset budgets.
 
+Before any asset work, verify:
+
+```bash
+test -f Tools/rkp.py && test -f Tools/asset_manifest.json
+```
+
+If this fails, stop. Do not create a minimal replacement pipeline. Ask the user to move into the RKP repo, clone the template, or explicitly request a bootstrap.
+
 Steps:
 
 1. Define the gameplay need in one sentence.

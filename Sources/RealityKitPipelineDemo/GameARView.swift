@@ -11,6 +11,7 @@ final class GameARView: ARView {
     private struct Projectile {
         let entity: ModelEntity
         let velocity: SIMD3<Float>
+        var canScore: Bool
         var age: TimeInterval
     }
 
@@ -25,6 +26,7 @@ final class GameARView: ARView {
     private var hasConfiguredScene = false
     private let importedTargetOrientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
     private let importedTargetScale: Float = 0.48
+    private let playerOrigin = SIMD3<Float>(0, 0.08, 0.2)
     private let targetSpawnSlots: [SIMD3<Float>] = [
         [-0.58, 0.18, -2.25],
         [0.58, 0.30, -2.35],
@@ -117,7 +119,7 @@ final class GameARView: ARView {
         target.name = "target"
         target.position = targetPosition
         if importedTarget != nil {
-            target.look(at: [0, 0.08, 0.2], from: targetPosition, relativeTo: worldAnchor)
+            target.look(at: playerOrigin, from: targetPosition, relativeTo: worldAnchor)
             target.orientation *= simd_quatf(angle: .pi, axis: [0, 1, 0])
         }
 
@@ -168,8 +170,10 @@ final class GameARView: ARView {
             direction = [0, 0, -1]
         }
 
-        let origin = SIMD3<Float>(0, 0.08, 0.2)
-        fireProjectile(from: origin, direction: direction)
+        fireProjectile(from: playerOrigin, direction: direction)
+        if resolveScreenHit(point: point), let lastProjectile = projectiles.indices.last {
+            projectiles[lastProjectile].canScore = false
+        }
     }
 
     private func fireProjectile(from origin: SIMD3<Float>, direction: SIMD3<Float>) {
@@ -180,7 +184,7 @@ final class GameARView: ARView {
         projectile.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.05)]))
 
         worldAnchor.addChild(projectile)
-        projectiles.append(Projectile(entity: projectile, velocity: direction * 3.4, age: 0))
+        projectiles.append(Projectile(entity: projectile, velocity: direction * 3.4, canScore: true, age: 0))
         gameSession.recordShot()
     }
 
@@ -199,19 +203,31 @@ final class GameARView: ARView {
     private func resolveHits() {
         var hitProjectiles = Set<ObjectIdentifier>()
         var hitTargets = Set<ObjectIdentifier>()
+        var hitScores: [ObjectIdentifier: (points: Int, zone: String)] = [:]
 
         for projectile in projectiles {
+            guard projectile.canScore else { continue }
+
             for target in targets {
                 let distance = simd_distance(projectile.entity.position, target.position)
                 if distance < 0.22 {
                     hitProjectiles.insert(ObjectIdentifier(projectile.entity))
-                    hitTargets.insert(ObjectIdentifier(target))
-                    gameSession.recordHit()
+                    let targetID = ObjectIdentifier(target)
+                    hitTargets.insert(targetID)
+
+                    let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
+                    if score.points > (hitScores[targetID]?.points ?? 0) {
+                        hitScores[targetID] = score
+                    }
                 }
             }
         }
 
         guard !hitTargets.isEmpty else { return }
+
+        for score in hitScores.values {
+            gameSession.recordHit(points: score.points, zone: score.zone)
+        }
 
         projectiles.removeAll { projectile in
             if hitProjectiles.contains(ObjectIdentifier(projectile.entity)) {
@@ -231,12 +247,80 @@ final class GameARView: ARView {
 
         gameSession.activeTargets = targets.count
 
+        spawnNextWaveIfNeeded()
+    }
+
+    private func resolveScreenHit(point: CGPoint) -> Bool {
+        var bestTarget: ModelEntity?
+        var bestDistance = CGFloat.greatestFiniteMagnitude
+
+        for target in targets {
+            let targetPoint = estimatedScreenPoint(for: target.position)
+            let distance = hypot(point.x - targetPoint.x, point.y - targetPoint.y)
+            let targetRadius = bounds.width * 0.09
+            if distance < targetRadius, distance < bestDistance {
+                bestDistance = distance
+                bestTarget = target
+            }
+        }
+
+        guard let bestTarget else { return false }
+
+        let score = scoreForScreenHit(distance: bestDistance)
+        bestTarget.removeFromParent()
+        targets.removeAll { ObjectIdentifier($0) == ObjectIdentifier(bestTarget) }
+        gameSession.recordHit(points: score.points, zone: score.zone)
+        gameSession.activeTargets = targets.count
+        spawnNextWaveIfNeeded()
+        return true
+    }
+
+    private func estimatedScreenPoint(for position: SIMD3<Float>) -> CGPoint {
+        CGPoint(
+            x: bounds.midX + CGFloat(position.x) * bounds.width * 0.32,
+            y: bounds.height * 0.416 - CGFloat(position.y - 0.30) * bounds.height * 0.18
+        )
+    }
+
+    private func spawnNextWaveIfNeeded() {
         if targets.isEmpty {
             gameSession.status = "Wave cleared"
             spawnTarget()
             spawnTarget()
             spawnTarget()
         }
+    }
+
+    private func scoreForHit(projectilePosition: SIMD3<Float>, target: ModelEntity) -> (points: Int, zone: String) {
+        let cameraDirection = simd_normalize(playerOrigin - target.position)
+        let offset = projectilePosition - target.position
+        let faceOffset = offset - simd_dot(offset, cameraDirection) * cameraDirection
+        let radialDistance = simd_length(faceOffset)
+
+        if radialDistance < 0.055 {
+            return (5, "Bullseye")
+        }
+
+        if radialDistance < 0.115 {
+            return (3, "Inner ring")
+        }
+
+        return (1, "Outer ring")
+    }
+
+    private func scoreForScreenHit(distance: CGFloat) -> (points: Int, zone: String) {
+        let bullseyeRadius = bounds.width * 0.022
+        let innerRingRadius = bounds.width * 0.048
+
+        if distance < bullseyeRadius {
+            return (5, "Bullseye")
+        }
+
+        if distance < innerRingRadius {
+            return (3, "Inner ring")
+        }
+
+        return (1, "Outer ring")
     }
 
     private func removeExpiredProjectiles() {

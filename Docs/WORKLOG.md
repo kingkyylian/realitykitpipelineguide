@@ -25,6 +25,27 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 - RealityKit tarafında öğrenilen loader, scale, orientation ve material davranışlarını bu worklog'a kısa not olarak geçir.
 - Kyylian ve Mehmet aynı pipeline bilgisini öğrenecek; iş bölümü aracı sahiplenmek için değil, pratik ilerlemek için yapılacak.
 
+### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 19:20 +03  
+**Amaç:** Target üzerindeki bullseye/ring texture'ını sadece görsel olmaktan çıkarıp gameplay skoruna bağlamak.
+
+**Yapılanlar:**
+
+- Hit scoring artık tek sabit `+10` değil.
+- Tap anında deterministic spawn slotlarından türetilen screen-space target merkeziyle mesafe ölçülüyor; projectile görsel olarak uçmaya devam ediyor.
+- Impact bölgesi ekrandaki halka merkezine göre hesaplanıyor.
+- Bullseye: `+5`, inner ring: `+3`, outer ring: `+1`.
+- HUD status hit bölgesini gösteriyor: `Bullseye +5`, `Inner ring +3`, `Outer ring +1`.
+- Görsel doğrulama çıktısı: `Docs/screenshots/ring_scoring_inner_hit.jpg`.
+
+**Öğrenme notu:**
+
+- Texture sadece görsel kalite için değil, gameplay bilgisini oyuncuya anlatmak için de kullanılabilir.
+- Görsel mesh ve collision hâlâ ayrı: collision basit sphere kalıyor, skor ise bu non-AR prototype'ta target'ın ekrandaki halka merkezinden hesaplanıyor.
+- Screen-space hit çözümü, discrete projectile step veya non-AR RealityKit hit-test belirsizliği yüzünden görsel olarak doğru tıklanan hedefin kaçırılmasını engeller.
+
 ### Sprint 3: İlk Texture'lı Target Asset
 
 **Durum:** Tamamlandı  
@@ -146,13 +167,13 @@ rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityK
 
 ### Loader Contract
 
-`ImportedAssetLoader` assetleri şu sırayla arar:
+`ImportedAssetLoader` tek asset adı için bundle içinde şu sırayla dosya arar:
 
-1. Bundle root: `target_basic.usdz`
-2. Bundle subdirectory: `Imported/target_basic.usdz`
-3. Bundle subdirectory: `Assets/Imported/target_basic.usdz`
+1. Bundle root: `<asset_id>.usdz`
+2. Bundle subdirectory: `Imported/<asset_id>.usdz`
+3. Bundle subdirectory: `Assets/Imported/<asset_id>.usdz`
 
-`GameARView` target spawn ederken önce `target_basic.usdz` yüklemeyi dener. Bulamazsa procedural sphere fallback kullanır. Bu sayede asset yokken de app çalışır.
+`GameARView` target spawn ederken asset id sırası olarak önce `target_basic_textured`, sonra `target_basic` dener. İkisi de yoksa procedural sphere fallback kullanır. Bu sayede texture asset veya base asset yokken de app çalışır.
 
 ## Project Map
 
@@ -248,6 +269,18 @@ Not:
 - CoreSimulator servis uyarıları shell build sırasında devam ediyor; build sonucunu engellemedi.
 - Screenshot'ta iki imported target kadraj içinde ve okunur ölçekte görünüyor.
 - `target_basic_textured.usdz` henüz yokken fallback olarak `target_basic.usdz` yüklenmeye devam ediyor.
+
+Sprint 4 — ring skor doğrulaması:
+
+```text
+build_run_sim: ok, iPhone 17 simulator
+tap: right target center
+screenshot: Docs/screenshots/ring_scoring_inner_hit.jpg
+HUD: Inner ring +3
+Score: 3
+Hits: 1
+Accuracy: 100%
+```
 
 Sprint 3 — texture asset doğrulaması:
 

@@ -30,6 +30,7 @@ It is not only a game prototype. It is also a teaching artifact for Kyylian and 
 | Scale/orientation tuning | Complete | `Docs/screenshots/target_basic_scale_slots.jpg` |
 | Base color textured asset | Complete | `Assets/Imported/target_basic_textured.usdz`, `Docs/screenshots/target_textured_sprint3_fresh.png` |
 | UV primvar lesson | Complete | `Docs/blender-usdz-checklist.md`, `Docs/WORKLOG.md` |
+| Ring-based scoring | Complete | `Docs/screenshots/ring_scoring_inner_hit.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 
 ## Planned Learning Modules
@@ -39,7 +40,7 @@ Recommended order:
 1. GitHub repo polish: README, LICENSE, CI, issue/PR templates.
 2. Module 4: Texture Maps and Material Response.
 3. Module 5: Performance and Mobile Asset Budget.
-4. Module 6: Collision, VFX, and Gameplay Feel.
+4. Module 6: Collision, VFX, and Gameplay Feel. Ring scoring is started; VFX/audio remain.
 5. Module 7: Environment Asset and Texture Atlas.
 6. Module 8: Repo and Authoring Workflow.
 
@@ -76,6 +77,7 @@ If the user asks to continue education content, do this next:
 - `GameARView` loads `target_basic_textured` first, then `target_basic`, then procedural fallback.
 - Imported target scale is normalized with `0.48`.
 - Spawn positions are deterministic slots for teaching/debugging.
+- Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.
 

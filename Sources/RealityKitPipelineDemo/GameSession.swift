@@ -26,9 +26,9 @@ final class GameSession: ObservableObject {
         status = "Projectile fired"
     }
 
-    func recordHit() {
+    func recordHit(points: Int, zone: String) {
         hits += 1
-        score += 10
-        status = "Target hit"
+        score += points
+        status = "\(zone) +\(points)"
     }
 }

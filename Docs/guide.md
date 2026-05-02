@@ -357,7 +357,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Normal map | Planned | yok | Tangent-space normal ve export davranışı test edilecek. |
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
-| Collision and gameplay asset fit | Planned | procedural collision mevcut | Visual mesh vs collision shape dersi eklenecek. |
+| Collision and gameplay asset fit | Started | ring-based score in `GameARView` | Visual texture gameplay scoring'e bağlandı; collision shape dersi genişletilecek. |
 | Hit VFX / animation | Planned | yok | Gameplay feedback ve RealityKit animation eklenecek. |
 | Environment asset | Planned | `arena_floor` todo | Floor/prop/atlas dersi için aday. |
 | Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
@@ -510,6 +510,13 @@ Bu bölüm, repo'nun asset pipeline eğitiminden tam oyun geliştirme eğitimine
 2. Her wave'de target sayısını artır.
 3. Miss penalty ekle.
 4. Score formula'yı dokümante et.
+
+Current project note:
+
+- The target texture now has gameplay meaning: bullseye hits score `+5`, inner ring hits score `+3`, outer ring hits score `+1`.
+- Hit scoring uses tap-time screen-space distance from deterministic target slot centers. This keeps the non-AR teaching prototype deterministic and directly ties visible rings to score.
+- Evidence: `Docs/screenshots/ring_scoring_inner_hit.jpg` shows `Inner ring +3`, score `3`, hits `1`, accuracy `100%`.
+- This is intentionally still lightweight. The next scoring lesson should add wave-level balancing and miss penalty.
 
 ### Module 12: UI/UX Flow
 
@@ -686,6 +693,7 @@ rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityK
 | `Docs/screenshots/target_basic_frontface.png` | Imported target front-facing düzeltmesi |
 | `Docs/screenshots/target_basic_scale_slots.jpg` | Scale ve deterministic spawn düzeltmesi |
 | `Docs/screenshots/target_textured_sprint3_fresh.png` | Texture'lı asset RealityKit'te yüklendi |
+| `Docs/screenshots/ring_scoring_inner_hit.jpg` | Texture ring'i gameplay skoruna bağlandı |
 
 ### Instructor Notes
 

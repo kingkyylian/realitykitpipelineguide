@@ -7,7 +7,7 @@ Use this when the task mentions Blender, USDZ, UVs, texture maps, materials, sca
 Steps:
 
 1. Define the gameplay need in one sentence.
-2. Create or update an asset brief.
+2. Scaffold the asset with `make new-asset id=<asset_id> type=<asset_type>` when it is new.
 3. Update `Tools/asset_manifest.json` with id, file, type, status, budgets, texture maps, and notes.
 4. Put final runtime USDZ files in `Assets/Imported`.
 5. Keep source art or scripts in `Assets/Source` or `Tools/blender`.
@@ -57,4 +57,3 @@ First decisions:
 - First playable goal
 
 Do not start with hero art. Start with runtime skeleton, procedural placeholders, and one imported asset vertical slice.
-

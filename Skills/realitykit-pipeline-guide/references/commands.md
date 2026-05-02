@@ -25,6 +25,21 @@ make doctor
 
 This runs `Tools/pipeline_doctor.py`, a fast static check for manifest/imported asset consistency, XcodeGen paths, Markdown evidence links, public local path leaks, CI basics, and skill packaging.
 
+## New Asset Scaffolder
+
+```bash
+make new-asset id=enemy_drone type=gameplay_target
+```
+
+Supported types:
+
+- `gameplay_target`
+- `environment`
+- `prop`
+- `projectile`
+
+This creates a planned manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`. It does not generate the final USDZ or mark the asset imported.
+
 ## Validate Manifest Only
 
 ```bash

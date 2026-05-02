@@ -128,6 +128,12 @@ Run the pipeline doctor:
 make doctor
 ```
 
+Scaffold a new asset:
+
+```bash
+make new-asset id=enemy_drone type=gameplay_target
+```
+
 Regenerate the guide PDF:
 
 ```bash
@@ -183,4 +189,5 @@ Reusable templates:
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
+- `Tools/new_asset.py`: creates a manifest entry, asset brief, and Blender starter script for a new asset.
 - `Tools/pipeline_doctor.py`: static pipeline consistency checker for manifests, docs, links, CI paths, and skill packaging.

@@ -52,6 +52,14 @@ Minimum brief:
 - Mobile budget risk
 - Rollback/fallback behavior
 
+For a new asset, scaffold the contract first:
+
+```bash
+make new-asset id=enemy_drone type=gameplay_target
+```
+
+This creates the manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`.
+
 ### 2. Gameplay Contract
 
 Before writing code, define:

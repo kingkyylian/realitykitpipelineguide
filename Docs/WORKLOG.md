@@ -12,6 +12,34 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 15: New Asset Scaffolder
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:35 +03  
+**Amaç:** Yeni asset'e başlama adımını standartlaştırmak: manifest entry, asset brief ve Blender starter script tek komutla oluşsun.
+
+**Yapılanlar:**
+
+- `Tools/new_asset.py` eklendi.
+- `make new-asset id=<asset_id> type=<asset_type>` hedefi eklendi.
+- Desteklenen tipler: `gameplay_target`, `environment`, `prop`, `projectile`.
+- Scaffolder `status: planned` manifest kaydı, `Docs/assets/<id>.md` brief'i ve `Tools/blender/create_<id>.py` placeholder export script'i oluşturuyor.
+- README, production playbook ve skill command/workflow reference güncellendi.
+
+**Verification:**
+
+```text
+make new-asset id=test_dummy type=prop: ok
+generated manifest entry, Docs/assets/test_dummy.md, Tools/blender/create_test_dummy.py: ok
+cleanup of test_dummy scaffold: ok
+make doctor: ok, 1 known warning for actions/checkout@v4 Node 20 deprecation
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Scaffolder asset üretmemeli; asset işinin başlangıç contract'ını üretmeli. Final USDZ, screenshot ve imported status hâlâ bilinçli production adımları olarak kalmalı.
+
 ### Sprint 14: Reproducible Demo GIF
 
 **Durum:** Tamamlandı  

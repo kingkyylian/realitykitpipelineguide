@@ -528,15 +528,10 @@ final class GameARView: ARView {
     }
 
     private func animateTargetSpawn(_ target: Entity) {
-        guard #available(iOS 26.0, *) else {
-            return
-        }
-
         let originalScale = target.scale
+        let finalTransform = target.transform
         target.scale = originalScale * 0.18
-        Entity.animate(.spring(response: 0.34, dampingFraction: 0.72)) {
-            target.scale = originalScale
-        }
+        target.move(to: finalTransform, relativeTo: target.parent, duration: 0.24)
     }
 
     private func playHitSound(points: Int) {

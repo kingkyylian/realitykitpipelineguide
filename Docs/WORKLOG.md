@@ -139,7 +139,7 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 - `CollisionEvents.Began` subscription eklendi; projectile-target teması event üzerinden resolve ediliyor.
 - Manual distance check fallback olarak kaldı; ana davranış artık RealityKit collision event'i ile uyumlu.
 - Procedural target/fallback floor/showcase backdrop materyalleri `PhysicallyBasedMaterial` helper'ına taşındı.
-- Target spawn animasyonu `Entity.animate` ile eklendi; API iOS 26+ olduğu için availability guard kondu.
+- Target spawn animasyonu SDK-stable `move(to:relativeTo:duration:)` ile eklendi; public CI'nin Xcode 16/iOS 18 baseline'ında derlenebilir kaldı.
 - Projectile body mode `.dynamic` yerine `.kinematic` yapıldı; böylece projectile gravity ile düşmeden düz aim çizgisini koruyor.
 - `resolveHit` içine projectile/target hâlâ aktif mi guard'ı eklendi; aynı collision için duplicate event gelirse double-score engelleniyor.
 - Simulator run sırasında alt controls alanının da ARView tap gesture tarafından projectile ateşleyebildiği görüldü; HUD/controls dışındaki gameplay alanı için tap guard eklendi.
@@ -160,7 +160,7 @@ screenshot check: opening targets are larger, symmetric, and readable enough for
 
 **Öğrenme notu:**
 
-RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Projectile gibi oyuncu aim çizgisini koruması gereken body'lerde `.dynamic` gravity hissi bozabilir; `.kinematic` daha doğru. Bu projede kinematic projectile'ın hareketi bilinçli olarak game loop içinde manuel sürülüyor; collision event modern RealityKit tarafını, distance fallback ise öğretici ve stabil gameplay tarafını koruyor.
+RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor ve eski SDK'da symbol hiç bulunmadığı için sadece availability guard yeterli değil. iOS 18 hedefleyen public repo'da SDK-stable API kullanmak daha doğru. Projectile gibi oyuncu aim çizgisini koruması gereken body'lerde `.dynamic` gravity hissi bozabilir; `.kinematic` daha doğru. Bu projede kinematic projectile'ın hareketi bilinçli olarak game loop içinde manuel sürülüyor; collision event modern RealityKit tarafını, distance fallback ise öğretici ve stabil gameplay tarafını koruyor.
 
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 

@@ -359,7 +359,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
 | Collision and gameplay asset fit | Started | ring-based score in `GameARView` | Visual texture gameplay scoring'e bağlandı; collision shape dersi genişletilecek. |
-| Hit VFX / animation | Started | spark VFX, iOS 26-gated `Entity.animate` | Gameplay feedback başladı; ParticleEmitter/audio açık. |
+| Hit VFX / animation | Started | spark VFX, SDK-stable target spawn animation | Gameplay feedback başladı; ParticleEmitter/audio açık. |
 | Environment asset | Complete | `arena_floor.usdz`, `arena_floor_imported.jpg` | Floor scale/origin, target readability, and UV grid behavior verified. |
 | Modern RealityKit feel | Started | physics bodies, collision events, PBR helper materials | ParticleEmitter/audio/material comparison still open. |
 | Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
@@ -472,7 +472,7 @@ Current project note:
 - Projectile bodies are `.kinematic`, but their position is advanced manually in the game loop so they keep a flat aim line without gravity.
 - Hit resolution listens to `CollisionEvents.Began`, with the previous distance check retained as fallback.
 - Procedural showcase materials use a small `PhysicallyBasedMaterial` helper.
-- Target spawn uses `Entity.animate` only behind an iOS 26 availability check.
+- Target spawn uses `move(to:relativeTo:duration:)` so the repo still builds on the iOS 18/Xcode 16 public CI baseline.
 
 **Ders:** Apple docs'taki modern API'leri körlemesine eklemek doğru değil. Önce deployment target ve availability okunmalı; sonra yeni API ya guarded kullanılmalı ya da eski platformda fallback kalmalı.
 

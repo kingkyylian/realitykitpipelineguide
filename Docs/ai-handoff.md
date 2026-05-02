@@ -49,8 +49,10 @@ If the user asks to make the repository look professional on GitHub, do this nex
 1. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
 2. Add README badges after the GitHub remote exists.
 3. Add a short demo GIF or hosted video link.
-4. Expand `Tools/blender` with target asset generation/export scripts.
-5. Add a first-good-issue list for learners.
+4. Set GitHub repo description/topics from `Docs/github-showcase.md`.
+5. Create the `v0.1.0` tag/release from `CHANGELOG.md`.
+6. Expand `Tools/blender` with target asset generation/export scripts.
+7. Add a first-good-issue list for learners.
 
 If the user asks to continue education content, do this next:
 

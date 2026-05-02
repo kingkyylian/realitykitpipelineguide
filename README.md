@@ -1,10 +1,26 @@
 # RealityKit Pipeline Demo
 
-Small learning project for building a mobile RealityKit game pipeline with Blender-authored USDZ assets and AI-assisted production.
+Build a tiny iOS RealityKit game while learning the real Blender -> USDZ -> Xcode -> RealityKit asset pipeline.
+
+Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, simulator screenshot, and learning note.
 
 ![Ring scoring gameplay screenshot](Docs/screenshots/ring_scoring_inner_hit.jpg)
 
-The demo starts with procedural RealityKit objects so the app can compile before any Blender assets exist. The asset pipeline is still present: export `.usdz` files from Blender into `Assets/Imported`, register them in `Tools/asset_manifest.json`, then load or replace procedural placeholders from code.
+## What You Learn
+
+- Build a SwiftUI + RealityKit game prototype.
+- Generate and import Blender-authored USDZ assets.
+- Keep asset scale, origin, UVs, materials, and texture budgets under control.
+- Connect visual texture design to gameplay with ring-based scoring.
+- Verify every asset with manifest checks, builds, screenshots, and worklog notes.
+
+## Showcase
+
+| Textured target scoring | Imported arena floor |
+| --- | --- |
+| ![Ring scoring inner hit](Docs/screenshots/ring_scoring_inner_hit.jpg) | ![Imported arena floor](Docs/screenshots/arena_floor_imported.jpg) |
+
+The app starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
 
 ## Quick Start
 
@@ -43,6 +59,20 @@ For the teaching version of the pipeline, start from `Docs/guide.md`. It explain
 Start each work session from `Docs/WORKLOG.md`. It tracks sprints, decisions, verification results, and asset/code contracts.
 
 For AI agents or future handoff, start from `AGENTS.md` and `Docs/ai-handoff.md`.
+
+## GitHub Metadata
+
+Suggested repo description:
+
+```text
+Learn a complete Blender -> USDZ -> RealityKit asset pipeline through a tiny SwiftUI iOS game.
+```
+
+Suggested topics:
+
+```text
+realitykit, swift, swiftui, ios, ios-game, blender, usdz, game-development, 3d-pipeline, asset-pipeline
+```
 
 ## Goals
 

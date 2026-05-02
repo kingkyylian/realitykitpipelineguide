@@ -79,6 +79,24 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 Public repo onboarding'i local agent workflow'dan ayrılmalı. `rtk` gibi ekip içi wrapper'lar AGENTS/worklog içinde kalabilir, ama README normal kullanıcının çalıştıracağı çıplak komutları göstermeli.
 
+### Sprint 7: GitHub Showcase Prep
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02  
+**Amaç:** Repo'nun ilk 10 saniye izlenimini güçlendirmek ve weekly/trending/curated listelere gönderim için gerekli metinleri hazırlamak.
+
+**Yapılanlar:**
+
+- README en üstüne "neden farklı?" anlatısı eklendi.
+- README'e `What You Learn` ve iki görselli showcase bölümü eklendi.
+- GitHub description ve topics önerileri README'e işlendi.
+- `CHANGELOG.md` ile `v0.1.0` release içeriği hazırlandı.
+- `Docs/github-showcase.md` ile release, topics ve outreach metni tek yerde toplandı.
+
+**Öğrenme notu:**
+
+İyi teknik repo ile paylaşılabilir repo aynı şey değil. Public listeler için ilk ekranın 10 saniyede "ne öğretiyor, ne çalışıyor, neden farklı" sorularını cevaplaması gerekiyor.
+
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 
 **Durum:** Tamamlandı  

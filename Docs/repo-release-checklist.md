@@ -7,6 +7,7 @@ Use this before creating the public repository or pushing a first clean branch.
 - `README.md`
 - `LICENSE`
 - `CONTRIBUTING.md`
+- `CHANGELOG.md`
 - `Makefile`
 - `AGENTS.md`
 - `.github/workflows/ci.yml`
@@ -22,6 +23,7 @@ Use this before creating the public repository or pushing a first clean branch.
 - `Docs/screenshots`
 - `Docs/pdf/realitykit-pipeline-guide.pdf`
 - `Docs/*checklist*.md`, `Docs/asset-budget.md`, `Docs/learning-roadmap.md`, `Docs/pipeline.md`
+- `Docs/github-showcase.md`
 - `Prompts`
 - `Tools/blender`
 
@@ -62,6 +64,8 @@ Use this before creating the public repository or pushing a first clean branch.
 
 6. Review `Docs/WORKLOG.md` for stale active sprint status.
 7. Review `Docs/ai-handoff.md` for stale current status or next-task guidance.
+8. Set GitHub description and topics from `Docs/github-showcase.md`.
+9. Create `v0.1.0` release from `CHANGELOG.md`.
 
 ## Current Evidence Set
 

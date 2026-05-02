@@ -33,6 +33,8 @@ python3 Tools/rkp.py status --json
 python3 Tools/rkp.py doctor --json
 ```
 
+`status --json` includes inferred prompt archetypes when available, so agents can distinguish a `drone` draft from a generic `gameplay_target`.
+
 Create a new asset task:
 
 ```bash

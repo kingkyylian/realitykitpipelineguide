@@ -70,6 +70,29 @@ make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_importe
 make release-check
 ```
 
+### Prompt To Asset
+
+`prompt-asset` turns a short asset prompt into a Blender generator script and records the inferred archetype in the asset manifest.
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red bullseye drone target"
+```
+
+For this prompt the tool infers `drone`, then writes a procedural Blender draft with a central body, four arms, rotor discs, Smart UV projection, and an `st` UV layer for USDZ export. Build and acceptance still stay explicit:
+
+```bash
+python3 Tools/rkp.py build-asset enemy_drone
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+```
+
+Use status JSON when an agent or script needs to inspect the inferred archetype:
+
+```bash
+python3 Tools/rkp.py status --json
+```
+
 ### Generate and Build
 
 ```bash

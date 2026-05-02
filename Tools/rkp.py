@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -32,6 +33,7 @@ def build_status_payload() -> dict:
                 "status": asset.get("status", ""),
                 "type": asset.get("type", ""),
                 "file": asset.get("file", ""),
+                "archetype": asset.get("archetype") or infer_script_archetype(asset.get("id", "")),
                 "next": next_action(asset),
             }
             for asset in assets
@@ -47,10 +49,14 @@ def print_asset_table() -> None:
 
     print("RealityKit Pipeline Status")
     print()
-    print(f"{'asset':<28} {'status':<10} {'type':<18} {'file':<28} next")
-    print("-" * 104)
+    print(f"{'asset':<28} {'status':<10} {'type':<18} {'archetype':<14} {'file':<28} next")
+    print("-" * 119)
     for asset in assets:
-        print(f"{asset['id']:<28} {asset['status']:<10} {asset['type']:<18} {asset['file']:<28} {asset['next']}")
+        archetype = asset["archetype"] or "-"
+        print(
+            f"{asset['id']:<28} {asset['status']:<10} {asset['type']:<18} "
+            f"{archetype:<14} {asset['file']:<28} {asset['next']}"
+        )
 
 
 def print_json(payload: dict) -> None:
@@ -63,6 +69,18 @@ def run_doctor_json() -> int:
     summary = doctor.summary()
     print_json(summary)
     return 0 if summary["ok"] else 1
+
+
+def infer_script_archetype(asset_id: str) -> str | None:
+    if not asset_id:
+        return None
+    script_path = ROOT / "Tools" / "blender" / f"create_{asset_id}.py"
+    if not script_path.exists():
+        return None
+    match = re.search(r'^ARCHETYPE\s*=\s*["\']([^"\']+)["\']', script_path.read_text(encoding="utf-8"), re.MULTILINE)
+    if match:
+        return match.group(1)
+    return None
 
 
 def next_action(asset: dict) -> str:

@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 23: Prompt Archetype Status Surface
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 00:12 +03
+**Amaç:** Prompt archetype bilgisini machine-readable pipeline state'e taşımak ve README'de prompt-to-asset akışını görünür yapmak.
+
+**Yapılanlar:**
+
+- `prompt-asset` artık manifest entry içine `prompt` ve `archetype` metadata'sı yazıyor.
+- `python3 Tools/rkp.py status --json` çıktısına `archetype` alanı eklendi.
+- `python3 Tools/rkp.py status` text tablosu archetype sütunu gösterecek şekilde güncellendi.
+- Generated Blender script'te archetype bulunmadığında `ARCHETYPE = null` yerine Python uyumlu `ARCHETYPE = None` üretilecek şekilde düzeltildi.
+- README'ye `Prompt To Asset` bölümü eklendi.
+- CLI docs ve skill command reference `status --json` archetype davranışını anlatacak şekilde güncellendi.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/prompt_asset.py Tools/rkp.py: ok
+python3 Tools/rkp.py prompt-asset test_status_drone --type gameplay_target --prompt "red bullseye drone target" --force: ok, archetype=drone
+python3 Tools/rkp.py status --json: ok, includes archetype=drone for prompt-backed asset
+python3 -m py_compile Tools/blender/create_test_status_drone.py: ok
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Prompt pipeline agent'lar için ancak state yüzeyinde okunabiliyorsa işe yarar. `archetype` alanı Blender script içinde kalmamalı; CLI status üzerinden planlanabilir olmalı.
+
 ### Sprint 22: Prompt Archetype Geometry
 
 **Durum:** Tamamlandı

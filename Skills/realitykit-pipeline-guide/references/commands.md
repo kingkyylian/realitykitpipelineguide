@@ -32,6 +32,8 @@ python3 Tools/rkp.py doctor --json
 
 Use JSON output for scripts, CI assertions, and agent planning. Keep side-effect commands such as `build-asset` and `accept-asset` text-first unless a concrete integration needs structured output.
 
+`status --json` includes `archetype` for prompt-backed assets when it is available from the manifest or generated Blender script.
+
 ## Full Local Release Check
 
 ```bash

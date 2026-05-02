@@ -59,7 +59,7 @@ def blender_template(asset_id: str, asset_type: str, prompt: str, archetype: str
     prompt_json = json.dumps(prompt)
     primary_json = json.dumps(primary)
     secondary_json = json.dumps(secondary)
-    archetype_repr = json.dumps(archetype)
+    archetype_repr = repr(archetype)
 
     return f'''from pathlib import Path
 
@@ -320,6 +320,21 @@ def append_prompt_to_brief(asset_id: str, prompt: str, asset_type: str, archetyp
     brief_path.write_text(text, encoding="utf-8")
 
 
+def update_manifest_prompt_metadata(asset_id: str, prompt: str, archetype: str | None) -> None:
+    manifest_path = ROOT / "Tools" / "asset_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for asset in manifest.get("assets", []):
+        if asset.get("id") == asset_id:
+            asset["prompt"] = prompt
+            asset["archetype"] = archetype
+            notes = asset.get("notes", "")
+            note = f" Prompt-backed draft; archetype={archetype or 'type-default'}."
+            if note.strip() not in notes:
+                asset["notes"] = (notes.rstrip() + note).strip()
+            break
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def write_blender_script(
     asset_id: str,
     asset_type: str,
@@ -373,6 +388,7 @@ def main() -> int:
         return 1
 
     append_prompt_to_brief(asset_id, args.prompt, args.type, archetype)
+    update_manifest_prompt_metadata(asset_id, args.prompt, archetype)
 
     archetype_label = archetype or "type-default"
     print(f"prompt asset ready: {asset_id} (archetype: {archetype_label})")

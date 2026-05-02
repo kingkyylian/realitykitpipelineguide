@@ -8,13 +8,15 @@ Steps:
 
 1. Define the gameplay need in one sentence.
 2. Scaffold the asset with `make new-asset id=<asset_id> type=<asset_type>` when it is new.
-3. Update `Tools/asset_manifest.json` with id, file, type, status, budgets, texture maps, and notes.
-4. Put final runtime USDZ files in `Assets/Imported`.
-5. Keep source art or scripts in `Assets/Source` or `Tools/blender`.
-6. Run project generation and build.
-7. Verify in RealityKit, not only in Blender.
-8. Capture screenshot evidence when visual behavior changed.
-9. Add the lesson to `Docs/WORKLOG.md`.
+3. Edit the asset brief and Blender starter script.
+4. Build the USDZ with `make build-asset id=<asset_id>`.
+5. Update `Tools/asset_manifest.json` notes, but keep `status: planned` until visual acceptance.
+6. Put final runtime USDZ files in `Assets/Imported`.
+7. Keep source art or scripts in `Assets/Source` or `Tools/blender`.
+8. Run project generation and build.
+9. Verify in RealityKit, not only in Blender.
+10. Capture screenshot evidence when visual behavior changed.
+11. Add the lesson to `Docs/WORKLOG.md`.
 
 ## Gameplay Feature
 

@@ -40,6 +40,20 @@ Supported types:
 
 This creates a planned manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`. It does not generate the final USDZ or mark the asset imported.
 
+## Asset Build
+
+```bash
+make build-asset id=enemy_drone
+```
+
+If Blender is not on `PATH`:
+
+```bash
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=enemy_drone
+```
+
+This runs `Tools/blender/create_<id>.py` and verifies `Assets/Imported/<id>.usdz` exists and is non-empty. It intentionally leaves manifest status unchanged.
+
 ## Validate Manifest Only
 
 ```bash

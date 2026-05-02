@@ -134,6 +134,18 @@ Scaffold a new asset:
 make new-asset id=enemy_drone type=gameplay_target
 ```
 
+Run the Blender build script for an asset:
+
+```bash
+make build-asset id=enemy_drone
+```
+
+If Blender is not on `PATH`, provide it explicitly:
+
+```bash
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=enemy_drone
+```
+
 Regenerate the guide PDF:
 
 ```bash
@@ -189,5 +201,6 @@ Reusable templates:
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
+- `Tools/build_asset.py`: runs `Tools/blender/create_<id>.py` and verifies the expected USDZ exists.
 - `Tools/new_asset.py`: creates a manifest entry, asset brief, and Blender starter script for a new asset.
 - `Tools/pipeline_doctor.py`: static pipeline consistency checker for manifests, docs, links, CI paths, and skill packaging.

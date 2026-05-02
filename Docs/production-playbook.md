@@ -60,6 +60,14 @@ make new-asset id=enemy_drone type=gameplay_target
 
 This creates the manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`.
 
+After editing the Blender script or source asset, build the USDZ:
+
+```bash
+make build-asset id=enemy_drone
+```
+
+This verifies the USDZ file exists, but does not mark the asset imported. Acceptance still requires RealityKit visual verification.
+
 ### 2. Gameplay Contract
 
 Before writing code, define:

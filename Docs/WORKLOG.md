@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 16: Asset Build Command
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:45 +03  
+**Amaç:** `new-asset` ile açılan contract'tan sonra Blender script'ini çalıştırıp USDZ çıktısını doğrulayan ikinci pipeline adımını eklemek.
+
+**Yapılanlar:**
+
+- `Tools/build_asset.py` eklendi.
+- `make build-asset id=<asset_id>` hedefi eklendi.
+- Komut `Tools/blender/create_<id>.py` dosyasını Blender background mode ile çalıştırıyor.
+- `BLENDER=/path/to/blender` override destekleniyor.
+- Komut beklenen `Assets/Imported/<id>.usdz` dosyasının oluştuğunu ve boş olmadığını doğruluyor.
+- Manifest status bilinçli olarak değiştirilmedi; `imported` kabulü ayrı `accept-asset` gate'i olarak kalacak.
+
+**Verification:**
+
+```text
+make build-asset id=arena_floor: blocked as expected, Blender executable not found in this environment
+python3 Tools/build_asset.py --id nope: ok, unknown asset id rejected
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Build ve accept farklı kapılar olmalı. USDZ dosyasının üretilmesi teknik çıktıdır; RealityKit içinde scale/origin/material/screenshot doğrulanmadan asset imported sayılmamalı.
+
 ### Sprint 15: New Asset Scaffolder
 
 **Durum:** Tamamlandı  

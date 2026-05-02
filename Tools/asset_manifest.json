@@ -39,13 +39,13 @@
       "id": "enemy_drone",
       "file": "enemy_drone.usdz",
       "type": "gameplay_target",
-      "status": "planned",
+      "status": "imported",
       "maxTriangles": 1500,
       "maxTextureSize": 1024,
       "textureMaps": [
         "baseColor"
       ],
-      "notes": "Scaffolded asset. Fill in size, origin, UV/material, export, simulator screenshot, and worklog notes before marking imported. Prompt-backed draft; archetype=drone.",
+      "notes": "Scaffolded asset. Fill in size, origin, UV/material, export, simulator screenshot, and worklog notes before marking imported. Prompt-backed draft; archetype=drone. Accepted with screenshot Docs/screenshots/enemy_drone_imported.jpg.",
       "prompt": "red bullseye drone target",
       "archetype": "drone"
     }

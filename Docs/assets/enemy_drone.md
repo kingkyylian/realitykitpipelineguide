@@ -24,12 +24,12 @@ Gameplay purpose:
 
 ## Acceptance Criteria
 
-- [ ] USDZ exported to `Assets/Imported/enemy_drone.usdz`.
-- [ ] `Tools/asset_manifest.json` status changed from `planned` to `imported`.
-- [ ] `make doctor` passes without new errors.
-- [ ] `make release-check` passes.
-- [ ] Simulator screenshot captured if visual.
-- [ ] `Docs/WORKLOG.md` lesson added.
+- [x] USDZ exported to `Assets/Imported/enemy_drone.usdz`.
+- [x] `Tools/asset_manifest.json` status changed from `planned` to `imported`.
+- [x] `make doctor` passes without new errors.
+- [x] `make release-check` passes.
+- [x] Simulator screenshot captured if visual.
+- [x] `Docs/WORKLOG.md` lesson added.
 
 ## Prompt Source
 
@@ -43,3 +43,7 @@ red bullseye drone target
 - Generated through `python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt ...`.
 - Treat the Blender script as a first procedural draft, not final art direction.
 - Build creates USDZ; acceptance still requires simulator screenshot evidence.
+
+## Evidence
+
+![Accepted enemy_drone](../screenshots/enemy_drone_imported.jpg)

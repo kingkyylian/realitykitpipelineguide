@@ -12,6 +12,28 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Accepted Asset: enemy_drone
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 01:22  
+**Amaç:** `enemy_drone` asset'ini production pipeline'a screenshot evidence ile kabul etmek.
+
+**Acceptance:**
+
+- USDZ: `Assets/Imported/enemy_drone.usdz`
+- Screenshot: `Docs/screenshots/enemy_drone_imported.jpg`
+- Manifest status: `imported`
+
+**Verification:**
+
+```text
+make doctor: ok
+```
+
+**Öğrenme notu:**
+
+Asset kabulü dosyanın oluşmasıyla değil, runtime evidence ve manifest/worklog kaydıyla tamamlanır.
+
 ### Sprint 27: Real Asset Build Guardrails
 
 **Durum:** Tamamlandı

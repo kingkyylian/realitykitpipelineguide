@@ -1,0 +1,12 @@
+flowchart LR
+    A[Gameplay ihtiyacı] --> B[Asset brief]
+    B --> C[Mesh / origin / scale]
+    C --> D[UV + material + texture]
+    D --> E[USDZ export]
+    E --> F[Assets/Imported]
+    F --> G[asset_manifest.json]
+    G --> H[xcodegen generate]
+    H --> I[Xcode build]
+    I --> J[RealityKit loader]
+    J --> K[Simulator screenshot]
+    K --> L[Worklog + checklist]

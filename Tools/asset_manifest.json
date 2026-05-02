@@ -1,0 +1,36 @@
+{
+  "project": "RealityKitPipelineDemo",
+  "scale": "1 Blender unit = 1 meter",
+  "assets": [
+    {
+      "id": "target_basic",
+      "file": "target_basic.usdz",
+      "type": "gameplay_target",
+      "status": "imported",
+      "maxTriangles": 1500,
+      "maxTextureSize": 1024,
+      "notes": "First Blender export test. 284 triangles, 3 materials, origin at center, exported from Blender as USDZ."
+    },
+    {
+      "id": "target_basic_textured",
+      "file": "target_basic_textured.usdz",
+      "type": "gameplay_target",
+      "status": "imported",
+      "maxTriangles": 1500,
+      "maxTextureSize": 1024,
+      "textureMaps": [
+        "baseColor"
+      ],
+      "notes": "Sprint 3 teaching asset. 229 verts, 284 polys. Single base color texture 512x512 PNG embedded (~11KB). Planar UV projection from Z axis overriding original 'st' primvar. Concentric rings: red center, alternating white/red, dark outer. Roughness 0.65 / metallic 0 as material values. Confirmed: target_basic_textured ready in HUD, UV not flipped, scale/origin matching target_basic."
+    },
+    {
+      "id": "arena_floor",
+      "file": "arena_floor.usdz",
+      "type": "environment",
+      "status": "todo",
+      "maxTriangles": 800,
+      "maxTextureSize": 1024,
+      "notes": "Optional replacement for the procedural floor."
+    }
+  ]
+}

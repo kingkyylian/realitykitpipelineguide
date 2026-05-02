@@ -1,0 +1,379 @@
+# RealityKit Pipeline Demo Worklog
+
+Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce buraya kısa hedef yazacağız; iş bitince ne yaptığımızı, hangi komutları çalıştırdığımızı ve ne öğrendiğimizi ekleyeceğiz.
+
+## Nasıl Kullanacağız
+
+1. Yeni iş başlamadan önce `Current Sprint` bölümünü güncelle.
+2. İşi küçük görevlere böl: Claude, Codex, insan.
+3. Asset veya kod sözleşmesi değişirse `Contracts` bölümüne yaz.
+4. Build/test sonucu varsa `Verification Log` bölümüne ekle.
+5. Kararları sadece sohbet içinde bırakma; `Decision Log` bölümüne kaydet.
+
+## Current Sprint
+
+### Teaching Goal: Asset + Texture Pipeline
+
+**Durum:** Aktif  
+**Amaç:** Bu proje sadece oynanabilir demo üretmek için değil; Blender -> USDZ -> RealityKit asset ve texture sistemini Kyylian ve Mehmet'e adım adım öğretmek için de kullanılacak.
+
+**Not alma kuralı:**
+
+- Her asset/texture kararını `Decision Log` içine yaz.
+- Her yeni asset denemesini `Verification Log` içinde build/görsel doğrulama sonucu ile kapat.
+- Blender tarafında öğrenilen export/origin/scale/material derslerini `Docs/blender-usdz-checklist.md` dosyasına ekle.
+- RealityKit tarafında öğrenilen loader, scale, orientation ve material davranışlarını bu worklog'a kısa not olarak geçir.
+- Kyylian ve Mehmet aynı pipeline bilgisini öğrenecek; iş bölümü aracı sahiplenmek için değil, pratik ilerlemek için yapılacak.
+
+### Sprint 3: İlk Texture'lı Target Asset
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 18:15 +03  
+**Amaç:** `target_basic_textured.usdz` ile ilk base color texture import akışını öğretmek ve doğrulamak.
+
+**Yapılanlar:**
+
+- `target_basic.usdz` Blender Python ile import edildi; Cylinder mesh (229 verts, 284 poly) korundu.
+- `'st'` UV primvar yerinde override edildi: Z ekseninden planar projeksiyon (u=x/0.65+0.5, v=y/0.65+0.5).
+- 512×512 PNG base color texture Blender Python ile üretildi: kırmızı merkez, beyaz/kırmızı halkalar, koyu dış.
+- Tek `mat_textured` materyali: PrincipledBSDF + ImageTexture → Base Color, roughness=0.65, metallic=0.
+- USDZ export (Blender `wm.usd_export`, `export_textures_mode='NEW'`): texture ~11 KB PNG olarak embed edildi.
+- `rtk xcodegen generate` → build → simulator: `target_basic_textured ready` HUD'da görüldü.
+- Screenshot: `Build/target_textured_sprint3_fresh.png`.
+
+**Öğrenme notları:**
+
+- Blender USD export, shader'daki UV Map node'unun `uv_map` alanına göre primvar seçer — hangi layer'ı aktif yaptığın değil, node'un referans ettiği isim önemli.
+- Orijinal asset `'st'` primvar kullandığı için yeni UV'yi `'st'` layer'ına yazmak gerekti; yoksa UVMap layer aktif olsa bile texture yanlış primvar'a bind edilirdi.
+- `export_textures_mode='NEW'` `/tmp` path'inden kopyalama uyarısı veriyor ama PNG yine de USDZ içine embed oluyor — RealityKit tarafında sorunsuz yükleniyor.
+- Texture boyutu 512×512 simulator'da yeterli çözünürlük veriyor; 1024 şimdilik gerekmiyor.
+
+### Sprint 2: Imported Target Scale ve Spawn Tuning
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 14:36 +03  
+**Amaç:** `target_basic.usdz` assetinin ekranda çok büyük veya kadraj dışı görünmesini düzeltmek.
+
+**Sonuç:**
+
+- Imported target için RealityKit tarafında `0.48` uniform scale uygulandı.
+- Rastgele spawn yerine sabit, kadraj içi spawn slotları eklendi.
+- Reset sonrası slot sırası başa alınıyor; bu eğitim/debug sırasında aynı sahneyi tekrar üretilebilir yapıyor.
+- Görsel doğrulama çıktısı: `Build/target_basic_scale_slots.jpg`.
+
+### Sprint 1: İlk Gerçek Target Asset Import
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-04-30 16:47 +03  
+**Amaç:** Claude/Blender tarafından üretilen `target_basic.usdz` assetini app resource pipeline'a almak ve build içinde doğrulamak.
+
+**Sonuç:**
+
+- `Assets/Imported/target_basic.usdz` eklendi.
+- Asset bilgisi: 284 triangle, 3 materyal, merkez origin, yaklaşık 19KB USDZ.
+- `Tools/asset_manifest.json` içinde `target_basic` durumu `imported` olarak güncellendi.
+- XcodeGen sonrası asset `.app/Imported/target_basic.usdz` altında bundle'a kopyalandı.
+- Generic iOS Simulator build başarılı.
+
+### Sprint 0: Demo Pipeline Hazırlığı
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-04-29 16:53 +03  
+**Amaç:** RealityKit öğrenmek için küçük ama gerçek pipeline taşıyan demo proje kurmak.
+
+**Kapsam:**
+
+- iOS RealityKit sandbox app.
+- Procedural hedef vurma döngüsü.
+- Blender/Claude asset export sözleşmesi.
+- XcodeGen tabanlı resource pipeline.
+- Öğrenme ve QA dokümanları.
+
+**Kapsam dışı:**
+
+- Final art.
+- Substance pipeline.
+- visionOS target.
+- Reality Composer Pro package.
+- Gerçek cihaz profiling.
+
+## Role Split
+
+### Kyylian + Mehmet
+
+- Asset ve texture pipeline'ını uçtan uca birlikte öğrenir.
+- İş bölümünü kendi aralarında yapar; amaç bir kişinin sadece Blender, diğerinin sadece kod bilmesi değildir.
+- Oyun hissi, tema, art direction ve kalite beklentilerini birlikte netleştirir.
+- Asset export sonrası simulator screenshot'ını birlikte yorumlar: scale, origin, orientation, material, texture, collision.
+- Öğrenilen dersleri checklist ve worklog'a yazdırır.
+
+### Asset Üretim İstasyonu
+
+- Blender, Blender MCP veya Claude otomasyonu kullanılabilir.
+- Çıktı `.usdz` olarak `Assets/Imported` altına konur.
+- Asset scale, origin, naming, UV ve texture sözleşmesine uyar.
+- Üretim aracı değişebilir; öğrenilecek konu pipeline davranışıdır.
+
+### Codex İstasyonu
+
+- RealityKit/Swift/Xcode tarafını kurar.
+- Gameplay sistemlerini yazar.
+- Asset import, bundle, loader, scale/orientation/material davranışı ve build pipeline sorunlarını çözer.
+- Build/test/verification sonuçlarını kaydeder.
+- Gerektiğinde eğitim notlarını, checklistleri ve handoff sözleşmelerini günceller.
+
+## Contracts
+
+### Asset Contract
+
+İlk hedef asset:
+
+```text
+Path: /Users/kyylian/Developer/RealityKitPipelineDemo/Assets/Imported/target_basic.usdz
+Format: USDZ
+Scale: 1 Blender unit = 1 meter
+Origin: gameplay pivot
+Naming: snake_case
+First asset id: target_basic
+```
+
+Yeni `.usdz` dosyası eklendikten sonra:
+
+```bash
+rtk xcodegen generate
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator build
+```
+
+### Loader Contract
+
+`ImportedAssetLoader` assetleri şu sırayla arar:
+
+1. Bundle root: `target_basic.usdz`
+2. Bundle subdirectory: `Imported/target_basic.usdz`
+3. Bundle subdirectory: `Assets/Imported/target_basic.usdz`
+
+`GameARView` target spawn ederken önce `target_basic.usdz` yüklemeyi dener. Bulamazsa procedural sphere fallback kullanır. Bu sayede asset yokken de app çalışır.
+
+## Project Map
+
+| Path | Amaç |
+| --- | --- |
+| `Sources/RealityKitPipelineDemo` | SwiftUI + RealityKit app kodu |
+| `Assets/Imported` | Blender/Claude `.usdz` çıktıları |
+| `Assets/Textures` | Texture kaynakları veya exportları |
+| `Tools/asset_manifest.json` | Asset listesi, bütçe ve durum |
+| `Docs/pipeline.md` | Genel üretim pipeline |
+| `Docs/blender-usdz-checklist.md` | Blender export kontrol listesi |
+| `Docs/asset-budget.md` | Mobil performans bütçesi |
+| `Prompts` | Claude/Codex tekrar kullanılabilir promptları |
+
+## Change Log
+
+### 2026-04-30
+
+- Claude/Blender çıktısı `Assets/Imported/target_basic.usdz` projeye eklendi.
+- `target_basic` manifest kaydı `imported` durumuna alındı.
+- XcodeGen proje dosyası asset resource klasörüyle yeniden üretildi.
+- Build çıktısında `target_basic.usdz` dosyasının `Imported/` altında bundle'a girdiği doğrulandı.
+- Simulator üzerinde app launch edildi ve imported target görsel olarak doğrulandı.
+- USDZ içindeki nested mesh için child-level orientation düzeltmesi eklendi; ring materyalleri görünür hale geldi.
+- Imported target spawn sırasında kameraya baktırıldı ve 180 derece front-face düzeltmesi yapıldı; hedef tahtası artık kırmızı/beyaz ön yüzüyle oyuncuya bakıyor.
+
+### 2026-05-02
+
+- Repo açmadan önce öğretici paket için `Docs/guide.md` eklendi; asset'in gameplay ihtiyacından simulator screenshot'ına kadar yolculuğu rehber formatında anlatıldı.
+- `Docs/guide.md` profesyonel eğitim yapısına refactor edildi: öğrenme hedefleri, mental model, core concepts, sprint walkthrough, debugging playbook, yeni asset checklist'i ve repo release checklist eklendi.
+- Pipeline şeması kaynak Mermaid (`Docs/diagrams/pipeline.mmd`) ve görüntülenebilir SVG (`Docs/diagrams/pipeline.svg`) olarak eklendi.
+- Rehberden `Build/realitykit-pipeline-guide.html` ve `Build/realitykit-pipeline-guide.pdf` üretildi.
+- Public repo hazırlığı için seçilmiş görsel kanıtlar `Docs/screenshots` altına, paylaşılabilir PDF `Docs/pdf/realitykit-pipeline-guide.pdf` altına kopyalandı.
+- `.gitignore` public repo için genişletildi; `Build/` scratch output olarak bırakıldı.
+- `Docs/repo-release-checklist.md` eklendi.
+- Sprint 3 için `target_basic_textured` manifest kaydı ve loader fallback sırası hazırlandı.
+- Texture eğitim asset'i için Blender checklist'e base color odaklı export kuralları eklendi.
+- Imported target scale `0.48` olarak RealityKit tarafında normalize edildi.
+- Spawn noktaları sabit slot listesine çevrildi; hedefler HUD ve alt kontrol butonlarıyla çakışmadan kadraj içinde görünür hale geldi.
+- Reset sonrası spawn slot sırası resetlenerek debug ve eğitim tekrar üretilebilirliği artırıldı.
+
+### 2026-04-29
+
+- `RealityKitPipelineDemo` klasörü oluşturuldu.
+- XcodeGen `project.yml` eklendi.
+- SwiftUI app entry, HUD ve kontrol butonları eklendi.
+- `GameARView` ile non-AR RealityKit sandbox kuruldu.
+- Procedural arena, target, projectile, hit detection, score ve reset eklendi.
+- `ImportedAssetLoader` eklendi.
+- `target_basic.usdz` bulunamazsa procedural fallback davranışı eklendi.
+- `Assets/Imported` ve `Assets/Textures` resource folder olarak XcodeGen’e bağlandı.
+- `README.md`, pipeline, Blender checklist, asset budget ve learning roadmap eklendi.
+- Claude/Codex/QA prompt şablonları eklendi.
+
+## Verification Log
+
+### 2026-05-02
+
+Komut:
+
+```bash
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('json: ok')"
+```
+
+Sonuç:
+
+```text
+json: ok
+```
+
+Komut:
+
+```bash
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+```
+
+Sonuç:
+
+```text
+xcodebuild: ok
+```
+
+MCP görsel doğrulama (Sprint 2 sonu):
+
+```text
+build_run_sim: ok, iPhone 17 simulator
+screenshot: Build/target_basic_scale_slots.jpg
+screenshot: Build/target_textured_fallback_ready.jpg
+```
+
+Not:
+
+- CoreSimulator servis uyarıları shell build sırasında devam ediyor; build sonucunu engellemedi.
+- Screenshot'ta iki imported target kadraj içinde ve okunur ölçekte görünüyor.
+- `target_basic_textured.usdz` henüz yokken fallback olarak `target_basic.usdz` yüklenmeye devam ediyor.
+
+Sprint 3 — texture asset doğrulaması:
+
+```bash
+# Blender Python ile asset üretimi
+blender --background --python /tmp/make_textured_target.py
+# → Assets/Imported/target_basic_textured.usdz (29.4 KB)
+# → textures/target_basic_textured_basecolor.png 512x512 embedded
+
+rtk xcodegen generate
+rtk xcodebuild -quiet ... build
+xcrun simctl launch ... com.kyylian.RealityKitPipelineDemo
+xcrun simctl io ... screenshot target_textured_sprint3_fresh.png
+```
+
+Sonuç:
+
+```text
+xcodebuild: ok
+HUD: target_basic_textured ready
+screenshot: Build/target_textured_sprint3_fresh.png
+```
+
+Not:
+
+- Texture UV planar projection Z'den; `'st'` primvar override edildi.
+- HUD ilk açılışta `target_basic_textured ready` yazıyor — textured asset yüklendi.
+- Concentric ring pattern UV flip/bozukluk yok.
+- Scale ve origin `target_basic` ile aynı kalıyor.
+
+### 2026-04-30
+
+Komut:
+
+```bash
+rtk xcodegen generate
+```
+
+Sonuç:
+
+```text
+Created project at /Users/kyylian/Developer/RealityKitPipelineDemo/RealityKitPipelineDemo.xcodeproj
+```
+
+Komut:
+
+```bash
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+```
+
+Sonuç:
+
+```text
+xcodebuild: ok
+```
+
+Bundle kontrolü:
+
+```text
+Build/Products/Debug-iphonesimulator/RealityKitPipelineDemo.app/Imported/target_basic.usdz
+```
+
+Not:
+
+- İlk build denemesi varsayılan `~/Library/Developer/Xcode/DerivedData` yazma izni nedeniyle düştü.
+- Workspace içindeki `Build/DerivedData` ile build başarılı.
+- CoreSimulator servis uyarıları devam ediyor; generic build sonucunu engellemedi.
+- Asset simulator üzerinde yüklendi ve screenshot ile doğrulandı.
+- İlk görsel testte asset edge-on görünüyordu; nested mesh child rotation sonrası kırmızı/beyaz ringler görünür hale geldi.
+- Screenshot çıktısı: `Build/target_basic_simulator_childrot.png`.
+- Son düzeltme sonrası front-facing screenshot: `Build/target_basic_frontface.png`.
+- Kalan tuning: target scale ve spawn bounds ayarlanmalı; bazı hedefler ekrana büyük veya kenardan taşmış gelebiliyor.
+
+### 2026-04-29
+
+Komut:
+
+```bash
+rtk xcodegen generate
+```
+
+Sonuç:
+
+```text
+Created project at /Users/kyylian/Developer/RealityKitPipelineDemo/RealityKitPipelineDemo.xcodeproj
+```
+
+Komut:
+
+```bash
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator build
+```
+
+Sonuç:
+
+```text
+xcodebuild: ok
+```
+
+Not:
+
+- CoreSimulator servisinden sandbox kaynaklı uyarılar geliyor.
+- Generic iOS Simulator build başarılı.
+- App görsel olarak henüz simülatörde/cihazda çalıştırılarak doğrulanmadı.
+
+## Decision Log
+
+### D001: Substance ilk aşamada zorunlu değil
+
+Mobil RealityKit MVP için Substance kullanılmayacak. İlk aşamada Blender + Claude asset otomasyonu + RealityKit entegrasyonu yeterli. Substance ancak PBR texture üretimi darboğaz olursa değerlendirilecek.
+
+### D002: Asset pipeline bilgisi ortak öğrenilecek
+
+Kyylian ve Mehmet asset/texture pipeline'ını birlikte öğrenecek. Blender, Blender MCP, Claude otomasyonu ve Codex ayrı istasyonlar olarak kullanılabilir; ancak kalıcı rol ayrımı "asset'i bir kişi bilir, kodu diğer kişi bilir" şeklinde yapılmayacak. Her handoff simulator screenshot, build sonucu ve kısa öğrenme notuyla kapatılacak.
+
+### D003: Elle Xcode resource eklemek yerine XcodeGen kullanılacak
+
+Yeni assetler `Assets/Imported` altına eklenecek, sonra `rtk xcodegen generate` çalıştırılacak. Böylece Xcode project dosyası elle düzenlenmeyecek.
+
+### D004: Asset yokken app çalışmaya devam edecek
+
+`target_basic.usdz` bulunamazsa procedural sphere kullanılacak. Bu karar öğrenme hızını korur ve asset pipeline bozukken gameplay development’ı durdurmaz.
+
+## Next Sprint Candidates
+
+- Imported target scale/orientation ayarı yap.
+- Target health ve wave timer ekle.
+- Hit VFX ve spatial sound ekle.
+- Basit device/simulator run checklist oluştur.

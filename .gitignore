@@ -1,0 +1,28 @@
+.DS_Store
+
+# Xcode and local build output
+Build/
+build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserdata/
+*.xcuserstate
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager / tooling
+.build/
+.swiftpm/
+
+# Local editor and OS noise
+.claude/
+.vscode/
+.idea/
+*.swp
+
+# Keep public teaching artifacts under Docs/.
+# Build/ is scratch output and should not be pushed.

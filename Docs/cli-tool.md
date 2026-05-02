@@ -2,6 +2,8 @@
 
 `Tools/rkp.py` is the primary interface for this repository. The guide explains the system, but the CLI runs the system.
 
+Generated USDZ files are reusable asset outputs. Acceptance proves the asset can load in the sample app, but it does not mean the demo should permanently use that asset as its default target.
+
 ## Mental Model
 
 The pipeline has three asset states:

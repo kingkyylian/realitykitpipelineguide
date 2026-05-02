@@ -186,7 +186,7 @@ final class GameARView: ARView {
     }
 
     private func loadTargetAsset() -> LoadedTargetAsset? {
-        for name in ["enemy_drone", "target_basic_textured", "target_basic"] {
+        for name in ["target_basic_textured", "target_basic"] {
             if let model = ImportedAssetLoader.loadModel(named: name) {
                 return LoadedTargetAsset(name: name, model: model)
             }

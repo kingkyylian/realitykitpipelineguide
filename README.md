@@ -15,6 +15,8 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit sample that proves the pipeline output inside an iOS app.
 - `Docs` and `Skills`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
+Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy or load them in your own RealityKit game when needed; the demo app is only a verification harness and does not automatically switch its default gameplay target to every newly generated asset.
+
 ## What You Learn
 
 - Build a SwiftUI + RealityKit game prototype.

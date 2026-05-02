@@ -27,13 +27,13 @@
       "id": "arena_floor",
       "file": "arena_floor.usdz",
       "type": "environment",
-      "status": "todo",
+      "status": "imported",
       "maxTriangles": 800,
       "maxTextureSize": 1024,
       "textureMaps": [
         "baseColor"
       ],
-      "notes": "Sprint 5 candidate. Imported replacement for the procedural floor. Teaching focus: environment scale/origin, readable target contrast, UV tiling or atlas behavior. Start with 512px base color; 1024px max only if floor readability needs it."
+      "notes": "Sprint 5 environment teaching asset. 3.2m x 3.2m flat floor plane, origin at center, 128 triangles. Uses 'st' UV primvar and embedded 512x512 arena_floor_basecolor.png. Imported replacement for the procedural floor; teaching focus is environment scale/origin, target readability, and UV tiling behavior."
     }
   ]
 }

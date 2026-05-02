@@ -14,7 +14,7 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ### Teaching Goal: Asset + Texture Pipeline
 
-**Durum:** Aktif  
+**Durum:** Tamamlandı  
 **Amaç:** Bu proje sadece oynanabilir demo üretmek için değil; Blender -> USDZ -> RealityKit asset ve texture sistemini Kyylian ve Mehmet'e adım adım öğretmek için de kullanılacak.
 
 **Not alma kuralı:**
@@ -37,6 +37,14 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 - `arena_floor.usdz` yoksa mevcut procedural floor + lane fallback korunur.
 - `Tools/asset_manifest.json` içindeki `arena_floor` kaydı environment/texture öğretim notlarıyla genişletildi.
 - Fallback görsel doğrulama çıktısı: `Docs/screenshots/arena_floor_fallback_ready.jpg`.
+- Imported arena görsel doğrulama çıktısı: `Docs/screenshots/arena_floor_imported.jpg`.
+
+**Sonuç:**
+
+- `Assets/Imported/arena_floor.usdz` eklendi.
+- Asset bilgisi: 3.2m x 3.2m flat plane, origin center, 128 triangle, `st` UV primvar, 512x512 embedded base color texture.
+- Manifest status `imported` yapıldı.
+- Simulator'da imported floor grid/texture göründü ve target readability bozulmadı.
 
 **Asset handoff beklentisi:**
 
@@ -316,6 +324,17 @@ manifest: ok
 xcodebuild: ok
 build_run_sim: ok, iPhone 17 simulator
 screenshot: Docs/screenshots/arena_floor_fallback_ready.jpg
+```
+
+Sprint 5 — imported arena doğrulaması:
+
+```text
+asset: Assets/Imported/arena_floor.usdz (15.5 KB)
+manifest: ok
+xcodegen generate: ok
+xcodebuild: ok
+build_run_sim: ok, iPhone 17 simulator
+screenshot: Docs/screenshots/arena_floor_imported.jpg
 ```
 
 Sprint 3 — texture asset doğrulaması:

@@ -67,4 +67,5 @@ Use this before creating the public repository or pushing a first clean branch.
 | `Docs/screenshots/target_textured_sprint3_fresh.png` | Textured target loaded in RealityKit |
 | `Docs/screenshots/ring_scoring_inner_hit.jpg` | Ring texture connected to gameplay scoring |
 | `Docs/screenshots/arena_floor_fallback_ready.jpg` | Arena floor fallback works before imported floor asset exists |
+| `Docs/screenshots/arena_floor_imported.jpg` | Imported arena floor is visible without hurting target readability |
 | `Docs/pdf/realitykit-pipeline-guide.pdf` | Shareable guide snapshot |

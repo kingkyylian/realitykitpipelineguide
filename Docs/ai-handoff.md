@@ -27,7 +27,8 @@ It is not only a game prototype. It is also a teaching artifact for Kyylian and 
 | Base color textured asset | Complete | `Assets/Imported/target_basic_textured.usdz`, `Docs/screenshots/target_textured_sprint3_fresh.png` |
 | UV primvar lesson | Complete | `Docs/blender-usdz-checklist.md`, `Docs/WORKLOG.md` |
 | Ring-based scoring | Complete | `Docs/screenshots/ring_scoring_inner_hit.jpg` |
-| Arena floor fallback | Prepared | `Docs/screenshots/arena_floor_fallback_ready.jpg` |
+| Arena floor fallback | Complete | `Docs/screenshots/arena_floor_fallback_ready.jpg` |
+| Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 
 ## Planned Learning Modules
@@ -38,7 +39,7 @@ Recommended order:
 2. Module 4: Texture Maps and Material Response.
 3. Module 5: Performance and Mobile Asset Budget.
 4. Module 6: Collision, VFX, and Gameplay Feel. Ring scoring is started; VFX/audio remain.
-5. Module 7: Environment Asset and Texture Atlas. Arena loader fallback is prepared; `arena_floor.usdz` is still todo.
+5. Module 7: Environment Asset and Texture Atlas. Arena floor import is complete; future work can expand atlas/tiling variants.
 6. Module 8: Repo and Authoring Workflow.
 
 ## Current Recommended Next Task
@@ -76,6 +77,7 @@ If the user asks to continue education content, do this next:
 - Spawn positions are deterministic slots for teaching/debugging.
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
+- `arena_floor.usdz` is imported and manifest status is `imported`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.
 

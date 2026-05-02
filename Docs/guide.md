@@ -359,7 +359,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
 | Collision and gameplay asset fit | Started | ring-based score in `GameARView` | Visual texture gameplay scoring'e bağlandı; collision shape dersi genişletilecek. |
 | Hit VFX / animation | Planned | yok | Gameplay feedback ve RealityKit animation eklenecek. |
-| Environment asset | Started | `arena_floor` todo + loader fallback | Floor/prop/atlas dersi için aday; code path hazır. |
+| Environment asset | Complete | `arena_floor.usdz`, `arena_floor_imported.jpg` | Floor scale/origin, target readability, and UV grid behavior verified. |
 | Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
 | Authoring workflow | Planned | kısmi | `.blend` kaynakları, export scripts, asset versioning kararı verilecek. |
 
@@ -436,6 +436,12 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 2. Tek 512 texture veya atlas kullan.
 3. Target contrast ve readability screenshot ile doğrula.
 4. Manifest status'ünü `imported` yap ve öğrenme notunu worklog'a yaz.
+
+Current project note:
+
+- `arena_floor.usdz` is imported: 3.2m x 3.2m, centered origin, 128 triangles, `st` UV primvar, embedded 512x512 base color texture.
+- Evidence: `Docs/screenshots/arena_floor_imported.jpg`.
+- The imported floor grid is visible without reducing target readability.
 
 ### Planned Module 8: Repo and Authoring Workflow
 
@@ -680,7 +686,7 @@ rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pd
 | --- | --- | --- |
 | `target_basic.usdz` | imported | İlk USDZ import, orientation, scale |
 | `target_basic_textured.usdz` | imported | Base color texture, UV primvar, embed |
-| `arena_floor.usdz` | todo | Environment scale/origin, floor readability, UV tiling adayı |
+| `arena_floor.usdz` | imported | Environment scale/origin, floor readability, UV grid behavior |
 
 ### Core Commands
 
@@ -698,6 +704,7 @@ rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityK
 | `Docs/screenshots/target_textured_sprint3_fresh.png` | Texture'lı asset RealityKit'te yüklendi |
 | `Docs/screenshots/ring_scoring_inner_hit.jpg` | Texture ring'i gameplay skoruna bağlandı |
 | `Docs/screenshots/arena_floor_fallback_ready.jpg` | `arena_floor.usdz` yokken procedural floor fallback çalışıyor |
+| `Docs/screenshots/arena_floor_imported.jpg` | Imported arena floor target readability'yi bozmadan görünüyor |
 
 ### Instructor Notes
 

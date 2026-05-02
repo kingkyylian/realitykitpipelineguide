@@ -52,6 +52,16 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 
 Some internal docs and worklog entries use commands prefixed with `rtk`. That is this project's local agent wrapper, not a public dependency. If you cloned the repo normally, run the same command without `rtk`.
 
+## Use as a Codex Skill
+
+This repo includes a portable Codex skill at `Skills/realitykit-pipeline-guide`. Install it locally with:
+
+```bash
+make install-skill
+```
+
+After installing, ask Codex to use `realitykit-pipeline-guide` for RealityKit asset pipeline, gameplay, documentation, or release tasks. The skill points agents to the right workflow, contracts, commands, and repo gates without rereading the whole guide every time.
+
 ## Start Here
 
 For the teaching version of the pipeline, start from `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
@@ -146,6 +156,7 @@ Reusable templates:
 - `Prompts/game-feature-brief.md`
 - `Prompts/codex-task.md`
 - `Prompts/qa-checklist.md`
+- `Skills/realitykit-pipeline-guide`
 
 ## Folder Map
 
@@ -163,5 +174,6 @@ Reusable templates:
 - `Docs/screenshots`: selected visual evidence used by the guide.
 - `Docs/pdf`: generated PDF guide for sharing.
 - `Prompts`: reusable AI prompts for Codex/Claude.
+- `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.

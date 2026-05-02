@@ -29,8 +29,17 @@ Bu repo artık üç katmanlı bir rehber sistemi olarak düşünülmeli:
 | `Docs/guide.md` | Asset ve texture pipeline'ını öğrenirken. |
 | `Docs/production-playbook.md` | Gerçek feature/asset işi planlarken, review ederken veya release hazırlarken. |
 | `Docs/new-game-startup.md` | Bu repo'dan öğrenilen sistemi yeni bir RealityKit oyununa taşırken. |
+| `Skills/realitykit-pipeline-guide` | Aynı sistemi Codex skill olarak tekrar kullanırken. |
 
 Kural: Öğrenme sırasında önce bu dosyayı oku. Uygulama sırasında `production-playbook` kapısını kullan. Yeni proje başlatırken `new-game-startup` checklist'ini takip et.
+
+Skill kurulumu:
+
+```bash
+make install-skill
+```
+
+Kurulumdan sonra Codex'e `Use realitykit-pipeline-guide` diyerek asset, gameplay, release veya dokümantasyon görevlerini bu repo standardına göre yönlendirebilirsiniz.
 
 ## Scope Statement
 

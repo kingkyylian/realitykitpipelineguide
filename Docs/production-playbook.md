@@ -29,6 +29,16 @@ Feature brief
 -> release note
 ```
 
+## Codex Skill Mode
+
+This repo includes an installable skill:
+
+```bash
+make install-skill
+```
+
+After installation, use the `realitykit-pipeline-guide` skill when asking an AI agent to work on RealityKit asset imports, gameplay features, release polish, or new game startup tasks. The skill keeps agents on the same contracts and verification gates as this playbook.
+
 ### 1. Feature Brief
 
 Start with `Prompts/game-feature-brief.md` or `Prompts/asset-brief.md`.
@@ -172,4 +182,3 @@ Before merging or publishing, ask:
 - Can Kyylian and Mehmet both explain the asset/runtime contract?
 - Would a new AI agent understand the current state from `AGENTS.md` and `Docs/ai-handoff.md`?
 - Is the screenshot evidence still true after this change?
-

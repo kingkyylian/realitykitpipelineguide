@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 12: Installable Skill Pack
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:00 +03  
+**Amaç:** Repo'yu sadece okunacak guide olmaktan çıkarıp, clone eden kişinin Codex içinde tekrar kullanabileceği skill/pipeline kit haline getirmek.
+
+**Yapılanlar:**
+
+- `Skills/realitykit-pipeline-guide` altında installable Codex skill paketi eklendi.
+- Skill referansları eklendi: workflow routing, contracts/gates, commands.
+- `check_repo.py` hızlı yapı/manifest kontrol script'i eklendi.
+- `make install-skill` hedefi eklendi; skill `${CODEX_HOME:-$HOME/.codex}/skills` altına kopyalanabiliyor.
+- README, guide ve production playbook skill kullanımını anlatacak şekilde güncellendi.
+
+**Verification:**
+
+```text
+official skill validator: blocked locally, quick_validate.py requires missing PyYAML module
+Ruby YAML frontmatter check: ok
+manual TODO check: ok
+skill repo check: ok
+temporary install test: ok with CODEX_HOME=/private/tmp/realitykitpipelineguide-skill-test
+local Codex install: ok at ~/.codex/skills/realitykit-pipeline-guide
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Guide tek başına insan için iyi, ama ekip/AI workflow'u için aynı standartların yüklenebilir bir skill haline gelmesi gerekiyor. Skill kısa kalmalı; detaylar progressive disclosure ile references dosyalarına ayrılmalı.
+
 ### Sprint 11: Wave Game Loop
 
 **Durum:** Tamamlandı  

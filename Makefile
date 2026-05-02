@@ -1,8 +1,10 @@
 PROJECT = RealityKitPipelineDemo.xcodeproj
 SCHEME = RealityKitPipelineDemo
 DERIVED_DATA = Build/DerivedData
+SKILL_NAME = realitykit-pipeline-guide
+CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate guide release-check clean
+.PHONY: generate build validate guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -21,6 +23,11 @@ guide:
 	cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 
 release-check: generate validate build
+
+install-skill:
+	mkdir -p "$(CODEX_HOME)/skills/$(SKILL_NAME)"
+	cp -R "Skills/$(SKILL_NAME)/." "$(CODEX_HOME)/skills/$(SKILL_NAME)/"
+	@echo "installed $(SKILL_NAME) to $(CODEX_HOME)/skills/$(SKILL_NAME)"
 
 clean:
 	rm -rf Build/DerivedData

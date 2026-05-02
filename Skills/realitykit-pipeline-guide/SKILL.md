@@ -1,0 +1,48 @@
+---
+name: realitykit-pipeline-guide
+description: Build, review, or extend RealityKit iOS game projects that use a Blender -> USDZ -> Xcode -> RealityKit asset pipeline. Use when working on imported USDZ assets, asset manifests, mobile 3D budgets, RealityKit loaders/fallbacks, gameplay features tied to assets, simulator screenshot evidence, production playbooks, or teaching/handoff docs for this repository style.
+---
+
+# RealityKit Pipeline Guide
+
+Use this skill to keep RealityKit game work tied to an asset pipeline contract, not just code changes.
+
+## Quick Workflow
+
+1. Identify the task type:
+   - Asset import or texture work
+   - Gameplay feature
+   - Visual/game-feel polish
+   - Documentation or release polish
+   - New game startup
+2. Read only the needed reference:
+   - `references/workflows.md` for task routing and implementation flow.
+   - `references/contracts.md` for asset/gameplay/release acceptance gates.
+   - `references/commands.md` for build, validation, PDF, and install commands.
+3. Preserve the repo contract:
+   - Imported assets live in `Assets/Imported`.
+   - Asset metadata lives in `Tools/asset_manifest.json`.
+   - Public evidence lives in `Docs/screenshots`.
+   - Lessons and decisions go in `Docs/WORKLOG.md`.
+   - Future-agent context goes in `Docs/ai-handoff.md` when project state changes.
+4. Verify before claiming completion.
+
+## Default Rules
+
+- Keep procedural fallbacks unless the task explicitly removes them.
+- Keep XcodeGen as the project generation source of truth.
+- Prefer `make release-check` for local verification.
+- For visual changes, run the simulator and capture or reference screenshot evidence.
+- Do not use a latest Apple API if the public CI Xcode baseline cannot compile it.
+- Keep docs canonical: update `Docs/guide.md` for teaching, `Docs/production-playbook.md` for production gates, and `Docs/new-game-startup.md` for future-game startup guidance.
+
+## Useful Script
+
+Run this from the repo root for a fast structure check:
+
+```bash
+python3 Skills/realitykit-pipeline-guide/scripts/check_repo.py
+```
+
+The script validates required guide, manifest, asset, and screenshot paths. It does not replace Xcode build verification.
+

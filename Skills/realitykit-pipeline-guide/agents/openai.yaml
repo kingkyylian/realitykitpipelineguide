@@ -1,0 +1,4 @@
+interface:
+  display_name: "RealityKit Pipeline Guide"
+  short_description: "Build RealityKit games with a Blender to USDZ asset pipeline."
+  default_prompt: "Use this skill to plan and implement a RealityKit game asset or gameplay pipeline task."

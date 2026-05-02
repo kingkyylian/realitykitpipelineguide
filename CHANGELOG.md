@@ -13,6 +13,7 @@
 - Asset manifest with budgets and learning notes.
 - Blender starter script for arena floor generation.
 - Public guide PDF, screenshots, release checklist, CI, contribution templates, and Makefile.
+- Showcase polish pass with a darker backdrop, readable HUD, reticle overlay, and hit spark VFX.
 
 ### Verified
 
@@ -26,5 +27,5 @@
 
 - Add a README demo GIF.
 - Add target-generation Blender scripts.
-- Add hit VFX and audio feedback.
+- Add audio feedback.
 - Add roughness/metallic material comparison assets.

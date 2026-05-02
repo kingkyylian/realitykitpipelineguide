@@ -15,11 +15,18 @@ final class GameARView: ARView {
         var age: TimeInterval
     }
 
+    private struct HitEffect {
+        let root: Entity
+        var age: TimeInterval
+        let duration: TimeInterval
+    }
+
     private let gameSession: GameSession
     private let worldAnchor = AnchorEntity(world: .zero)
     private var subscriptions: [Cancellable] = []
     private var projectiles: [Projectile] = []
     private var targets: [ModelEntity] = []
+    private var hitEffects: [HitEffect] = []
     private var lastSpawnToken = 0
     private var lastResetToken = 0
     private var nextTargetSlot = 0
@@ -58,6 +65,7 @@ final class GameARView: ARView {
         scene.anchors.append(worldAnchor)
 
         addLighting()
+        addShowcaseBackdrop()
         addArena()
         spawnTarget()
         spawnTarget()
@@ -85,9 +93,17 @@ final class GameARView: ARView {
 
     private func addLighting() {
         let light = DirectionalLight()
-        light.light.intensity = 1800
+        light.light.intensity = 2600
         light.orientation = simd_quatf(angle: -.pi / 4, axis: [1, 0, 0])
         worldAnchor.addChild(light)
+    }
+
+    private func addShowcaseBackdrop() {
+        let backdropMaterial = SimpleMaterial(color: UIColor(red: 0.08, green: 0.10, blue: 0.12, alpha: 1), isMetallic: false)
+        let backdrop = ModelEntity(mesh: .generateBox(size: [3.8, 1.6, 0.06]), materials: [backdropMaterial])
+        backdrop.name = "showcase_backdrop"
+        backdrop.position = [0, 0.18, -2.85]
+        worldAnchor.addChild(backdrop)
     }
 
     private func addArena() {
@@ -204,6 +220,7 @@ final class GameARView: ARView {
         }
 
         resolveHits()
+        updateHitEffects(deltaTime: deltaTime)
         removeExpiredProjectiles()
     }
 
@@ -234,6 +251,11 @@ final class GameARView: ARView {
 
         for score in hitScores.values {
             gameSession.recordHit(points: score.points, zone: score.zone)
+        }
+
+        for target in targets where hitTargets.contains(ObjectIdentifier(target)) {
+            let score = hitScores[ObjectIdentifier(target)] ?? (points: 1, zone: "Outer ring")
+            addHitEffect(at: target.position, points: score.points)
         }
 
         projectiles.removeAll { projectile in
@@ -274,6 +296,7 @@ final class GameARView: ARView {
         guard let bestTarget else { return false }
 
         let score = scoreForScreenHit(distance: bestDistance)
+        addHitEffect(at: bestTarget.position, points: score.points)
         bestTarget.removeFromParent()
         targets.removeAll { ObjectIdentifier($0) == ObjectIdentifier(bestTarget) }
         gameSession.recordHit(points: score.points, zone: score.zone)
@@ -340,11 +363,64 @@ final class GameARView: ARView {
         }
     }
 
+    private func addHitEffect(at position: SIMD3<Float>, points: Int) {
+        let root = Entity()
+        root.name = "hit_effect"
+        root.position = position
+
+        let color: UIColor
+        switch points {
+        case 5:
+            color = UIColor(red: 0.20, green: 0.92, blue: 1.0, alpha: 1.0)
+        case 3:
+            color = UIColor(red: 1.0, green: 0.82, blue: 0.22, alpha: 1.0)
+        default:
+            color = UIColor(red: 0.98, green: 0.34, blue: 0.24, alpha: 1.0)
+        }
+
+        let material = SimpleMaterial(color: color, roughness: 0.35, isMetallic: false)
+        for index in 0..<12 {
+            let angle = (Float(index) / 12.0) * 2.0 * .pi
+            let spark = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [material])
+            spark.position = [cos(angle) * 0.15, sin(angle) * 0.15, 0.02]
+            root.addChild(spark)
+        }
+
+        let flash = ModelEntity(mesh: .generateSphere(radius: 0.055), materials: [material])
+        flash.position = [0, 0, 0.03]
+        root.addChild(flash)
+
+        root.look(at: playerOrigin, from: position, relativeTo: worldAnchor)
+        worldAnchor.addChild(root)
+        hitEffects.append(HitEffect(root: root, age: 0, duration: 0.42))
+    }
+
+    private func updateHitEffects(deltaTime: TimeInterval) {
+        guard !hitEffects.isEmpty else { return }
+
+        for index in hitEffects.indices {
+            hitEffects[index].age += deltaTime
+            let progress = min(Float(hitEffects[index].age / hitEffects[index].duration), 1.0)
+            let scale = 1.0 + progress * 1.9
+            hitEffects[index].root.scale = SIMD3<Float>(repeating: scale)
+        }
+
+        hitEffects.removeAll { effect in
+            let shouldRemove = effect.age >= effect.duration
+            if shouldRemove {
+                effect.root.removeFromParent()
+            }
+            return shouldRemove
+        }
+    }
+
     private func resetScene() {
         projectiles.forEach { $0.entity.removeFromParent() }
         targets.forEach { $0.removeFromParent() }
+        hitEffects.forEach { $0.root.removeFromParent() }
         projectiles.removeAll()
         targets.removeAll()
+        hitEffects.removeAll()
         nextTargetSlot = 0
         gameSession.reset()
         spawnTarget()

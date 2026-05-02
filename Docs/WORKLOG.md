@@ -97,6 +97,32 @@ Public repo onboarding'i local agent workflow'dan ayrılmalı. `rtk` gibi ekip i
 
 İyi teknik repo ile paylaşılabilir repo aynı şey değil. Public listeler için ilk ekranın 10 saniyede "ne öğretiyor, ne çalışıyor, neden farklı" sorularını cevaplaması gerekiyor.
 
+### Sprint 8: Showcase Vertical Slice
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02  
+**Amaç:** Demo GIF almadan önce mevcut sahneyi daha okunabilir ve daha az amatör gösterecek küçük bir gameplay/showcase polish katmanı eklemek.
+
+**Yapılanlar:**
+
+- RealityKit sahnesine koyu showcase backdrop eklendi.
+- Directional light intensity artırıldı.
+- Hit anında target pozisyonunda kısa ömürlü renkli spark/flash VFX eklendi.
+- HUD yeniden düzenlendi: başlık, büyük skor, status renkleri, targets metriği.
+- Ortaya non-interactive reticle overlay eklendi.
+
+**Verification:**
+
+```text
+make build: ok
+make release-check: ok
+specific iPhone 17 simulator build/screenshot: sandbox CoreSimulator destination discovery nedeniyle alınamadı
+```
+
+**Öğrenme notu:**
+
+Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşılır bir görsel hiyerarşi gerekiyor. Küçük HUD/framing/VFX işleri repo'nun öğretici değerini bozmadan ilk izlenimi yükseltir.
+
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 
 **Durum:** Tamamlandı  

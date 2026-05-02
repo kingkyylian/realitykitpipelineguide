@@ -26,6 +26,16 @@ PALETTES = {
     "gray": ((0.36, 0.40, 0.42, 1.0), (0.72, 0.76, 0.76, 1.0)),
 }
 
+ARCHETYPE_KEYWORDS: dict[str, list[str]] = {
+    "drone":      ["drone", "flying", "quadcopter", "rotor", "hover"],
+    "tower":      ["tower", "turret", "pillar", "beacon", "post"],
+    "crate":      ["crate", "box", "container", "pickup", "supply"],
+    "projectile": ["projectile", "bullet", "orb", "ball", "shot"],
+    "target":     ["target", "bullseye", "ring", "board"],
+}
+
+_ARCHETYPE_PRIORITY = ["drone", "tower", "crate", "projectile", "target"]
+
 
 def infer_palette(prompt: str) -> tuple[str, tuple[float, ...], tuple[float, ...]]:
     lower = prompt.lower()
@@ -35,11 +45,21 @@ def infer_palette(prompt: str) -> tuple[str, tuple[float, ...], tuple[float, ...
     return "red", PALETTES["red"][0], PALETTES["red"][1]
 
 
-def blender_template(asset_id: str, asset_type: str, prompt: str) -> str:
+def infer_archetype(prompt: str) -> str | None:
+    lower = prompt.lower()
+    for archetype in _ARCHETYPE_PRIORITY:
+        for keyword in ARCHETYPE_KEYWORDS[archetype]:
+            if keyword in lower:
+                return archetype
+    return None
+
+
+def blender_template(asset_id: str, asset_type: str, prompt: str, archetype: str | None) -> str:
     palette_name, primary, secondary = infer_palette(prompt)
     prompt_json = json.dumps(prompt)
     primary_json = json.dumps(primary)
     secondary_json = json.dumps(secondary)
+    archetype_repr = json.dumps(archetype)
 
     return f'''from pathlib import Path
 
@@ -55,6 +75,7 @@ TEXTURE_DIR = ROOT / "Assets" / "Textures"
 ASSET_ID = "{asset_id}"
 ASSET_TYPE = "{asset_type}"
 PROMPT = {prompt_json}
+ARCHETYPE = {archetype_repr}
 PALETTE_NAME = "{palette_name}"
 PRIMARY = {primary_json}
 SECONDARY = {secondary_json}
@@ -81,13 +102,24 @@ def make_texture():
             dy = v - 0.5
             radius = math.sqrt(dx * dx + dy * dy)
 
-            if ASSET_TYPE == "gameplay_target":
+            if ARCHETYPE == "target" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_target"):
                 ring = int(radius * 18)
                 color = PRIMARY if ring % 2 == 0 else SECONDARY
                 if radius < 0.08:
                     color = (1.0, 1.0, 1.0, 1.0)
                 elif radius > 0.48:
                     color = (0.04, 0.04, 0.04, 1.0)
+            elif ARCHETYPE == "drone":
+                sector = int((math.atan2(dy, dx) / (2 * math.pi) + 0.5) * 8)
+                color = PRIMARY if sector % 2 == 0 else SECONDARY
+            elif ARCHETYPE == "tower":
+                band = int(v * 8)
+                color = PRIMARY if band % 2 == 0 else SECONDARY
+            elif ARCHETYPE == "crate":
+                in_seam = (x % 128) < 4 or (y % 128) < 4
+                color = (0.06, 0.06, 0.06, 1.0) if in_seam else PRIMARY
+            elif ARCHETYPE == "projectile" or (ARCHETYPE is None and ASSET_TYPE == "projectile"):
+                color = PRIMARY
             elif ASSET_TYPE == "environment":
                 grid = x % 64 < 3 or y % 64 < 3
                 axis = abs(x - 256) < 3 or abs(y - 256) < 3
@@ -138,22 +170,92 @@ def make_quad_mesh(width, height, vertical=True):
     return mesh
 
 
+def join_and_uv(parts):
+    """Join parts into one object, Smart UV Project, rename UV layer to 'st'."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    if len(parts) > 1:
+        bpy.ops.object.join()
+    obj = bpy.context.active_object
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
+    bpy.ops.uv.smart_project(angle_limit=1.15, island_margin=0.02)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    if obj.data.uv_layers:
+        obj.data.uv_layers[0].name = "st"
+    return obj
+
+
+def make_drone_parts():
+    parts = []
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.12, location=(0, 0, 0))
+    parts.append(bpy.context.active_object)
+    for angle_deg in (0, 90, 180, 270):
+        rad = math.radians(angle_deg)
+        arm_cx = math.cos(rad) * 0.14
+        arm_cy = math.sin(rad) * 0.14
+        bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.018, depth=0.28, location=(arm_cx, arm_cy, 0))
+        arm = bpy.context.active_object
+        arm.rotation_euler[2] = rad + math.pi / 2
+        parts.append(arm)
+        tip_x = math.cos(rad) * 0.28
+        tip_y = math.sin(rad) * 0.28
+        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.085, depth=0.008, location=(tip_x, tip_y, 0.018))
+        parts.append(bpy.context.active_object)
+    return parts
+
+
+def make_tower_parts():
+    parts = []
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.12, depth=0.48, location=(0, 0, 0.24))
+    parts.append(bpy.context.active_object)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.072, depth=0.22, location=(0, 0, 0.59))
+    parts.append(bpy.context.active_object)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.18, depth=0.034, location=(0, 0, 0.72))
+    parts.append(bpy.context.active_object)
+    return parts
+
+
+def make_crate_parts():
+    bpy.ops.mesh.primitive_cube_add(size=0.40, location=(0, 0, 0.20))
+    obj = bpy.context.active_object
+    mod = obj.modifiers.new("bevel", "BEVEL")
+    mod.width = 0.018
+    mod.segments = 2
+    bpy.ops.object.modifier_apply(modifier="bevel")
+    return [obj]
+
+
 def make_asset(material):
-    if ASSET_TYPE == "environment":
+    if ARCHETYPE == "drone":
+        obj = join_and_uv(make_drone_parts())
+    elif ARCHETYPE == "tower":
+        obj = join_and_uv(make_tower_parts())
+    elif ARCHETYPE == "crate":
+        obj = join_and_uv(make_crate_parts())
+    elif ARCHETYPE == "projectile" or (ARCHETYPE is None and ASSET_TYPE == "projectile"):
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.06, location=(0, 0, 0.06))
+        obj = join_and_uv([bpy.context.active_object])
+    elif ASSET_TYPE == "environment":
         mesh = make_quad_mesh(3.2, 3.2, vertical=False)
         obj = bpy.data.objects.new(ASSET_ID, mesh)
-    elif ASSET_TYPE == "projectile":
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.06, location=(0, 0, 0.06))
-        obj = bpy.context.object
-        obj.name = ASSET_ID
-        obj.data.uv_layers.new(name="st")
+        bpy.context.collection.objects.link(obj)
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
     else:
         mesh = make_quad_mesh(0.52, 0.52, vertical=True)
         obj = bpy.data.objects.new(ASSET_ID, mesh)
-
-    obj.data.materials.append(material)
-    if obj.name not in bpy.context.collection.objects:
         bpy.context.collection.objects.link(obj)
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+
+    obj.name = ASSET_ID
+    obj.data.materials.clear()
+    obj.data.materials.append(material)
+    for poly in obj.data.polygons:
+        poly.material_index = 0
     bpy.context.view_layer.objects.active = obj
     obj.select_set(True)
     return obj
@@ -169,8 +271,14 @@ def export_usdz(obj):
     bpy.ops.wm.usd_export(
         filepath=str(USDZ_PATH),
         selected_objects_only=True,
-        export_textures=True,
-        evaluation_mode="RENDER",
+        export_textures_mode="NEW",
+        overwrite_textures=True,
+        export_materials=True,
+        export_uvmaps=True,
+        export_normals=True,
+        triangulate_meshes=True,
+        generate_preview_surface=True,
+        root_prim_path="/root",
     )
 
 
@@ -180,7 +288,7 @@ def main():
     material = make_material(image)
     obj = make_asset(material)
     export_usdz(obj)
-    print(f"exported {{USDZ_PATH}} from prompt: {{PROMPT}}")
+    print(f"exported {{USDZ_PATH}} (archetype={{ARCHETYPE}}, prompt={{PROMPT}})")
 
 
 if __name__ == "__main__":
@@ -188,15 +296,15 @@ if __name__ == "__main__":
 '''
 
 
-def append_prompt_to_brief(asset_id: str, prompt: str, asset_type: str) -> None:
+def append_prompt_to_brief(asset_id: str, prompt: str, asset_type: str, archetype: str | None) -> None:
     brief_path = BRIEF_DIR / f"{asset_id}.md"
     if not brief_path.exists():
         return
     text = brief_path.read_text(encoding="utf-8")
     if "## Prompt Source" in text:
         return
+    archetype_line = f"- Inferred archetype: `{archetype}`\n" if archetype else ""
     text += f"""
-
 ## Prompt Source
 
 ```text
@@ -205,19 +313,25 @@ def append_prompt_to_brief(asset_id: str, prompt: str, asset_type: str) -> None:
 
 ## Prompt Pipeline Notes
 
-- Generated through `python3 Tools/rkp.py prompt-asset {asset_id} --type {asset_type} --prompt ...`.
+{archetype_line}- Generated through `python3 Tools/rkp.py prompt-asset {asset_id} --type {asset_type} --prompt ...`.
 - Treat the Blender script as a first procedural draft, not final art direction.
 - Build creates USDZ; acceptance still requires simulator screenshot evidence.
 """
     brief_path.write_text(text, encoding="utf-8")
 
 
-def write_blender_script(asset_id: str, asset_type: str, prompt: str, force: bool) -> Path:
+def write_blender_script(
+    asset_id: str,
+    asset_type: str,
+    prompt: str,
+    archetype: str | None,
+    force: bool,
+) -> Path:
     SCRIPT_DIR.mkdir(parents=True, exist_ok=True)
     script_path = SCRIPT_DIR / f"create_{asset_id}.py"
     if script_path.exists() and not force:
         raise FileExistsError(f"Blender script already exists: {script_path.relative_to(ROOT)}")
-    script_path.write_text(blender_template(asset_id, asset_type, prompt), encoding="utf-8")
+    script_path.write_text(blender_template(asset_id, asset_type, prompt, archetype), encoding="utf-8")
     return script_path
 
 
@@ -235,6 +349,8 @@ def main() -> int:
         print(f"error: asset id must already be snake_case; suggested id: {asset_id}", file=sys.stderr)
         return 2
 
+    archetype = infer_archetype(args.prompt)
+
     new_asset_result = subprocess.run(
         [sys.executable, "Tools/new_asset.py", "--id", asset_id, "--type", args.type],
         cwd=ROOT,
@@ -245,13 +361,21 @@ def main() -> int:
         print(f"asset already exists, updating prompt script: {asset_id}")
 
     try:
-        script_path = write_blender_script(asset_id, args.type, args.prompt, force=args.force or new_asset_result.returncode == 0)
+        script_path = write_blender_script(
+            asset_id,
+            args.type,
+            args.prompt,
+            archetype,
+            force=args.force or new_asset_result.returncode == 0,
+        )
     except FileExistsError as exc:
         print(f"error: {exc}. Use --force to replace it.", file=sys.stderr)
         return 1
 
-    append_prompt_to_brief(asset_id, args.prompt, args.type)
-    print(f"prompt asset ready: {asset_id}")
+    append_prompt_to_brief(asset_id, args.prompt, args.type, archetype)
+
+    archetype_label = archetype or "type-default"
+    print(f"prompt asset ready: {asset_id} (archetype: {archetype_label})")
     print(f"- prompt: {args.prompt}")
     print(f"- blender script: {script_path.relative_to(ROOT)}")
     print(f"- next: python3 Tools/rkp.py build-asset {asset_id}")

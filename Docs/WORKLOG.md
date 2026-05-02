@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 22: Prompt Archetype Geometry
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 00:05 +03
+**Amaç:** `prompt-asset` komutuna archetype inference ekleyerek type-based primitive'den gerçek geometry dispatch sistemine geçmek.
+
+**Yapılanlar:**
+
+- `infer_archetype(prompt)` eklendi. Keyword tabanlı, öncelik sırası: `drone > tower > crate > projectile > target > None (type fallback)`.
+- 5 archetype her biri için ayrı Blender geometry builder: `make_drone_parts`, `make_tower_parts`, `make_crate_parts`, sphere (projectile), quad (target).
+- Multi-part meshler `join_and_uv()` ile birleştiriliyor: `bpy.ops.object.join` + Smart UV Project + UV layer "st" rename.
+- Texture de archetype-aware: drone → radial sektör, tower → horizontal band, crate → panel seam, target → bullseye rings, projectile → solid.
+- USD export bug düzeltildi: `export_textures=True` → `export_textures_mode="NEW"`.
+- Asset brief'e archetype annotation eklendi (`Inferred archetype: drone`).
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/prompt_asset.py: ok
+python3 Tools/rkp.py prompt-asset test_drone --type gameplay_target --prompt "red bullseye drone target" --force: ok (archetype: drone)
+python3 -m py_compile Tools/blender/create_test_drone.py: ok
+python3 Tools/rkp.py doctor: ok (1 known warning)
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Archetype inference öncelik sırası kritik. "red bullseye drone target" gibi multi-keyword promptlarda `drone > target` olmazsa yanlış dispatch olur. Keyword eşleşmesi `lower in prompt` ile yapılıyor; LLM semantiği yok, bu bilinçli sınır.
+
 ### Sprint 21: Prompt-Backed Asset Command
 
 **Durum:** Tamamlandı

@@ -104,6 +104,8 @@ This command orchestrates `prompt-asset`, optional `build-asset`, optional `acce
 For agent CLIs that support repository slash commands:
 
 ```text
+/rkp status
+/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 /rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 /rkp-status
 ```

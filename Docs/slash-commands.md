@@ -4,6 +4,13 @@ This repo includes Claude-style slash commands for the RealityKit pipeline. They
 
 ## Commands
 
+Short dispatcher:
+
+```text
+/rkp status
+/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+```
+
 Create or continue a prompt-backed asset:
 
 ```text

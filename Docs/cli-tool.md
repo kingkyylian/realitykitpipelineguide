@@ -102,6 +102,8 @@ Prefer direct CLI commands when building automation, agents, or future MCP-style
 Claude-style slash commands live in `.claude/commands`:
 
 ```text
+/rkp status
+/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 /rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 /rkp-status
 ```

@@ -68,6 +68,7 @@ class Doctor:
             "Docs/ai-handoff.md",
             "Tools/rkp.py",
             "Tools/prompt_asset.py",
+            ".claude/commands/rkp.md",
             ".claude/commands/rkp-asset.md",
             ".claude/commands/rkp-status.md",
             "Skills/realitykit-pipeline-guide/SKILL.md",

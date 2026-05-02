@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 26: Short `/rkp` Slash Command
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 00:52 +03
+**Amaç:** Kullanıcının beklediği `/rkp ...` slash command girişini eklemek.
+
+**Yapılanlar:**
+
+- `.claude/commands/rkp.md` dispatcher komutu eklendi.
+- `/rkp status`, `/rkp status json`, `/rkp asset ...`, `/rkp doctor`, `/rkp release` akışları tanımlandı.
+- README, CLI docs, slash command docs ve skill command reference `/rkp` kullanımını gösterecek şekilde güncellendi.
+- Pipeline doctor `/rkp` komut dosyasını required path olarak kontrol edecek şekilde güncellendi.
+
+**Verification:**
+
+```text
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+global install: ok, copied to /Users/kyylian/.claude/commands/rkp.md
+```
+
+**Öğrenme notu:**
+
+Kullanıcı slash command yüzeyinde kısa komutu bekler. `/rkp-asset` doğru ama discoverability için `/rkp` dispatcher gerekir.
+
 ### Sprint 25: Slash Command Surface
 
 **Durum:** Tamamlandı

@@ -11,7 +11,7 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 ## What This Is
 
 - `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, and release checks.
-- `.claude/commands`: slash commands such as `/rkp-asset` and `/rkp-status` for agent-style usage.
+- `.claude/commands`: slash commands such as `/rkp`, `/rkp-asset`, and `/rkp-status` for agent-style usage.
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit sample that proves the pipeline output inside an iOS app.
 - `Docs` and `Skills`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
@@ -71,6 +71,12 @@ make release-check
 `make-asset` is the one-command asset loop. It turns a short prompt into an asset contract and Blender generator script, then can optionally build, accept, and run the release gate.
 
 If you are using a slash-command agent CLI, use:
+
+```text
+/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+```
+
+The longer direct slash command is also available:
 
 ```text
 /rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"

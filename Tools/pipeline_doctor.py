@@ -66,6 +66,7 @@ class Doctor:
             "Docs/WORKLOG.md",
             "Docs/ai-handoff.md",
             "Tools/rkp.py",
+            "Tools/prompt_asset.py",
             "Skills/realitykit-pipeline-guide/SKILL.md",
         ]
         for rel in required:

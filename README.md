@@ -47,6 +47,7 @@ This repo is designed to be used as a small pipeline tool first. The guide is su
 python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py build-asset enemy_drone
 python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 python3 Tools/rkp.py release-check
@@ -86,21 +87,27 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
    python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
    ```
 
-2. Edit the generated Blender script or source art.
-3. Build the USDZ:
+2. Or start from a prompt-backed procedural Blender draft:
+
+   ```bash
+   python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+   ```
+
+3. Edit the generated Blender script or source art.
+4. Build the USDZ:
 
    ```bash
    python3 Tools/rkp.py build-asset enemy_drone
    ```
 
-4. Verify the asset in the simulator and capture a screenshot.
-5. Accept it into the production pipeline:
+5. Verify the asset in the simulator and capture a screenshot.
+6. Accept it into the production pipeline:
 
    ```bash
    python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
    ```
 
-6. Run the final gate:
+7. Run the final gate:
 
    ```bash
    python3 Tools/rkp.py release-check
@@ -194,6 +201,12 @@ Scaffold a new asset:
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 ```
 
+Create a prompt-backed procedural Blender draft:
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
 Run the Blender build script for an asset:
 
 ```bash
@@ -272,4 +285,5 @@ Reusable templates:
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
 - `Tools/build_asset.py`: runs `Tools/blender/create_<id>.py` and verifies the expected USDZ exists.
 - `Tools/new_asset.py`: creates a manifest entry, asset brief, and Blender starter script for a new asset.
+- `Tools/prompt_asset.py`: creates a prompt-backed Blender generator script and asset brief notes.
 - `Tools/pipeline_doctor.py`: static pipeline consistency checker for manifests, docs, links, CI paths, and skill packaging.

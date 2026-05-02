@@ -15,6 +15,7 @@ make build
 python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py build-asset enemy_drone
 python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 python3 Tools/rkp.py release-check
@@ -61,6 +62,20 @@ Supported types:
 - `projectile`
 
 This creates a planned manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`. It does not generate the final USDZ or mark the asset imported.
+
+## Prompt Asset Draft
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
+With Blender available:
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
+```
+
+This creates the asset contract, writes a prompt-backed procedural Blender generator, records the prompt in the asset brief, and can optionally run the USDZ build. It does not mark the asset imported; visual acceptance still requires `accept-asset`.
 
 ## Asset Build
 

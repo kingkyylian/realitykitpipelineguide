@@ -39,6 +39,18 @@ Create a new asset task:
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 ```
 
+Create a prompt-backed procedural Blender draft:
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+```
+
+Build immediately when Blender is available:
+
+```bash
+python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
+```
+
 Build the asset through Blender:
 
 ```bash
@@ -75,6 +87,7 @@ Prefer direct CLI commands when building automation, agents, or future MCP-style
 ## Tool Contract
 
 - `new-asset` may create manifest entries, asset briefs, and Blender starter scripts.
+- `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
 - `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files.

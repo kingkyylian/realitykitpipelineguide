@@ -141,6 +141,13 @@ def main() -> int:
     new_asset.add_argument("--triangles", type=int, help="Triangle budget override")
     new_asset.add_argument("--texture", type=int, help="Texture size budget override")
 
+    prompt_asset = subparsers.add_parser("prompt-asset", help="Create a prompt-backed asset brief and Blender generator")
+    prompt_asset.add_argument("id", help="Asset id in snake_case")
+    prompt_asset.add_argument("--prompt", required=True, help="Asset prompt or short art brief")
+    prompt_asset.add_argument("--type", default="prop", help="Asset type, for example gameplay_target or environment")
+    prompt_asset.add_argument("--build", action="store_true", help="Run Blender build after generating the script")
+    prompt_asset.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
+
     build_asset = subparsers.add_parser("build-asset", help="Run the Blender build script for one asset")
     build_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
 
@@ -168,6 +175,21 @@ def main() -> int:
             command.extend(["--triangles", str(args.triangles)])
         if args.texture is not None:
             command.extend(["--texture", str(args.texture)])
+        return run(command)
+    if args.command == "prompt-asset":
+        command = [
+            sys.executable,
+            "Tools/prompt_asset.py",
+            args.id,
+            "--prompt",
+            args.prompt,
+            "--type",
+            args.type,
+        ]
+        if args.build:
+            command.append("--build")
+        if args.force:
+            command.append("--force")
         return run(command)
     if args.command == "build-asset":
         return run([sys.executable, "Tools/build_asset.py", "--id", args.id])

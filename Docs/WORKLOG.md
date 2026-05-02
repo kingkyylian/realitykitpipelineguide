@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 21: Prompt-Backed Asset Command
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-02 23:50 +03
+**Amaç:** Kullanıcının tek komutla prompt girip asset contract + Blender generator + opsiyonel USDZ build başlatabilmesini sağlamak.
+
+**Yapılanlar:**
+
+- `Tools/prompt_asset.py` eklendi.
+- `python3 Tools/rkp.py prompt-asset <id> --type <type> --prompt "<brief>"` komutu eklendi.
+- `--build` opsiyonu eklendi; Blender varsa generator sonrası USDZ build tetiklenebiliyor.
+- Prompt asset brief içine `Prompt Source` olarak kaydediliyor.
+- Generated Blender script prompt'a göre basit procedural texture ve mesh draft oluşturuyor.
+- `make prompt-asset id=<id> type=<type> prompt="<brief>"` wrapper'ı eklendi.
+- README, CLI docs ve skill command reference güncellendi.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/prompt_asset.py Tools/rkp.py Tools/new_asset.py: ok
+python3 Tools/rkp.py prompt-asset test_prompt_target --type gameplay_target --prompt "blue bullseye target" --force: ok
+python3 -m py_compile Tools/blender/create_test_prompt_target.py: ok
+python3 Tools/rkp.py build-asset test_prompt_target: blocked as expected because Blender is not on PATH
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Prompt komutu production acceptance'ın yerine geçmemeli. Prompt hızlı draft başlatır; oyuna girme sınırı hala USDZ build + simulator screenshot + `accept-asset`.
+
 ### Sprint 20: README Tool Positioning
 
 **Durum:** Tamamlandı  

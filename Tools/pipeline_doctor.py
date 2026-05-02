@@ -191,6 +191,7 @@ class Doctor:
             "references/workflows.md",
             "references/contracts.md",
             "references/commands.md",
+            "references/slash-commands.md",
             "scripts/check_repo.py",
         ]
         for rel in required:

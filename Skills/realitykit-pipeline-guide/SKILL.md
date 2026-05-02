@@ -19,6 +19,7 @@ Use this skill to keep RealityKit game work tied to an asset pipeline contract, 
    - `references/workflows.md` for task routing and implementation flow.
    - `references/contracts.md` for asset/gameplay/release acceptance gates.
    - `references/commands.md` for build, validation, PDF, and install commands.
+   - `references/slash-commands.md` for `/rkp` slash command usage and Codex equivalents.
 3. Preserve the repo contract:
    - Prefer `python3 Tools/rkp.py status` for first orientation.
    - Imported assets live in `Assets/Imported`.

@@ -97,6 +97,17 @@ make release-check
 
 Prefer direct CLI commands when building automation, agents, or future MCP-style integrations. Prefer `make` for short local terminal usage.
 
+## Slash Commands
+
+Claude-style slash commands live in `.claude/commands`:
+
+```text
+/rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+/rkp-status
+```
+
+They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-commands.md`.
+
 ## Tool Contract
 
 - `new-asset` may create manifest entries, asset briefs, and Blender starter scripts.

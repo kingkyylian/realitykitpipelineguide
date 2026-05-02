@@ -21,7 +21,9 @@ __pycache__/
 *.pyc
 
 # Local editor and OS noise
-.claude/
+.claude/*
+!.claude/commands/
+!.claude/commands/*.md
 .vscode/
 .idea/
 *.swp

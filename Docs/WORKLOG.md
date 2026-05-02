@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 25: Slash Command Surface
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 00:46 +03
+**Amaç:** Python CLI komutlarını agent CLI içinde `/rkp-asset` ve `/rkp-status` gibi slash command yüzeyine taşımak.
+
+**Yapılanlar:**
+
+- `.claude/commands/rkp-asset.md` eklendi.
+- `.claude/commands/rkp-status.md` eklendi.
+- `Docs/slash-commands.md` eklendi.
+- README, CLI docs ve skill command reference slash command kullanımını gösterecek şekilde güncellendi.
+- Pipeline doctor slash command dosyalarını required path olarak kontrol edecek şekilde güncellendi.
+
+**Verification:**
+
+```text
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Slash command sadece kullanıcı yüzeyi olmalı; gerçek implementation `Tools/rkp.py` içinde kalmalı. Böylece `/rkp-asset` agent ergonomisi verir ama pipeline kurallarını bypass etmez.
+
 ### Sprint 24: One-Command Asset Loop
 
 **Durum:** Tamamlandı

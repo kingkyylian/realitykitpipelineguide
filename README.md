@@ -11,6 +11,7 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 ## What This Is
 
 - `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, and release checks.
+- `.claude/commands`: slash commands such as `/rkp-asset` and `/rkp-status` for agent-style usage.
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit sample that proves the pipeline output inside an iOS app.
 - `Docs` and `Skills`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
@@ -68,6 +69,14 @@ make release-check
 ### Prompt To Asset
 
 `make-asset` is the one-command asset loop. It turns a short prompt into an asset contract and Blender generator script, then can optionally build, accept, and run the release gate.
+
+If you are using a slash-command agent CLI, use:
+
+```text
+/rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+```
+
+For terminal usage, run the same pipeline directly:
 
 ```bash
 python3 Tools/rkp.py make-asset enemy_drone \
@@ -150,6 +159,8 @@ After installing, ask Codex to use `realitykit-pipeline-guide` for RealityKit as
 ## Start Here
 
 For the command-first version of the pipeline, start from `Docs/cli-tool.md`.
+
+For slash-command usage, start from `Docs/slash-commands.md`.
 
 For the teaching version of the pipeline, use `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
 
@@ -295,6 +306,7 @@ Reusable templates:
 - `Assets/Textures`: source or exported texture files.
 - `Docs`: pipeline, budgets, checklists.
 - `Docs/cli-tool.md`: command-first usage contract for the pipeline CLI.
+- `Docs/slash-commands.md`: slash command usage for agent CLIs.
 - `Docs/guide.md`: public-facing learning guide for the asset and texture pipeline.
 - `Docs/production-playbook.md`: reusable production gates and team workflow.
 - `Docs/new-game-startup.md`: checklist for starting a future RealityKit game.

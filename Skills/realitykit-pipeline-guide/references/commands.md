@@ -99,6 +99,17 @@ BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py ma
 
 This command orchestrates `prompt-asset`, optional `build-asset`, optional `accept-asset`, and optional `release-check`. Screenshot acceptance remains explicit.
 
+## Slash Commands
+
+For agent CLIs that support repository slash commands:
+
+```text
+/rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+/rkp-status
+```
+
+The slash commands live in `.claude/commands` and wrap the same `Tools/rkp.py` pipeline. They do not bypass screenshot acceptance.
+
 ## Asset Build
 
 ```bash

@@ -42,7 +42,7 @@ Use this before creating the public repository or pushing a first clean branch.
 4. Regenerate guide HTML/PDF if `Docs/guide.md` changed:
 
    ```bash
-   rtk pandoc Docs/guide.md --standalone --embed-resources --resource-path=Docs --metadata title="RealityKit Asset and Texture Pipeline Guide" -o Build/realitykit-pipeline-guide.html
+   rtk pandoc Docs/guide.md --standalone --embed-resources --resource-path=Docs --css Docs/guide-style.css --metadata title="RealityKit Asset and Texture Pipeline Guide" -o Build/realitykit-pipeline-guide.html
    rtk weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-guide.pdf
    rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
    ```

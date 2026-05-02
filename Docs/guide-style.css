@@ -1,0 +1,140 @@
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+
+:root {
+  color-scheme: light;
+  --ink: #172026;
+  --muted: #5c6870;
+  --line: #d8dee2;
+  --soft: #f5f7f8;
+  --accent: #2f6f73;
+  --accent-soft: #e8f2ef;
+  --warn-soft: #fff6e7;
+}
+
+body {
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11.5pt;
+  line-height: 1.55;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--ink);
+  line-height: 1.18;
+  page-break-after: avoid;
+}
+
+h1 {
+  font-size: 30pt;
+  margin: 0 0 10mm 0;
+  padding-bottom: 6mm;
+  border-bottom: 3px solid var(--accent);
+}
+
+h2 {
+  font-size: 19pt;
+  margin-top: 12mm;
+  padding-top: 3mm;
+  border-top: 1px solid var(--line);
+}
+
+h3 {
+  font-size: 13.5pt;
+  margin-top: 7mm;
+}
+
+p {
+  margin: 0 0 4mm 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code {
+  color: #18323a;
+  background: var(--soft);
+  border: 1px solid #e7ecef;
+  border-radius: 4px;
+  padding: 0.05em 0.28em;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+pre {
+  background: #101820;
+  color: #f3f7f8;
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  font-size: 9.5pt;
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4mm 0 7mm 0;
+  font-size: 9.8pt;
+}
+
+th {
+  background: var(--accent-soft);
+  color: #12363a;
+  font-weight: 700;
+}
+
+th,
+td {
+  border: 1px solid var(--line);
+  padding: 7px 8px;
+  vertical-align: top;
+}
+
+tr:nth-child(even) td {
+  background: #fbfcfc;
+}
+
+img {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 4mm 0 6mm 0;
+}
+
+blockquote {
+  margin: 5mm 0;
+  padding: 4mm 5mm;
+  background: var(--warn-soft);
+  border-left: 4px solid #d28b22;
+}
+
+ul,
+ol {
+  padding-left: 1.2rem;
+}
+
+li {
+  margin-bottom: 1.4mm;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 10mm 0;
+}

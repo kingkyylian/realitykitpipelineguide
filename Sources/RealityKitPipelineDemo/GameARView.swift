@@ -91,6 +91,13 @@ final class GameARView: ARView {
     }
 
     private func addArena() {
+        if let importedArena = ImportedAssetLoader.loadModel(named: "arena_floor") {
+            importedArena.name = "arena_floor"
+            importedArena.position = [0, -0.42, -1.6]
+            worldAnchor.addChild(importedArena)
+            return
+        }
+
         let floorMaterial = SimpleMaterial(color: UIColor(red: 0.14, green: 0.18, blue: 0.20, alpha: 1), isMetallic: false)
         let floor = ModelEntity(mesh: .generateBox(size: [3.2, 0.04, 3.2]), materials: [floorMaterial])
         floor.name = "arena_floor"

@@ -359,7 +359,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
 | Collision and gameplay asset fit | Started | ring-based score in `GameARView` | Visual texture gameplay scoring'e bağlandı; collision shape dersi genişletilecek. |
 | Hit VFX / animation | Planned | yok | Gameplay feedback ve RealityKit animation eklenecek. |
-| Environment asset | Planned | `arena_floor` todo | Floor/prop/atlas dersi için aday. |
+| Environment asset | Started | `arena_floor` todo + loader fallback | Floor/prop/atlas dersi için aday; code path hazır. |
 | Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
 | Authoring workflow | Planned | kısmi | `.blend` kaynakları, export scripts, asset versioning kararı verilecek. |
 
@@ -424,15 +424,18 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 Öğrenilecekler:
 
 - `arena_floor.usdz` üretimi.
+- Environment asset origin ve scale davranışı.
 - Repeating texture ve atlas mantığı.
 - Environment mesh ile gameplay target mesh bütçelerinin farkı.
 - Floor asset'i target readability'yi bozuyor mu?
+- Imported environment fallback: asset yoksa procedural floor çalışmaya devam etmeli.
 
 İlk egzersiz:
 
 1. Procedural floor yerine düşük poly `arena_floor.usdz` ekle.
 2. Tek 512 texture veya atlas kullan.
 3. Target contrast ve readability screenshot ile doğrula.
+4. Manifest status'ünü `imported` yap ve öğrenme notunu worklog'a yaz.
 
 ### Planned Module 8: Repo and Authoring Workflow
 
@@ -677,7 +680,7 @@ rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pd
 | --- | --- | --- |
 | `target_basic.usdz` | imported | İlk USDZ import, orientation, scale |
 | `target_basic_textured.usdz` | imported | Base color texture, UV primvar, embed |
-| `arena_floor.usdz` | todo | Environment replacement adayı |
+| `arena_floor.usdz` | todo | Environment scale/origin, floor readability, UV tiling adayı |
 
 ### Core Commands
 
@@ -694,6 +697,7 @@ rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityK
 | `Docs/screenshots/target_basic_scale_slots.jpg` | Scale ve deterministic spawn düzeltmesi |
 | `Docs/screenshots/target_textured_sprint3_fresh.png` | Texture'lı asset RealityKit'te yüklendi |
 | `Docs/screenshots/ring_scoring_inner_hit.jpg` | Texture ring'i gameplay skoruna bağlandı |
+| `Docs/screenshots/arena_floor_fallback_ready.jpg` | `arena_floor.usdz` yokken procedural floor fallback çalışıyor |
 
 ### Instructor Notes
 

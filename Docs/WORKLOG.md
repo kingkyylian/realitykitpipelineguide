@@ -25,6 +25,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 - RealityKit tarafında öğrenilen loader, scale, orientation ve material davranışlarını bu worklog'a kısa not olarak geçir.
 - Kyylian ve Mehmet aynı pipeline bilgisini öğrenecek; iş bölümü aracı sahiplenmek için değil, pratik ilerlemek için yapılacak.
 
+### Sprint 5: Arena Floor Environment Asset
+
+**Durum:** Aktif  
+**Tarih:** 2026-05-02 19:30 +03  
+**Amaç:** Procedural floor yerine `arena_floor.usdz` environment asset pipeline'ını öğretmek.
+
+**Codex hazırlığı:**
+
+- `GameARView.addArena()` artık önce `arena_floor.usdz` yüklemeyi dener.
+- `arena_floor.usdz` yoksa mevcut procedural floor + lane fallback korunur.
+- `Tools/asset_manifest.json` içindeki `arena_floor` kaydı environment/texture öğretim notlarıyla genişletildi.
+- Fallback görsel doğrulama çıktısı: `Docs/screenshots/arena_floor_fallback_ready.jpg`.
+
+**Asset handoff beklentisi:**
+
+- Dosya: `Assets/Imported/arena_floor.usdz`
+- Ölçü: mevcut procedural floor ile uyumlu, yaklaşık 3.2m x 3.2m gameplay alanı.
+- Origin: floor merkezinde; gameplay placement için uygun.
+- Doku: tek base color texture ile başlanmalı; 512px tercih, 1024px üst limit.
+- Görsel hedef: target readability'yi bozmayan düşük kontrastlı floor.
+
+**Öğrenme hedefi:**
+
+- Environment asset scale/origin davranışı target asset'ten nasıl farklı?
+- Floor texture tiling veya atlas target readability'yi nasıl etkiler?
+- Procedural fallback environment pipeline'da nasıl korunur?
+
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 
 **Durum:** Tamamlandı  
@@ -280,6 +307,15 @@ HUD: Inner ring +3
 Score: 3
 Hits: 1
 Accuracy: 100%
+```
+
+Sprint 5 — arena fallback hazırlık doğrulaması:
+
+```text
+manifest: ok
+xcodebuild: ok
+build_run_sim: ok, iPhone 17 simulator
+screenshot: Docs/screenshots/arena_floor_fallback_ready.jpg
 ```
 
 Sprint 3 — texture asset doğrulaması:

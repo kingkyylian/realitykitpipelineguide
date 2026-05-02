@@ -22,6 +22,15 @@ python3 Tools/rkp.py release-check
 
 Use this interface for agent automation, future MCP-style wrappers, and reusable tooling. The Makefile remains a local convenience wrapper around the same tool.
 
+Machine-readable commands:
+
+```bash
+python3 Tools/rkp.py status --json
+python3 Tools/rkp.py doctor --json
+```
+
+Use JSON output for scripts, CI assertions, and agent planning. Keep side-effect commands such as `build-asset` and `accept-asset` text-first unless a concrete integration needs structured output.
+
 ## Full Local Release Check
 
 ```bash

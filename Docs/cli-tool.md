@@ -26,6 +26,13 @@ Check static pipeline health:
 python3 Tools/rkp.py doctor
 ```
 
+Use JSON output for CI, scripts, agents, or future MCP-style wrappers:
+
+```bash
+python3 Tools/rkp.py status --json
+python3 Tools/rkp.py doctor --json
+```
+
 Create a new asset task:
 
 ```bash
@@ -71,4 +78,5 @@ Prefer direct CLI commands when building automation, agents, or future MCP-style
 - `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files.
+- `status --json` and `doctor --json` are the stable machine-readable surface for automation.
 - `release-check` runs the same gates expected before push or release.

@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 19: Machine-Readable CLI Output
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 23:24 +03  
+**Amaç:** CLI'ı gelecekte CI, agent ve MCP-style wrapper'ların okuyabileceği structured output yüzeyiyle güçlendirmek.
+
+**Yapılanlar:**
+
+- `python3 Tools/rkp.py status --json` eklendi.
+- `python3 Tools/rkp.py doctor --json` eklendi.
+- `Tools/pipeline_doctor.py` text output'u bozmadan import edilebilir `collect()` / `summary()` yapısına ayrıldı.
+- README, `Docs/cli-tool.md` ve skill command reference JSON kullanımını gösterecek şekilde güncellendi.
+- JSON kapsamı bilinçli olarak `status` ve `doctor` ile sınırlı tutuldu; side-effect komutlar text-first kaldı.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/rkp.py Tools/pipeline_doctor.py: ok
+python3 Tools/rkp.py status --json: ok
+python3 Tools/rkp.py doctor --json: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Agent/MCP entegrasyonunda ilk ihtiyaç yan etkili komutlardan önce structured project state'tir. `status --json` ve `doctor --json` bu yüzden en iyi ilk JSON yüzeyi.
+
 ### Sprint 18: Command-First Pipeline Tool
 
 **Durum:** Tamamlandı  

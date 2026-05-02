@@ -44,6 +44,13 @@ python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enem
 python3 Tools/rkp.py release-check
 ```
 
+Machine-readable status and doctor output are available for scripts and agents:
+
+```bash
+python3 Tools/rkp.py status --json
+python3 Tools/rkp.py doctor --json
+```
+
 The same flow is available through `make` for shorter local commands:
 
 ```bash

@@ -28,6 +28,9 @@ class Finding:
     message: str
     path: str | None = None
 
+    def to_dict(self) -> dict:
+        return {"level": self.level, "message": self.message, "path": self.path}
+
     def render(self) -> str:
         prefix = {"error": "ERROR", "warning": "WARN", "info": "INFO"}[self.level]
         if self.path:
@@ -208,7 +211,7 @@ class Doctor:
         if "actions/checkout@v4" in text:
             self.warning("actions/checkout@v4 currently emits Node 20 deprecation warnings", ".github/workflows/ci.yml")
 
-    def run(self) -> int:
+    def collect(self) -> list[Finding]:
         self.check_required_paths()
         self.check_manifest()
         self.check_project_paths()
@@ -216,9 +219,21 @@ class Doctor:
         self.check_public_text()
         self.check_skill_pack()
         self.check_ci()
+        return self.findings
 
+    def summary(self) -> dict:
         errors = [finding for finding in self.findings if finding.level == "error"]
         warnings = [finding for finding in self.findings if finding.level == "warning"]
+        return {
+            "ok": len(errors) == 0,
+            "errors": len(errors),
+            "warnings": len(warnings),
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+    def run(self) -> int:
+        self.collect()
+        summary = self.summary()
 
         if not self.findings:
             print("pipeline doctor: ok")
@@ -227,8 +242,8 @@ class Doctor:
         for finding in self.findings:
             print(finding.render())
 
-        print(f"pipeline doctor: {len(errors)} error(s), {len(warnings)} warning(s)")
-        return 1 if errors else 0
+        print(f"pipeline doctor: {summary['errors']} error(s), {summary['warnings']} warning(s)")
+        return 1 if summary["errors"] else 0
 
     def _extract_markdown_targets(self, text: str) -> Iterable[str]:
         image_or_link = re.compile(r"!?\[[^\]]*]\(([^)]+)\)")

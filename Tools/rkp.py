@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from pipeline_doctor import Doctor
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "Tools" / "asset_manifest.json"
@@ -20,9 +22,25 @@ def load_manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
-def print_asset_table() -> None:
+def build_status_payload() -> dict:
     manifest = load_manifest()
     assets = manifest.get("assets", [])
+    return {
+        "assets": [
+            {
+                "id": asset.get("id", ""),
+                "status": asset.get("status", ""),
+                "type": asset.get("type", ""),
+                "file": asset.get("file", ""),
+                "next": next_action(asset),
+            }
+            for asset in assets
+        ]
+    }
+
+
+def print_asset_table() -> None:
+    assets = build_status_payload()["assets"]
     if not assets:
         print("no assets in manifest")
         return
@@ -32,12 +50,19 @@ def print_asset_table() -> None:
     print(f"{'asset':<28} {'status':<10} {'type':<18} {'file':<28} next")
     print("-" * 104)
     for asset in assets:
-        asset_id = asset.get("id", "")
-        status = asset.get("status", "")
-        asset_type = asset.get("type", "")
-        file_name = asset.get("file", "")
-        next_step = next_action(asset)
-        print(f"{asset_id:<28} {status:<10} {asset_type:<18} {file_name:<28} {next_step}")
+        print(f"{asset['id']:<28} {asset['status']:<10} {asset['type']:<18} {asset['file']:<28} {asset['next']}")
+
+
+def print_json(payload: dict) -> None:
+    print(json.dumps(payload, indent=2, sort_keys=True))
+
+
+def run_doctor_json() -> int:
+    doctor = Doctor(ROOT)
+    doctor.collect()
+    summary = doctor.summary()
+    print_json(summary)
+    return 0 if summary["ok"] else 1
 
 
 def next_action(asset: dict) -> str:
@@ -102,8 +127,12 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("status", help="Show manifest assets and the next pipeline action")
-    subparsers.add_parser("doctor", help="Run the static pipeline doctor")
+    status = subparsers.add_parser("status", help="Show manifest assets and the next pipeline action")
+    status.add_argument("--json", action="store_true", help="Print machine-readable status")
+
+    doctor = subparsers.add_parser("doctor", help="Run the static pipeline doctor")
+    doctor.add_argument("--json", action="store_true", help="Print machine-readable doctor summary")
+
     subparsers.add_parser("release-check", help="Run doctor, XcodeGen, manifest validation, and iOS build")
 
     new_asset = subparsers.add_parser("new-asset", help="Scaffold a manifest entry, asset brief, and Blender stub")
@@ -122,9 +151,14 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "status":
+        if args.json:
+            print_json(build_status_payload())
+            return 0
         print_asset_table()
         return 0
     if args.command == "doctor":
+        if args.json:
+            return run_doctor_json()
         return run([sys.executable, "Tools/pipeline_doctor.py"])
     if args.command == "release-check":
         return run_release_check()

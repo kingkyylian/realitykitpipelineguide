@@ -1,10 +1,18 @@
-# RealityKit Pipeline Demo
+# RealityKit Pipeline Guide
 
-Build a tiny iOS RealityKit game while learning the real Blender -> USDZ -> Xcode -> RealityKit asset pipeline.
+A command-first asset pipeline for building RealityKit iOS games with Blender-authored USDZ assets.
 
-Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, simulator screenshot, and learning note.
+This is a pipeline tool first. The included target-shooting game is the live example app used to prove the workflow: scaffold an asset, build it with Blender, accept it with simulator evidence, and ship it through Xcode.
+
+Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, screenshot, and learning note.
 
 ![RealityKit pipeline gameplay demo](Docs/screenshots/demo.gif)
+
+## What This Is
+
+- `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, and release checks.
+- `Sources/RealityKitPipelineDemo`: a small playable RealityKit sample that proves the pipeline output inside an iOS app.
+- `Docs` and `Skills`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
 ## What You Learn
 
@@ -12,15 +20,15 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 - Generate and import Blender-authored USDZ assets.
 - Keep asset scale, origin, UVs, materials, and texture budgets under control.
 - Connect visual texture design to gameplay with ring-based scoring.
-- Verify every asset with manifest checks, builds, screenshots, and worklog notes.
+- Verify every asset with CLI checks, builds, screenshots, and worklog notes.
 
-## Showcase
+## Live Example App
 
 | Textured target scoring | Imported arena floor |
 | --- | --- |
 | ![Ring scoring inner hit](Docs/screenshots/ring_scoring_inner_hit.jpg) | ![Imported arena floor](Docs/screenshots/arena_floor_imported.jpg) |
 
-The app starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
+The sample game starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
 
 ## Quick Start
 
@@ -72,11 +80,31 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 
 ### First Asset Loop
 
-1. Read `Tools/asset_manifest.json` to pick an asset id and budget.
-2. Author or regenerate an asset with Blender. A starter script lives at `Tools/blender/create_arena_floor.py`.
-3. Export the final `.usdz` to `Assets/Imported/<asset_id>.usdz`.
-4. Run `xcodegen generate`, build, and capture a simulator screenshot.
-5. Record the result in `Docs/WORKLOG.md`.
+1. Scaffold the asset contract:
+
+   ```bash
+   python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+   ```
+
+2. Edit the generated Blender script or source art.
+3. Build the USDZ:
+
+   ```bash
+   python3 Tools/rkp.py build-asset enemy_drone
+   ```
+
+4. Verify the asset in the simulator and capture a screenshot.
+5. Accept it into the production pipeline:
+
+   ```bash
+   python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+   ```
+
+6. Run the final gate:
+
+   ```bash
+   python3 Tools/rkp.py release-check
+   ```
 
 ### About `rtk`
 
@@ -111,7 +139,7 @@ For AI agents or future handoff, start from `AGENTS.md` and `Docs/ai-handoff.md`
 Suggested repo description:
 
 ```text
-Learn a complete Blender -> USDZ -> RealityKit asset pipeline through a tiny SwiftUI iOS game.
+Command-first Blender -> USDZ -> RealityKit asset pipeline, proven through a tiny SwiftUI iOS game.
 ```
 
 Suggested topics:
@@ -124,7 +152,7 @@ realitykit, swift, swiftui, ios, ios-game, blender, usdz, game-development, 3d-p
 
 - Learn SwiftUI + RealityKit app structure.
 - Practice a simple gameplay loop: spawn targets, fire projectiles, score hits.
-- Keep a clean path for Blender -> USDZ -> Xcode -> RealityKit.
+- Keep a CLI-driven path for Blender -> USDZ -> Xcode -> RealityKit.
 - Teach the asset and texture pipeline as a shared system, not as isolated Blender/code roles.
 - Use AI for repeatable planning, asset briefs, code tasks, and QA checklists.
 

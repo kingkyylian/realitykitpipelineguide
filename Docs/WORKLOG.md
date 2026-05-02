@@ -12,6 +12,32 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 20: README Tool Positioning
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 23:34 +03  
+**Amaç:** README'nin ilk ekranında repo kimliğini netleştirmek: pipeline tool ana ürün, mini oyun canlı örnek.
+
+**Yapılanlar:**
+
+- README başlığı `RealityKit Pipeline Guide` olarak güncellendi.
+- İlk paragraf command-first pipeline tool konumlandırmasına çevrildi.
+- `What This Is` bölümü eklendi: CLI, live app, docs/skill katmanları ayrıldı.
+- `Showcase` bölümü `Live Example App` olarak yeniden adlandırıldı.
+- `First Asset Loop` manuel manifest/export anlatımından CLI akışına çevrildi.
+- GitHub description önerisi pipeline tool kimliğine göre güncellendi.
+
+**Verification:**
+
+```text
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Tool + demo ikiliği sorun değil; sorun bu hiyerarşinin ilk ekranda belirsiz kalması. README'nin ilk işi repo'nun "araç, oyun bunun kanıtı" mesajını vermek.
+
 ### Sprint 19: Machine-Readable CLI Output
 
 **Durum:** Tamamlandı  

@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 27: Real Asset Build Guardrails
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 03:18 +03
+**Amaç:** `/rkp-asset` ve `build-asset` akışının gerçek USDZ üretmesi, yanlış klasörde fake pipeline üretmemesi ve Blender crash durumunu açık raporlaması.
+
+**Yapılanlar:**
+
+- Gerçek repo içinde `enemy_drone` prompt asset'i üretildi; archetype `drone`.
+- `Tools/build_asset.py` macOS'ta `/Applications/Blender.app/Contents/MacOS/Blender` yolunu otomatik bulacak şekilde güncellendi.
+- Blender build failure mesajı expected USDZ path, Blender executable ve crash log path gösterecek şekilde netleştirildi.
+- `Tools/usdz_fallback_builder.py` eklendi; Blender background startup crash yaşarsa `usdzip` ile doğrudan USDZ üretimi deneniyor.
+- `Assets/Imported/enemy_drone.usdz` üretildi; manifest acceptance öncesi bilinçli olarak `planned` kaldı.
+- `/rkp-asset` command sözleşmesi default build deneyecek ve RKP repo guard'ı uygulayacak şekilde güncellendi.
+- Global Claude slash command ve global Codex skill kopyası repo ile senkronlandı.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/build_asset.py Tools/rkp.py Tools/prompt_asset.py: ok
+python3 -m py_compile Tools/blender/create_enemy_drone.py: ok
+python3 Tools/rkp.py doctor: ok, 1 known warning
+python3 Tools/rkp.py build-asset enemy_drone: ok through direct USDZ fallback after Blender startup crash
+usdcat Assets/Imported/enemy_drone.usdz: ok, contains Mesh, primvars:st, UsdUVTexture
+xcodegen generate: ok
+global slash command diff: ok
+global Codex skill diff: ok
+```
+
+**Known blocker:**
+
+Blender 5.1.0, 5.1.1 ve 4.5.8 LTS bu makinede background startup sırasında Metal/USD init aşamasında çöküyor. Crash log: `/var/folders/jg/ppc_rfwj63v8qprgfw63k3pr0000gn/T/blender.crash.txt`. Python backtrace boş, yani `create_enemy_drone.py` script'i çalışmadan önce çöküyor.
+
+**Öğrenme notu:**
+
+Prompt-to-asset akışında scaffold, build ve accept farklı kabul edilmeli. Skill başarılı sayılmadan önce gerçek USDZ dosyası oluşmalı; screenshot acceptance olmadan durum `planned` kalmalı.
+
 ### Sprint 26: Short `/rkp` Slash Command
 
 **Durum:** Tamamlandı

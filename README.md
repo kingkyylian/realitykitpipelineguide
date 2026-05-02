@@ -95,16 +95,18 @@ For this prompt the tool infers `drone`, then writes a procedural Blender draft 
 If Blender is available, add `--build`:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+python3 Tools/rkp.py make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build
 ```
 
+If Blender crashes or is unavailable but `usdzip` exists, RKP falls back to a direct USDZ builder for prompt-backed procedural assets. The fallback still creates a real `.usdz`; the asset remains `planned` until simulator screenshot acceptance.
+
 After verifying the result in the simulator and saving a screenshot, run the same command with acceptance:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+python3 Tools/rkp.py make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build \
@@ -138,14 +140,14 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 2. If Blender is available, build the USDZ in the same command:
 
    ```bash
-   BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
+   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
    ```
 
 3. Verify the asset in the simulator and capture a screenshot.
 4. Accept it and run the release gate:
 
    ```bash
-   BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build --screenshot Docs/screenshots/enemy_drone_imported.jpg --release-check
+   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build --screenshot Docs/screenshots/enemy_drone_imported.jpg --release-check
    ```
 
 ### About `rtk`
@@ -259,7 +261,7 @@ python3 Tools/rkp.py build-asset enemy_drone
 If Blender is not on `PATH`, provide it explicitly:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py build-asset enemy_drone
+BLENDER=/custom/path/to/blender python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 Accept a built asset with required visual evidence:

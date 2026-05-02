@@ -34,6 +34,20 @@
         "baseColor"
       ],
       "notes": "Sprint 5 environment teaching asset. 3.2m x 3.2m flat floor plane, origin at center, 128 triangles. Uses 'st' UV primvar and embedded 512x512 arena_floor_basecolor.png. Imported replacement for the procedural floor; teaching focus is environment scale/origin, target readability, and UV tiling behavior. Accepted with screenshot Docs/screenshots/arena_floor_imported.jpg."
+    },
+    {
+      "id": "enemy_drone",
+      "file": "enemy_drone.usdz",
+      "type": "gameplay_target",
+      "status": "planned",
+      "maxTriangles": 1500,
+      "maxTextureSize": 1024,
+      "textureMaps": [
+        "baseColor"
+      ],
+      "notes": "Scaffolded asset. Fill in size, origin, UV/material, export, simulator screenshot, and worklog notes before marking imported. Prompt-backed draft; archetype=drone.",
+      "prompt": "red bullseye drone target",
+      "archetype": "drone"
     }
   ]
 }

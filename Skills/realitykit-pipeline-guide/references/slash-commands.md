@@ -7,8 +7,8 @@ Claude-style slash commands are also provided for environments that support `.cl
 ```text
 /rkp status
 /rkp status json
-/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
-/rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
+/rkp asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target" build=true
+/rkp-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target" build=true
 /rkp-status
 ```
 
@@ -17,12 +17,13 @@ These slash commands are wrappers around:
 ```bash
 test -f Tools/rkp.py && test -f Tools/asset_manifest.json
 python3 Tools/rkp.py status
-python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
 python3 Tools/rkp.py release-check
 ```
 
 They do not bypass build, screenshot acceptance, or release gates.
 If the guard command fails, do not create a fake RKP structure. Ask the user to open the real repo, clone the template, or request bootstrap.
+For `/rkp-asset`, default to `--build` unless the user explicitly asks for prompt-only scaffolding.
 
 For Codex sessions, prefer direct natural language plus the installed skill, for example:
 

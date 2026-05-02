@@ -56,7 +56,7 @@ python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red
 Add build, screenshot acceptance, and release gate as the asset moves forward:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py make-asset enemy_drone \
+python3 Tools/rkp.py make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build \
@@ -69,6 +69,8 @@ Build the asset through Blender:
 ```bash
 python3 Tools/rkp.py build-asset enemy_drone
 ```
+
+If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate.
 
 Accept the asset after simulator verification:
 

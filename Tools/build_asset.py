@@ -7,11 +7,13 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "Tools" / "asset_manifest.json"
+MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
 
 
 def load_asset(asset_id: str) -> dict | None:
@@ -26,7 +28,27 @@ def blender_executable() -> str | None:
     override = os.environ.get("BLENDER")
     if override:
         return override
-    return shutil.which("blender")
+    executable = shutil.which("blender")
+    if executable:
+        return executable
+    if MACOS_BLENDER_APP.exists():
+        return str(MACOS_BLENDER_APP)
+    return None
+
+
+def latest_blender_crash_log() -> Path | None:
+    crash_log = Path(tempfile.gettempdir()) / "blender.crash.txt"
+    if crash_log.exists():
+        return crash_log
+    return None
+
+
+def run_direct_usdz_fallback(asset_id: str) -> int:
+    fallback_script = ROOT / "Tools" / "usdz_fallback_builder.py"
+    if not fallback_script.exists():
+        return 1
+    print("warning: Blender failed; trying direct USDZ fallback builder", file=sys.stderr)
+    return subprocess.run([sys.executable, str(fallback_script), "--id", asset_id], cwd=ROOT).returncode
 
 
 def main() -> int:
@@ -54,11 +76,22 @@ def main() -> int:
         return 127
 
     output_path = ROOT / "Assets" / "Imported" / asset["file"]
-    command = [blender, "--background", "--python", str(script_path)]
-    print("running:", " ".join(command))
+    command = [blender, "--background", "--factory-startup", "--python", str(script_path)]
+    print("running:", " ".join(command), flush=True)
     result = subprocess.run(command, cwd=ROOT)
     if result.returncode != 0:
-        return result.returncode
+        print(
+            f"error: Blender build failed before creating {output_path.relative_to(ROOT)} "
+            f"(exit {result.returncode})",
+            file=sys.stderr,
+        )
+        print(f"hint: Blender executable: {blender}", file=sys.stderr)
+        crash_log = latest_blender_crash_log()
+        if crash_log:
+            print(f"hint: Blender crash log: {crash_log}", file=sys.stderr)
+        fallback_status = run_direct_usdz_fallback(args.id)
+        if fallback_status != 0:
+            return result.returncode
 
     if not output_path.exists():
         print(f"error: expected USDZ was not created: {output_path.relative_to(ROOT)}", file=sys.stderr)

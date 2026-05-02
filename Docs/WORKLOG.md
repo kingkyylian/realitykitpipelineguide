@@ -140,6 +140,8 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 - Manual distance check fallback olarak kaldı; ana davranış artık RealityKit collision event'i ile uyumlu.
 - Procedural target/fallback floor/showcase backdrop materyalleri `PhysicallyBasedMaterial` helper'ına taşındı.
 - Target spawn animasyonu `Entity.animate` ile eklendi; API iOS 26+ olduğu için availability guard kondu.
+- Projectile body mode `.dynamic` yerine `.kinematic` yapıldı; böylece projectile gravity ile düşmeden düz aim çizgisini koruyor.
+- `resolveHit` içine projectile/target hâlâ aktif mi guard'ı eklendi; aynı collision için duplicate event gelirse double-score engelleniyor.
 
 **Verification:**
 
@@ -150,7 +152,7 @@ make release-check: ok
 
 **Öğrenme notu:**
 
-RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Physics tarafında da hareket eden entity için sadece `PhysicsBodyComponent` yetmez, `PhysicsMotionComponent` gerekir.
+RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Physics tarafında da hareket eden entity için sadece `PhysicsBodyComponent` yetmez, `PhysicsMotionComponent` gerekir. Projectile gibi oyuncu aim çizgisini koruması gereken body'lerde `.dynamic` gravity hissi bozabilir; `.kinematic` daha doğru.
 
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 

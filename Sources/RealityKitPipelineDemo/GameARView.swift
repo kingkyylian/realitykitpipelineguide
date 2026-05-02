@@ -238,7 +238,7 @@ final class GameARView: ARView {
         projectile.components.set(PhysicsBodyComponent(
             shapes: [shape],
             mass: 0.04,
-            mode: .dynamic
+            mode: .kinematic
         ))
         projectile.components.set(PhysicsMotionComponent(
             linearVelocity: direction * 9.0,
@@ -339,6 +339,12 @@ final class GameARView: ARView {
     private func resolveHit(projectile: Projectile, target: ModelEntity) {
         let projectileID = ObjectIdentifier(projectile.entity)
         let targetID = ObjectIdentifier(target)
+
+        guard projectiles.contains(where: { ObjectIdentifier($0.entity) == projectileID }),
+              targets.contains(where: { ObjectIdentifier($0) == targetID }) else {
+            return
+        }
+
         let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
 
         gameSession.recordHit(points: score.points, zone: score.zone)

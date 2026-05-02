@@ -20,6 +20,38 @@ Bu proje üç şeyi aynı anda öğretir:
 
 En önemli prensip: Kalıcı rol ayrımı yok. Bir kişi sadece Blender, diğer kişi sadece kod tarafını bilmeyecek. İş bölümü yapılabilir; fakat her handoff sonunda ikiniz de asset'in amacı, scale/origin kararı, UV/material davranışı, bundle yolu ve RealityKit doğrulamasını açıklayabilmelisiniz.
 
+## Scope Statement
+
+Bu rehber şu anda **tam bir oyun geliştirme kursu değildir**. Mevcut kapsam, RealityKit tabanlı küçük bir playable prototype içinde asset ve texture pipeline'ını öğretmektir.
+
+Şu anda güçlü kapsanan alan:
+
+- USDZ asset import
+- scale/origin/orientation doğrulama
+- base color texture pipeline
+- UV primvar debugging
+- Xcode resource bundle
+- RealityKit loader fallback
+- manifest/worklog disiplini
+- screenshot-based visual QA
+
+Henüz tam kapsanmayan alan:
+
+- game loop architecture
+- wave/difficulty/scoring design
+- input feel
+- hit VFX, audio, haptics
+- menu/tutorial/results UI
+- persistence/settings
+- device performance profiling
+- release workflow
+
+Bu nedenle repo'nun mevcut vaadi şudur:
+
+> Learn how a RealityKit game prototype loads, validates, documents, and teaches a mobile 3D asset/texture pipeline.
+
+Tam oyun geliştirme eğitimine dönüşmesi için `Game Development Curriculum Roadmap` bölümündeki modüller doldurulmalıdır.
+
 ## How to Use This Guide
 
 ### Hedef Kitle
@@ -307,7 +339,7 @@ Bu görüntüde texture'lı target RealityKit'te yüklenmiş durumda. Halkalar m
 
 Bu projede public guide'a girecek assetler için hedef seviye **5**.
 
-## 8. Learning Coverage and Roadmap
+## 8. Asset Pipeline Learning Coverage and Roadmap
 
 Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk USDZ import, scale/orientation düzeltmesi ve base color texture pipeline. Aşağıdaki modüller eğitim içeriğinin kalan yol haritasıdır.
 
@@ -419,7 +451,157 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 2. Aynı asset'i script ile tekrar üret.
 3. Output hash, file size ve screenshot farkını kaydet.
 
-## 9. New Asset Checklist
+## 9. Game Development Curriculum Roadmap
+
+Bu bölüm, repo'nun asset pipeline eğitiminden tam oyun geliştirme eğitimine dönüşmesi için gereken modülleri listeler. Bu modüller henüz tamamlanmış kabul edilmez.
+
+### Module 9: Game Loop Architecture
+
+**Amaç:** Prototype'ı sadece sahne + target değil, açık state akışı olan bir mini oyuna çevirmek.
+
+Öğrenilecekler:
+
+- `idle`, `playing`, `waveCleared`, `gameOver`, `paused` state'leri.
+- GameSession'ın skor tutmaktan state yönetmeye genişlemesi.
+- Reset, start, pause ve replay akışı.
+- State değişimlerinin UI ve RealityKit sahnesine etkisi.
+
+İlk egzersiz:
+
+1. `GameState` enum ekle.
+2. Start button olmadan projectile fire etmeyi engelle.
+3. Wave clear olunca kısa bekleme ve sonraki wave state'i ekle.
+4. State transition'ları worklog'a kaydet.
+
+### Module 10: Player Input and Game Feel
+
+**Amaç:** Tap-to-shoot davranışını okunur, kontrollü ve öğretilebilir hale getirmek.
+
+Öğrenilecekler:
+
+- Crosshair veya aim indicator.
+- Shot cadence / cooldown.
+- Projectile speed ve travel time.
+- Miss feedback.
+- Input ile camera/ray arasındaki ilişki.
+
+İlk egzersiz:
+
+1. Tap cooldown ekle.
+2. Crosshair görseli ekle.
+3. Projectile speed için 3 farklı değer test et.
+4. Hangi değerin daha iyi hissettirdiğini screenshot veya kısa notla açıklayın.
+
+### Module 11: Waves, Difficulty, and Scoring
+
+**Amaç:** Tekil hedef spawn'ından dengelenebilir oyun loop'una geçmek.
+
+Öğrenilecekler:
+
+- Wave başına target sayısı.
+- Target health.
+- Time limit.
+- Accuracy ve miss penalty.
+- Difficulty scaling.
+
+İlk egzersiz:
+
+1. Wave counter ekle.
+2. Her wave'de target sayısını artır.
+3. Miss penalty ekle.
+4. Score formula'yı dokümante et.
+
+### Module 12: UI/UX Flow
+
+**Amaç:** Prototype HUD'ını gerçek oyun akışına dönüştürmek.
+
+Öğrenilecekler:
+
+- Start screen.
+- In-game HUD.
+- Pause overlay.
+- Results screen.
+- Mini tutorial/hint.
+
+İlk egzersiz:
+
+1. Start screen ekle.
+2. Results ekranında score, accuracy ve wave göster.
+3. Restart akışını test et.
+
+### Module 13: Feedback Systems: VFX, Audio, Haptics
+
+**Amaç:** Oyuncuya hit, miss, wave clear ve game over durumlarını hissettirmek.
+
+Öğrenilecekler:
+
+- Hit flash veya scale pulse.
+- Spawn animation.
+- Simple sound effects.
+- Haptic feedback.
+- Feedback'in gameplay readability'ye etkisi.
+
+İlk egzersiz:
+
+1. Target hit olduğunda kısa scale pulse veya color flash ekle.
+2. Miss durumunda hafif UI feedback ver.
+3. Feedback'in dikkat dağıtıp dağıtmadığını screenshot/not ile değerlendir.
+
+### Module 14: Persistence and Settings
+
+**Amaç:** Tek oturumluk prototype'tan küçük ama gerçek app davranışına geçmek.
+
+Öğrenilecekler:
+
+- High score kaydı.
+- Sound/haptic settings.
+- Last selected mode.
+- UserDefaults sınırları.
+
+İlk egzersiz:
+
+1. High score kaydet.
+2. Reset sonrası high score'un kaldığını doğrula.
+3. Sound/haptic toggle state'ini sakla.
+
+### Module 15: Performance Profiling on Device
+
+**Amaç:** Simulator doğrulamasından gerçek cihaz performans disiplinine geçmek.
+
+Öğrenilecekler:
+
+- Frame time.
+- Texture memory.
+- Thermal/battery düşüncesi.
+- Instruments veya Xcode GPU capture'a giriş.
+- Asset budget kararlarını gerçek ölçümle bağlamak.
+
+İlk egzersiz:
+
+1. Aynı sahneyi simulator ve cihazda çalıştır.
+2. Frame stutter veya thermal gözlemi yap.
+3. Texture size değişikliğinin fark yaratıp yaratmadığını not et.
+
+### Module 16: Release and Collaboration Workflow
+
+**Amaç:** Prototipi ekip içinde sürdürülebilir ve yayınlanabilir hale getirmek.
+
+Öğrenilecekler:
+
+- GitHub issues.
+- PR review checklist.
+- CI.
+- Release notes.
+- TestFlight/App Store yoluna giriş.
+
+İlk egzersiz:
+
+1. GitHub issue template ekle.
+2. PR template ekle.
+3. CI'da manifest parse ve build doğrulaması çalıştır.
+4. `v0.1.0` release notes taslağı hazırla.
+
+## 10. New Asset Checklist
 
 Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 
@@ -444,7 +626,7 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 14. Screenshot al.
 15. `Docs/WORKLOG.md` ve ilgili checklist'e öğrenme notunu yaz.
 
-## 10. Glossary
+## 11. Glossary
 
 | Terim | Kısa açıklama |
 | --- | --- |
@@ -460,7 +642,7 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 | Fallback | Asıl asset yokken app'in procedural veya yedek asset ile çalışmaya devam etmesi. |
 | Deterministic spawn | Aynı koşulda aynı sahnenin tekrar oluşması. |
 
-## 11. PDF / Repo Release Checklist
+## 12. PDF / Repo Release Checklist
 
 Repo public hale gelmeden önce:
 
@@ -480,7 +662,7 @@ rtk weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-gu
 rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 ```
 
-## 12. Appendix
+## 13. Appendix
 
 ### Current Teaching Assets
 

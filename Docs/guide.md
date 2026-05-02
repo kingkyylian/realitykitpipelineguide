@@ -307,7 +307,119 @@ Bu görüntüde texture'lı target RealityKit'te yüklenmiş durumda. Halkalar m
 
 Bu projede public guide'a girecek assetler için hedef seviye **5**.
 
-## 8. New Asset Checklist
+## 8. Learning Coverage and Roadmap
+
+Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk USDZ import, scale/orientation düzeltmesi ve base color texture pipeline. Aşağıdaki modüller eğitim içeriğinin kalan yol haritasıdır.
+
+### Coverage Matrix
+
+| Modül | Durum | Kanıt | Not |
+| --- | --- | --- | --- |
+| Project mental model | Complete | `Docs/guide.md`, pipeline diagram | Asset journey netleşti. |
+| First USDZ import | Complete | `target_basic.usdz`, screenshot | Bundle + RealityKit import doğrulandı. |
+| Scale/orientation tuning | Complete | `target_basic_scale_slots.jpg` | Playable framing çözüldü. |
+| Base color texture | Complete | `target_basic_textured.usdz` | 512x512 PNG embed doğrulandı. |
+| UV primvar debugging | Complete | Worklog + checklist | `st` primvar dersi işlendi. |
+| Manifest/worklog discipline | Complete | `Tools/asset_manifest.json`, `Docs/WORKLOG.md` | Handoff standardı oturdu. |
+| Roughness / metallic maps | Planned | yok | Material response dersi eklenecek. |
+| Normal map | Planned | yok | Tangent-space normal ve export davranışı test edilecek. |
+| Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
+| Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
+| Collision and gameplay asset fit | Planned | procedural collision mevcut | Visual mesh vs collision shape dersi eklenecek. |
+| Hit VFX / animation | Planned | yok | Gameplay feedback ve RealityKit animation eklenecek. |
+| Environment asset | Planned | `arena_floor` todo | Floor/prop/atlas dersi için aday. |
+| Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
+| Authoring workflow | Planned | kısmi | `.blend` kaynakları, export scripts, asset versioning kararı verilecek. |
+
+### Planned Module 4: Texture Maps and Material Response
+
+**Amaç:** Base color dışında material response kavramlarını öğretmek.
+
+Öğrenilecekler:
+
+- Roughness map ne zaman gerekir?
+- Metallic map ne zaman gereksizdir?
+- Normal map görsel kaliteyi nasıl artırır, maliyeti nedir?
+- Tek material value ile texture map arasındaki fark.
+- RealityKit imported material davranışı nasıl screenshot ile doğrulanır?
+
+İlk egzersiz:
+
+1. `target_basic_textured` için roughness value varyasyonu oluştur.
+2. Aynı asset'in roughness map kullanan varyasyonunu oluştur.
+3. Simulator screenshotlarını yan yana karşılaştır.
+4. Eğer fark okunmuyorsa map yerine material value kullan.
+
+### Planned Module 5: Performance and Mobile Asset Budget
+
+**Amaç:** Asset kararlarını mobil performansla ilişkilendirmek.
+
+Öğrenilecekler:
+
+- Triangle budget nasıl okunur?
+- 512, 1024 ve 2048 texture memory farkı nedir?
+- Material slot sayısı neden önemlidir?
+- Draw call mental model'i.
+- Instruments veya Xcode GPU capture ile başlangıç seviye frame kontrolü.
+
+İlk egzersiz:
+
+1. Aynı target'ı 512 ve 1024 base color texture ile export et.
+2. Dosya boyutunu ve simulator görüntüsünü karşılaştır.
+3. Fark yoksa 512'yi default kabul et.
+
+### Planned Module 6: Collision, VFX, and Gameplay Feel
+
+**Amaç:** Görsel asset'in gameplay sistemleriyle ilişkisini öğretmek.
+
+Öğrenilecekler:
+
+- Visual mesh ve collision shape neden farklı olabilir?
+- Collision sphere ne zaman yeterlidir?
+- Asset scale collision radius'u nasıl etkiler?
+- Hit VFX ve spawn animation oyuncuya ne anlatır?
+
+İlk egzersiz:
+
+1. Target collision radius'unu küçük/büyük varyasyonlarla test et.
+2. Hit feedback için basit scale pulse veya color flash ekle.
+3. Screenshot/video ile oyuncunun hit'i anlayıp anlamadığını değerlendir.
+
+### Planned Module 7: Environment Asset and Texture Atlas
+
+**Amaç:** Tek hedef asset'inden environment pipeline'a geçmek.
+
+Öğrenilecekler:
+
+- `arena_floor.usdz` üretimi.
+- Repeating texture ve atlas mantığı.
+- Environment mesh ile gameplay target mesh bütçelerinin farkı.
+- Floor asset'i target readability'yi bozuyor mu?
+
+İlk egzersiz:
+
+1. Procedural floor yerine düşük poly `arena_floor.usdz` ekle.
+2. Tek 512 texture veya atlas kullan.
+3. Target contrast ve readability screenshot ile doğrula.
+
+### Planned Module 8: Repo and Authoring Workflow
+
+**Amaç:** Asset üretimini ekip çalışmasına uygun hale getirmek.
+
+Öğrenilecekler:
+
+- `.blend` dosyaları bu repo'da mı, ayrı art repo'da mı tutulmalı?
+- Export script'leri nasıl versiyonlanmalı?
+- Asset versioning manifest içinde nasıl izlenmeli?
+- Release öncesi hangi dosyalar public repo'ya girmemeli?
+
+İlk egzersiz:
+
+1. Bir export script dosyasını `Tools` altına koy.
+2. Aynı asset'i script ile tekrar üret.
+3. Output hash, file size ve screenshot farkını kaydet.
+
+## 9. New Asset Checklist
 
 Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 
@@ -332,7 +444,7 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 14. Screenshot al.
 15. `Docs/WORKLOG.md` ve ilgili checklist'e öğrenme notunu yaz.
 
-## 9. Glossary
+## 10. Glossary
 
 | Terim | Kısa açıklama |
 | --- | --- |
@@ -348,7 +460,7 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 | Fallback | Asıl asset yokken app'in procedural veya yedek asset ile çalışmaya devam etmesi. |
 | Deterministic spawn | Aynı koşulda aynı sahnenin tekrar oluşması. |
 
-## 10. PDF / Repo Release Checklist
+## 11. PDF / Repo Release Checklist
 
 Repo public hale gelmeden önce:
 
@@ -368,7 +480,7 @@ rtk weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-gu
 rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 ```
 
-## 11. Appendix
+## 12. Appendix
 
 ### Current Teaching Assets
 

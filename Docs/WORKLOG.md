@@ -142,12 +142,15 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 - Target spawn animasyonu `Entity.animate` ile eklendi; API iOS 26+ olduğu için availability guard kondu.
 - Projectile body mode `.dynamic` yerine `.kinematic` yapıldı; böylece projectile gravity ile düşmeden düz aim çizgisini koruyor.
 - `resolveHit` içine projectile/target hâlâ aktif mi guard'ı eklendi; aynı collision için duplicate event gelirse double-score engelleniyor.
+- Simulator run sırasında alt controls alanının da ARView tap gesture tarafından projectile ateşleyebildiği görüldü; HUD/controls dışındaki gameplay alanı için tap guard eklendi.
+- Target'a dokununca anında patlatmayan delayed aim assist geri eklendi: tap projectile yönünü hedefe çevirir, skor/target removal yine collision event sonrası çalışır.
 
 **Verification:**
 
 ```text
 make build: ok
 make release-check: ok
+build_run_sim: ok, iPhone 17 Pro Max simulator
 ```
 
 **Öğrenme notu:**

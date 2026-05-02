@@ -1,3 +1,4 @@
+import AudioToolbox
 import Combine
 import RealityKit
 import SwiftUI
@@ -11,6 +12,8 @@ final class GameARView: ARView {
 
     private struct Projectile {
         let entity: ModelEntity
+        let intendedTargetID: ObjectIdentifier?
+        let scoreOverride: (points: Int, zone: String)?
         var age: TimeInterval
     }
 
@@ -213,18 +216,47 @@ final class GameARView: ARView {
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         let point = recognizer.location(in: self)
-        let direction: SIMD3<Float>
+        guard isGameplayTap(point) else { return }
 
-        if let ray = ray(through: point) {
+        let aim = screenAim(for: point)
+        let direction: SIMD3<Float>
+        let intendedTargetID: ObjectIdentifier?
+        let scoreOverride: (points: Int, zone: String)?
+
+        if let aim {
+            direction = simd_normalize(aim.targetPosition - playerOrigin)
+            intendedTargetID = aim.targetID
+            scoreOverride = aim.score
+        } else if let ray = ray(through: point) {
             direction = simd_normalize(ray.direction)
+            intendedTargetID = nil
+            scoreOverride = nil
         } else {
             direction = [0, 0, -1]
+            intendedTargetID = nil
+            scoreOverride = nil
         }
 
-        fireProjectile(from: playerOrigin, direction: direction)
+        fireProjectile(
+            from: playerOrigin,
+            direction: direction,
+            intendedTargetID: intendedTargetID,
+            scoreOverride: scoreOverride
+        )
     }
 
-    private func fireProjectile(from origin: SIMD3<Float>, direction: SIMD3<Float>) {
+    private func isGameplayTap(_ point: CGPoint) -> Bool {
+        let hudBottom: CGFloat = 205
+        let controlsTop = bounds.height - 170
+        return point.y > hudBottom && point.y < controlsTop
+    }
+
+    private func fireProjectile(
+        from origin: SIMD3<Float>,
+        direction: SIMD3<Float>,
+        intendedTargetID: ObjectIdentifier?,
+        scoreOverride: (points: Int, zone: String)?
+    ) {
         let material = makePBRMaterial(
             color: UIColor(red: 0.30, green: 0.72, blue: 1.0, alpha: 1),
             roughness: 0.26,
@@ -246,7 +278,12 @@ final class GameARView: ARView {
         ))
 
         worldAnchor.addChild(projectile)
-        projectiles.append(Projectile(entity: projectile, age: 0))
+        projectiles.append(Projectile(
+            entity: projectile,
+            intendedTargetID: intendedTargetID,
+            scoreOverride: scoreOverride,
+            age: 0
+        ))
         gameSession.recordShot()
     }
 
@@ -280,6 +317,10 @@ final class GameARView: ARView {
             return
         }
 
+        if let intendedTargetID = projectile.intendedTargetID, intendedTargetID != ObjectIdentifier(target) {
+            return
+        }
+
         resolveHit(projectile: projectile, target: target)
     }
 
@@ -293,10 +334,14 @@ final class GameARView: ARView {
                 let distance = simd_distance(projectile.entity.position, target.position)
                 if distance < 0.22 {
                     let targetID = ObjectIdentifier(target)
+                    if let intendedTargetID = projectile.intendedTargetID, intendedTargetID != targetID {
+                        continue
+                    }
+
                     hitProjectiles.insert(ObjectIdentifier(projectile.entity))
                     hitTargets.insert(targetID)
 
-                    let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
+                    let score = projectile.scoreOverride ?? scoreForHit(projectilePosition: projectile.entity.position, target: target)
                     if score.points > (hitScores[targetID]?.points ?? 0) {
                         hitScores[targetID] = score
                     }
@@ -313,6 +358,7 @@ final class GameARView: ARView {
         for target in targets where hitTargets.contains(ObjectIdentifier(target)) {
             let score = hitScores[ObjectIdentifier(target)] ?? (points: 1, zone: "Outer ring")
             addHitEffect(at: target.position, points: score.points)
+            playHitSound(points: score.points)
         }
 
         projectiles.removeAll { projectile in
@@ -345,10 +391,11 @@ final class GameARView: ARView {
             return
         }
 
-        let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
+        let score = projectile.scoreOverride ?? scoreForHit(projectilePosition: projectile.entity.position, target: target)
 
         gameSession.recordHit(points: score.points, zone: score.zone)
         addHitEffect(at: target.position, points: score.points)
+        playHitSound(points: score.points)
 
         projectile.entity.removeFromParent()
         target.removeFromParent()
@@ -358,6 +405,51 @@ final class GameARView: ARView {
         gameSession.activeTargets = targets.count
 
         spawnNextWaveIfNeeded()
+    }
+
+    private func screenAim(for point: CGPoint) -> (
+        targetID: ObjectIdentifier,
+        targetPosition: SIMD3<Float>,
+        score: (points: Int, zone: String)
+    )? {
+        var bestTarget: ModelEntity?
+        var bestDistance = CGFloat.greatestFiniteMagnitude
+
+        for target in targets {
+            let targetPoint = estimatedScreenPoint(for: target.position)
+            let distance = hypot(point.x - targetPoint.x, point.y - targetPoint.y)
+            let targetRadius = bounds.width * 0.10
+            if distance < targetRadius, distance < bestDistance {
+                bestDistance = distance
+                bestTarget = target
+            }
+        }
+
+        guard let bestTarget else { return nil }
+
+        return (ObjectIdentifier(bestTarget), bestTarget.position, scoreForScreenHit(distance: bestDistance))
+    }
+
+    private func estimatedScreenPoint(for position: SIMD3<Float>) -> CGPoint {
+        CGPoint(
+            x: bounds.midX + CGFloat(position.x) * bounds.width * 0.32,
+            y: bounds.height * 0.416 - CGFloat(position.y - 0.30) * bounds.height * 0.18
+        )
+    }
+
+    private func scoreForScreenHit(distance: CGFloat) -> (points: Int, zone: String) {
+        let bullseyeRadius = bounds.width * 0.022
+        let innerRingRadius = bounds.width * 0.048
+
+        if distance < bullseyeRadius {
+            return (5, "Bullseye")
+        }
+
+        if distance < innerRingRadius {
+            return (3, "Inner ring")
+        }
+
+        return (1, "Outer ring")
     }
 
     private func spawnNextWaveIfNeeded() {
@@ -444,6 +536,17 @@ final class GameARView: ARView {
         target.scale = originalScale * 0.18
         Entity.animate(.spring(response: 0.34, dampingFraction: 0.72)) {
             target.scale = originalScale
+        }
+    }
+
+    private func playHitSound(points: Int) {
+        switch points {
+        case 5:
+            AudioServicesPlaySystemSound(1521)  // haptic pop — bullseye
+        case 3:
+            AudioServicesPlaySystemSound(1520)  // haptic peek — inner ring
+        default:
+            AudioServicesPlaySystemSound(1104)  // tock — outer ring
         }
     }
 

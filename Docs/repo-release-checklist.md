@@ -5,11 +5,13 @@ Use this before creating the public repository or pushing a first clean branch.
 ## Keep
 
 - `README.md`
+- `AGENTS.md`
 - `project.yml`
 - `Sources/RealityKitPipelineDemo`
 - `Assets/Imported/*.usdz` that are part of the lesson
 - `Tools/asset_manifest.json`
 - `Docs/guide.md`
+- `Docs/ai-handoff.md`
 - `Docs/diagrams`
 - `Docs/screenshots`
 - `Docs/pdf/realitykit-pipeline-guide.pdf`
@@ -54,6 +56,7 @@ Use this before creating the public repository or pushing a first clean branch.
    ```
 
 6. Review `Docs/WORKLOG.md` for stale active sprint status.
+7. Review `Docs/ai-handoff.md` for stale current status or next-task guidance.
 
 ## Current Evidence Set
 

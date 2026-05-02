@@ -8,6 +8,8 @@ Start each session from `Docs/WORKLOG.md`. It tracks the current sprint, decisio
 
 For the teaching version of the pipeline, start from `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
 
+For AI agents or future handoff, start from `AGENTS.md` and `Docs/ai-handoff.md`.
+
 ## Goals
 
 - Learn SwiftUI + RealityKit app structure.
@@ -53,6 +55,7 @@ rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityK
 - `Assets/Textures`: source or exported texture files.
 - `Docs`: pipeline, budgets, checklists.
 - `Docs/guide.md`: public-facing learning guide for the asset and texture pipeline.
+- `Docs/ai-handoff.md`: fast orientation page for AI agents and future sessions.
 - `Docs/diagrams`: Mermaid source diagrams for the guide or PDF export.
 - `Docs/screenshots`: selected visual evidence used by the guide.
 - `Docs/pdf`: generated PDF guide for sharing.

@@ -110,6 +110,9 @@ Public repo onboarding'i local agent workflow'dan ayrılmalı. `rtk` gibi ekip i
 - Hit anında target pozisyonunda kısa ömürlü renkli spark/flash VFX eklendi.
 - HUD yeniden düzenlendi: başlık, büyük skor, status renkleri, targets metriği.
 - Ortaya non-interactive reticle overlay eklendi.
+- İlk showcase pass'teki "target'a tıkla ve anında patlat" davranışı kaldırıldı.
+- Tap artık projectile yönünü belirliyor; target removal, skor ve VFX projectile temasında çalışıyor.
+- Hit VFX tek büyüyen flash yerine dışarı dağılan spark parçacıklarına çevrildi.
 
 **Verification:**
 
@@ -121,7 +124,7 @@ specific iPhone 17 simulator build/screenshot: sandbox CoreSimulator destination
 
 **Öğrenme notu:**
 
-Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşılır bir görsel hiyerarşi gerekiyor. Küçük HUD/framing/VFX işleri repo'nun öğretici değerini bozmadan ilk izlenimi yükseltir.
+Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşılır bir görsel hiyerarşi gerekiyor. Küçük HUD/framing/VFX işleri repo'nun öğretici değerini bozmadan ilk izlenimi yükseltir. Ancak showcase polish gameplay sözleşmesini bozmamalı: hedefler tıklanınca değil, projectile gerçekten temas edince düşmeli.
 
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 

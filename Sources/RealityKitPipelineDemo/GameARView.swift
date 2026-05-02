@@ -11,12 +11,16 @@ final class GameARView: ARView {
     private struct Projectile {
         let entity: ModelEntity
         let velocity: SIMD3<Float>
+        let intendedTargetID: ObjectIdentifier?
+        let scoreOverride: (points: Int, zone: String)?
         var canScore: Bool
         var age: TimeInterval
     }
 
     private struct HitEffect {
         let root: Entity
+        let flash: ModelEntity
+        let sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)]
         var age: TimeInterval
         let duration: TimeInterval
     }
@@ -185,21 +189,39 @@ final class GameARView: ARView {
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         let point = recognizer.location(in: self)
+        let aim = screenAim(for: point)
         let direction: SIMD3<Float>
+        let intendedTargetID: ObjectIdentifier?
+        let scoreOverride: (points: Int, zone: String)?
 
-        if let ray = ray(through: point) {
+        if let aim {
+            direction = simd_normalize(aim.targetPosition - playerOrigin)
+            intendedTargetID = aim.targetID
+            scoreOverride = aim.score
+        } else if let ray = ray(through: point) {
             direction = simd_normalize(ray.direction)
+            intendedTargetID = nil
+            scoreOverride = nil
         } else {
             direction = [0, 0, -1]
+            intendedTargetID = nil
+            scoreOverride = nil
         }
 
-        fireProjectile(from: playerOrigin, direction: direction)
-        if resolveScreenHit(point: point), let lastProjectile = projectiles.indices.last {
-            projectiles[lastProjectile].canScore = false
-        }
+        fireProjectile(
+            from: playerOrigin,
+            direction: direction,
+            intendedTargetID: intendedTargetID,
+            scoreOverride: scoreOverride
+        )
     }
 
-    private func fireProjectile(from origin: SIMD3<Float>, direction: SIMD3<Float>) {
+    private func fireProjectile(
+        from origin: SIMD3<Float>,
+        direction: SIMD3<Float>,
+        intendedTargetID: ObjectIdentifier?,
+        scoreOverride: (points: Int, zone: String)?
+    ) {
         let material = SimpleMaterial(color: UIColor(red: 0.30, green: 0.72, blue: 1.0, alpha: 1), isMetallic: false)
         let projectile = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
         projectile.name = "projectile"
@@ -207,7 +229,14 @@ final class GameARView: ARView {
         projectile.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.05)]))
 
         worldAnchor.addChild(projectile)
-        projectiles.append(Projectile(entity: projectile, velocity: direction * 3.4, canScore: true, age: 0))
+        projectiles.append(Projectile(
+            entity: projectile,
+            velocity: direction * 4.8,
+            intendedTargetID: intendedTargetID,
+            scoreOverride: scoreOverride,
+            canScore: true,
+            age: 0
+        ))
         gameSession.recordShot()
     }
 
@@ -235,11 +264,15 @@ final class GameARView: ARView {
             for target in targets {
                 let distance = simd_distance(projectile.entity.position, target.position)
                 if distance < 0.22 {
-                    hitProjectiles.insert(ObjectIdentifier(projectile.entity))
                     let targetID = ObjectIdentifier(target)
+                    if let intendedTargetID = projectile.intendedTargetID, intendedTargetID != targetID {
+                        continue
+                    }
+
+                    hitProjectiles.insert(ObjectIdentifier(projectile.entity))
                     hitTargets.insert(targetID)
 
-                    let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
+                    let score = projectile.scoreOverride ?? scoreForHit(projectilePosition: projectile.entity.position, target: target)
                     if score.points > (hitScores[targetID]?.points ?? 0) {
                         hitScores[targetID] = score
                     }
@@ -279,7 +312,11 @@ final class GameARView: ARView {
         spawnNextWaveIfNeeded()
     }
 
-    private func resolveScreenHit(point: CGPoint) -> Bool {
+    private func screenAim(for point: CGPoint) -> (
+        targetID: ObjectIdentifier,
+        targetPosition: SIMD3<Float>,
+        score: (points: Int, zone: String)
+    )? {
         var bestTarget: ModelEntity?
         var bestDistance = CGFloat.greatestFiniteMagnitude
 
@@ -293,16 +330,10 @@ final class GameARView: ARView {
             }
         }
 
-        guard let bestTarget else { return false }
+        guard let bestTarget else { return nil }
 
         let score = scoreForScreenHit(distance: bestDistance)
-        addHitEffect(at: bestTarget.position, points: score.points)
-        bestTarget.removeFromParent()
-        targets.removeAll { ObjectIdentifier($0) == ObjectIdentifier(bestTarget) }
-        gameSession.recordHit(points: score.points, zone: score.zone)
-        gameSession.activeTargets = targets.count
-        spawnNextWaveIfNeeded()
-        return true
+        return (ObjectIdentifier(bestTarget), bestTarget.position, score)
     }
 
     private func estimatedScreenPoint(for position: SIMD3<Float>) -> CGPoint {
@@ -379,20 +410,27 @@ final class GameARView: ARView {
         }
 
         let material = SimpleMaterial(color: color, roughness: 0.35, isMetallic: false)
-        for index in 0..<12 {
-            let angle = (Float(index) / 12.0) * 2.0 * .pi
+        var sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)] = []
+
+        for index in 0..<18 {
+            let angle = (Float(index) / 18.0) * 2.0 * .pi
+            let vertical = sin(Float(index) * 1.7) * 0.07
             let spark = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [material])
-            spark.position = [cos(angle) * 0.15, sin(angle) * 0.15, 0.02]
+            spark.position = [0, 0, 0.03]
             root.addChild(spark)
+            sparks.append((
+                entity: spark,
+                velocity: [cos(angle) * 0.62, sin(angle) * 0.62, vertical + 0.16]
+            ))
         }
 
-        let flash = ModelEntity(mesh: .generateSphere(radius: 0.055), materials: [material])
-        flash.position = [0, 0, 0.03]
+        let flash = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
+        flash.position = [0, 0, 0.04]
         root.addChild(flash)
 
         root.look(at: playerOrigin, from: position, relativeTo: worldAnchor)
         worldAnchor.addChild(root)
-        hitEffects.append(HitEffect(root: root, age: 0, duration: 0.42))
+        hitEffects.append(HitEffect(root: root, flash: flash, sparks: sparks, age: 0, duration: 0.36))
     }
 
     private func updateHitEffects(deltaTime: TimeInterval) {
@@ -401,8 +439,16 @@ final class GameARView: ARView {
         for index in hitEffects.indices {
             hitEffects[index].age += deltaTime
             let progress = min(Float(hitEffects[index].age / hitEffects[index].duration), 1.0)
-            let scale = 1.0 + progress * 1.9
-            hitEffects[index].root.scale = SIMD3<Float>(repeating: scale)
+            let dt = Float(deltaTime)
+
+            for spark in hitEffects[index].sparks {
+                spark.entity.position += spark.velocity * dt
+                let fadeScale = max(0.18, 1.0 - progress * 0.72)
+                spark.entity.scale = SIMD3<Float>(repeating: fadeScale)
+            }
+
+            let flashScale = max(0.08, 1.0 - progress)
+            hitEffects[index].flash.scale = SIMD3<Float>(repeating: flashScale)
         }
 
         hitEffects.removeAll { effect in

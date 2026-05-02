@@ -13,7 +13,7 @@
 - Asset manifest with budgets and learning notes.
 - Blender starter script for arena floor generation.
 - Public guide PDF, screenshots, release checklist, CI, contribution templates, and Makefile.
-- Showcase polish pass with a darker backdrop, readable HUD, reticle overlay, and hit spark VFX.
+- Showcase polish pass with a darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
 
 ### Verified
 

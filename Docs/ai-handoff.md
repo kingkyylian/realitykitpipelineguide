@@ -79,7 +79,7 @@ If the user asks to continue education content, do this next:
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
 - `arena_floor.usdz` is imported and manifest status is `imported`.
-- Showcase polish exists: darker backdrop, readable HUD, reticle overlay, and hit spark VFX.
+- Showcase polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
 - Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.

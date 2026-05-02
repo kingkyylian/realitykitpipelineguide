@@ -57,10 +57,12 @@ class Doctor:
             "Assets/Imported",
             "Assets/Textures",
             "Docs/guide.md",
+            "Docs/cli-tool.md",
             "Docs/production-playbook.md",
             "Docs/new-game-startup.md",
             "Docs/WORKLOG.md",
             "Docs/ai-handoff.md",
+            "Tools/rkp.py",
             "Skills/realitykit-pipeline-guide/SKILL.md",
         ]
         for rel in required:

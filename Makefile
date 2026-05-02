@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate doctor new-asset build-asset accept-asset guide release-check install-skill clean
+.PHONY: generate build validate doctor status new-asset build-asset accept-asset guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -17,20 +17,23 @@ validate:
 	node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
 
 doctor:
-	python3 Tools/pipeline_doctor.py
+	python3 Tools/rkp.py doctor
+
+status:
+	python3 Tools/rkp.py status
 
 new-asset:
 	@test -n "$(id)" || (echo "usage: make new-asset id=enemy_drone type=gameplay_target" && exit 2)
-	python3 Tools/new_asset.py --id "$(id)" --type "$(or $(type),prop)"
+	python3 Tools/rkp.py new-asset "$(id)" --type "$(or $(type),prop)"
 
 build-asset:
 	@test -n "$(id)" || (echo "usage: make build-asset id=enemy_drone" && exit 2)
-	python3 Tools/build_asset.py --id "$(id)"
+	python3 Tools/rkp.py build-asset "$(id)"
 
 accept-asset:
 	@test -n "$(id)" || (echo "usage: make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone.jpg" && exit 2)
 	@test -n "$(screenshot)" || (echo "usage: make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone.jpg" && exit 2)
-	python3 Tools/accept_asset.py --id "$(id)" --screenshot "$(screenshot)"
+	python3 Tools/rkp.py accept-asset "$(id)" --screenshot "$(screenshot)"
 
 guide:
 	mkdir -p Build Docs/pdf
@@ -38,7 +41,8 @@ guide:
 	weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-guide.pdf
 	cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 
-release-check: doctor generate validate build
+release-check:
+	python3 Tools/rkp.py release-check
 
 install-skill:
 	mkdir -p "$(CODEX_HOME)/skills/$(SKILL_NAME)"

@@ -55,7 +55,7 @@ Minimum brief:
 For a new asset, scaffold the contract first:
 
 ```bash
-make new-asset id=enemy_drone type=gameplay_target
+python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 ```
 
 This creates the manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/create_<id>.py`.
@@ -63,7 +63,7 @@ This creates the manifest entry, `Docs/assets/<id>.md`, and `Tools/blender/creat
 After editing the Blender script or source asset, build the USDZ:
 
 ```bash
-make build-asset id=enemy_drone
+python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 This verifies the USDZ file exists, but does not mark the asset imported. Acceptance still requires RealityKit visual verification.
@@ -71,7 +71,7 @@ This verifies the USDZ file exists, but does not mark the asset imported. Accept
 After verifying the asset in the simulator, accept it with required screenshot evidence:
 
 ```bash
-make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
 This marks the manifest entry imported, updates the asset brief when present, prepends a worklog acceptance record, and runs the pipeline doctor.

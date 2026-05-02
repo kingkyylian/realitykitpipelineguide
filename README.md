@@ -31,6 +31,29 @@ The app starts with procedural RealityKit fallbacks so it can compile before any
 - Blender 4.x for authoring or regenerating art assets.
 - Optional for guide PDF export: `pandoc` and `weasyprint`.
 
+### Use The Pipeline CLI
+
+This repo is designed to be used as a small pipeline tool first. The guide is supporting material.
+
+```bash
+python3 Tools/rkp.py status
+python3 Tools/rkp.py doctor
+python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+python3 Tools/rkp.py build-asset enemy_drone
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py release-check
+```
+
+The same flow is available through `make` for shorter local commands:
+
+```bash
+make status
+make new-asset id=enemy_drone type=gameplay_target
+make build-asset id=enemy_drone
+make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+make release-check
+```
+
 ### Generate and Build
 
 ```bash
@@ -64,7 +87,9 @@ After installing, ask Codex to use `realitykit-pipeline-guide` for RealityKit as
 
 ## Start Here
 
-For the teaching version of the pipeline, start from `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
+For the command-first version of the pipeline, start from `Docs/cli-tool.md`.
+
+For the teaching version of the pipeline, use `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
 
 For reusable production practice, use `Docs/production-playbook.md`. It defines the feature brief, asset/runtime contract, quality gates, review checklist, and definition of done for future RealityKit games.
 
@@ -125,31 +150,31 @@ node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8
 Run the pipeline doctor:
 
 ```bash
-make doctor
+python3 Tools/rkp.py doctor
 ```
 
 Scaffold a new asset:
 
 ```bash
-make new-asset id=enemy_drone type=gameplay_target
+python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 ```
 
 Run the Blender build script for an asset:
 
 ```bash
-make build-asset id=enemy_drone
+python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 If Blender is not on `PATH`, provide it explicitly:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=enemy_drone
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 Accept a built asset with required visual evidence:
 
 ```bash
-make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
 Regenerate the guide PDF:
@@ -195,6 +220,7 @@ Reusable templates:
 - `Assets/Source`: optional source-art handoff area; app target does not depend on it.
 - `Assets/Textures`: source or exported texture files.
 - `Docs`: pipeline, budgets, checklists.
+- `Docs/cli-tool.md`: command-first usage contract for the pipeline CLI.
 - `Docs/guide.md`: public-facing learning guide for the asset and texture pipeline.
 - `Docs/production-playbook.md`: reusable production gates and team workflow.
 - `Docs/new-game-startup.md`: checklist for starting a future RealityKit game.
@@ -206,6 +232,7 @@ Reusable templates:
 - `Prompts`: reusable AI prompts for Codex/Claude.
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
+- `Tools/rkp.py`: primary CLI entrypoint for status, doctor, asset scaffolding, build, accept, and release checks.
 - `Tools/accept_asset.py`: marks a built asset imported only when screenshot evidence is provided.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
 - `Tools/build_asset.py`: runs `Tools/blender/create_<id>.py` and verifies the expected USDZ exists.

@@ -9,10 +9,23 @@ make generate
 make build
 ```
 
+## Primary Pipeline CLI
+
+```bash
+python3 Tools/rkp.py status
+python3 Tools/rkp.py doctor
+python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+python3 Tools/rkp.py build-asset enemy_drone
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py release-check
+```
+
+Use this interface for agent automation, future MCP-style wrappers, and reusable tooling. The Makefile remains a local convenience wrapper around the same tool.
+
 ## Full Local Release Check
 
 ```bash
-make release-check
+python3 Tools/rkp.py release-check
 ```
 
 This runs the pipeline doctor, XcodeGen, manifest validation, and Xcode simulator build with workspace-local DerivedData.
@@ -20,15 +33,15 @@ This runs the pipeline doctor, XcodeGen, manifest validation, and Xcode simulato
 ## Pipeline Doctor
 
 ```bash
-make doctor
+python3 Tools/rkp.py doctor
 ```
 
-This runs `Tools/pipeline_doctor.py`, a fast static check for manifest/imported asset consistency, XcodeGen paths, Markdown evidence links, public local path leaks, CI basics, and skill packaging.
+This runs `Tools/pipeline_doctor.py`, a fast static check for manifest/imported asset consistency, XcodeGen paths, Markdown evidence links, public local path leaks, CLI docs, CI basics, and skill packaging.
 
 ## New Asset Scaffolder
 
 ```bash
-make new-asset id=enemy_drone type=gameplay_target
+python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 ```
 
 Supported types:
@@ -43,13 +56,13 @@ This creates a planned manifest entry, `Docs/assets/<id>.md`, and `Tools/blender
 ## Asset Build
 
 ```bash
-make build-asset id=enemy_drone
+python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 If Blender is not on `PATH`:
 
 ```bash
-BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=enemy_drone
+BLENDER=/Applications/Blender.app/Contents/MacOS/Blender python3 Tools/rkp.py build-asset enemy_drone
 ```
 
 This runs `Tools/blender/create_<id>.py` and verifies `Assets/Imported/<id>.usdz` exists and is non-empty. It intentionally leaves manifest status unchanged.
@@ -57,7 +70,7 @@ This runs `Tools/blender/create_<id>.py` and verifies `Assets/Imported/<id>.usdz
 ## Asset Acceptance
 
 ```bash
-make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
 Screenshot is required. The command marks the manifest entry imported, records screenshot evidence, updates `Docs/assets/<id>.md` when present, prepends a worklog acceptance entry, and runs `make doctor` through `Tools/pipeline_doctor.py`.

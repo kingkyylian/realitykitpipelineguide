@@ -4,9 +4,9 @@ This file is the fast orientation page for any AI agent opening the repository.
 
 ## Project Status
 
-Current state: local Git repo on `main`. Use `git log --oneline --decorate -6` for the latest commit list instead of relying on a fixed count in this document.
+Current state: public Git repo on `main`: `https://github.com/kingkyylian/realitykitpipelineguide`. Use `git log --oneline --decorate -6` for the latest commit list instead of relying on a fixed count in this document.
 
-No remote is configured yet.
+The project now has a command-first pipeline CLI at `Tools/rkp.py`. The guide is supporting material; agents should prefer the CLI for status, asset scaffolding, build, acceptance, and release checks.
 
 ## What This Project Is
 
@@ -30,12 +30,13 @@ It is not only a game prototype. It is also a teaching artifact for Kyylian and 
 | Arena floor fallback | Complete | `Docs/screenshots/arena_floor_fallback_ready.jpg` |
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
+| Pipeline CLI | Started | `Tools/rkp.py`, `Docs/cli-tool.md` |
 
 ## Planned Learning Modules
 
 Recommended order:
 
-1. GitHub repo polish: README, LICENSE, CI, issue/PR templates. Basic public onboarding exists; next polish should refine examples and source-art coverage.
+1. Expand `Tools/rkp.py` into a reusable developer tool: richer status output, JSON mode, and optional MCP wrapper.
 2. Module 4: Texture Maps and Material Response.
 3. Module 5: Performance and Mobile Asset Budget.
 4. Module 6: Collision, VFX, and Gameplay Feel. Ring scoring is started; VFX/audio remain.
@@ -46,11 +47,11 @@ Recommended order:
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
-2. Add README badges after the GitHub remote exists.
-3. Add a short demo GIF or hosted video link.
-4. Set GitHub repo description/topics from `Docs/github-showcase.md`.
-5. Create the `v0.1.0` tag/release from `CHANGELOG.md`.
+1. Keep README command-first: `python3 Tools/rkp.py status` should be the first practical command.
+2. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
+3. Add README badges if they are not already present.
+4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+5. Create or update the `v0.1.0` tag/release from `CHANGELOG.md`.
 6. Expand `Tools/blender` with target asset generation/export scripts.
 7. Add a first-good-issue list for learners.
 
@@ -65,16 +66,17 @@ If the user asks to continue education content, do this next:
 
 1. `AGENTS.md`
 2. `README.md`
-3. `Docs/guide.md`
-4. `Docs/WORKLOG.md`
-5. `Tools/asset_manifest.json`
-6. `Sources/RealityKitPipelineDemo/GameARView.swift`
+3. `Docs/cli-tool.md`
+4. `Docs/guide.md`
+5. `Docs/WORKLOG.md`
+6. `Tools/asset_manifest.json`
+7. `Sources/RealityKitPipelineDemo/GameARView.swift`
 
 ## Known Implementation Details
 
 - `GameARView` uses non-AR RealityKit mode.
 - `GameARView` loads `target_basic_textured` first, then `target_basic`, then procedural fallback.
-- Imported target scale is normalized with `0.48`.
+- Imported target scale is normalized with `0.62`.
 - Spawn positions are deterministic slots for teaching/debugging.
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.

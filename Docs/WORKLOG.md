@@ -12,6 +12,34 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 18: Command-First Pipeline Tool
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 23:12 +03  
+**Amaç:** Repo'yu sadece rehber değil, geliştiricinin günlük kullanacağı CLI pipeline tool haline getirmek.
+
+**Yapılanlar:**
+
+- `Tools/rkp.py` eklendi.
+- `status`, `doctor`, `new-asset`, `build-asset`, `accept-asset`, `release-check` subcommand'leri eklendi.
+- `Makefile` geriye uyumlu wrapper olacak şekilde CLI'a bağlandı.
+- `Docs/cli-tool.md` eklendi; guide artık destek materyali, CLI primary interface olarak konumlandı.
+- README, production playbook, skill references ve AI handoff command-first akışa güncellendi.
+- Pipeline doctor artık CLI ve CLI dokümanını required path olarak kontrol ediyor.
+
+**Verification:**
+
+```text
+python3 -m py_compile Tools/rkp.py Tools/pipeline_doctor.py Tools/accept_asset.py Tools/build_asset.py Tools/new_asset.py: ok
+python3 Tools/rkp.py status: ok
+python3 Tools/rkp.py doctor: ok
+python3 Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Bir repo "guide" olarak faydalı olabilir, ama tekrar tekrar kullanılacak developer value CLI kontratından gelir. Guide açıklamalı katman, CLI ise günlük operasyon yüzeyi olmalı.
+
 ### Sprint 17: Asset Acceptance Gate
 
 **Durum:** Tamamlandı  

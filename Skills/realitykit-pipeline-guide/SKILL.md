@@ -20,6 +20,7 @@ Use this skill to keep RealityKit game work tied to an asset pipeline contract, 
    - `references/contracts.md` for asset/gameplay/release acceptance gates.
    - `references/commands.md` for build, validation, PDF, and install commands.
 3. Preserve the repo contract:
+   - Prefer `python3 Tools/rkp.py status` for first orientation.
    - Imported assets live in `Assets/Imported`.
    - Asset metadata lives in `Tools/asset_manifest.json`.
    - Public evidence lives in `Docs/screenshots`.
@@ -31,7 +32,7 @@ Use this skill to keep RealityKit game work tied to an asset pipeline contract, 
 
 - Keep procedural fallbacks unless the task explicitly removes them.
 - Keep XcodeGen as the project generation source of truth.
-- Prefer `make release-check` for local verification.
+- Prefer `python3 Tools/rkp.py release-check` for local verification.
 - For visual changes, run the simulator and capture or reference screenshot evidence.
 - Do not use a latest Apple API if the public CI Xcode baseline cannot compile it.
 - Keep docs canonical: update `Docs/guide.md` for teaching, `Docs/production-playbook.md` for production gates, and `Docs/new-game-startup.md` for future-game startup guidance.

@@ -16,7 +16,8 @@ Steps:
 8. Run project generation and build.
 9. Verify in RealityKit, not only in Blender.
 10. Capture screenshot evidence when visual behavior changed.
-11. Add the lesson to `Docs/WORKLOG.md`.
+11. Accept the asset with `make accept-asset id=<asset_id> screenshot=<path>`.
+12. Add any extra lesson to `Docs/WORKLOG.md`.
 
 ## Gameplay Feature
 

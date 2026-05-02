@@ -146,6 +146,12 @@ If Blender is not on `PATH`, provide it explicitly:
 BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=enemy_drone
 ```
 
+Accept a built asset with required visual evidence:
+
+```bash
+make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+```
+
 Regenerate the guide PDF:
 
 ```bash
@@ -200,6 +206,7 @@ Reusable templates:
 - `Prompts`: reusable AI prompts for Codex/Claude.
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
+- `Tools/accept_asset.py`: marks a built asset imported only when screenshot evidence is provided.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
 - `Tools/build_asset.py`: runs `Tools/blender/create_<id>.py` and verifies the expected USDZ exists.
 - `Tools/new_asset.py`: creates a manifest entry, asset brief, and Blender starter script for a new asset.

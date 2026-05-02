@@ -68,6 +68,14 @@ make build-asset id=enemy_drone
 
 This verifies the USDZ file exists, but does not mark the asset imported. Acceptance still requires RealityKit visual verification.
 
+After verifying the asset in the simulator, accept it with required screenshot evidence:
+
+```bash
+make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+```
+
+This marks the manifest entry imported, updates the asset brief when present, prepends a worklog acceptance record, and runs the pipeline doctor.
+
 ### 2. Gameplay Contract
 
 Before writing code, define:

@@ -12,6 +12,58 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 17: Asset Acceptance Gate
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:50 +03  
+**Amaç:** USDZ üretilmiş asset'i production pipeline'a alırken screenshot evidence zorunlu olsun; manifest, brief ve worklog kaydı otomatik oluşsun.
+
+**Yapılanlar:**
+
+- `Tools/accept_asset.py` eklendi.
+- `make accept-asset id=<asset_id> screenshot=<path>` hedefi eklendi.
+- Screenshot parametresi zorunlu; screenshot yoksa komut çalışmıyor.
+- Komut USDZ var/boş değil kontrolü yapıyor.
+- Manifest status `imported` yapılıyor ve notes içine screenshot evidence ekleniyor.
+- `Docs/assets/<id>.md` varsa acceptance checklist ve evidence bölümü güncelleniyor.
+- `Docs/WORKLOG.md` başına accepted asset kaydı ekleniyor.
+- Acceptance sonrası `Tools/pipeline_doctor.py` çalışıyor.
+
+**Verification:**
+
+```text
+make accept-asset id=arena_floor: blocked as expected without screenshot
+python3 Tools/accept_asset.py --id nope --screenshot Docs/screenshots/arena_floor_imported.jpg: ok, unknown asset id rejected
+make accept-asset id=arena_floor screenshot=Docs/screenshots/arena_floor_imported.jpg: ok
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Screenshot evidence accept gate'in parçası olmalı. Aksi halde manifest `imported` dese bile runtime scale/origin/material davranışı geriye dönük kanıtlanamaz.
+
+### Accepted Asset: arena_floor
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:42  
+**Amaç:** `arena_floor` asset'ini production pipeline'a screenshot evidence ile kabul etmek.
+
+**Acceptance:**
+
+- USDZ: `Assets/Imported/arena_floor.usdz`
+- Screenshot: `Docs/screenshots/arena_floor_imported.jpg`
+- Manifest status: `imported`
+
+**Verification:**
+
+```text
+make doctor: ok
+```
+
+**Öğrenme notu:**
+
+Asset kabulü dosyanın oluşmasıyla değil, runtime evidence ve manifest/worklog kaydıyla tamamlanır.
+
 ### Sprint 16: Asset Build Command
 
 **Durum:** Tamamlandı  

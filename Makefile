@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate doctor new-asset build-asset guide release-check install-skill clean
+.PHONY: generate build validate doctor new-asset build-asset accept-asset guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -26,6 +26,11 @@ new-asset:
 build-asset:
 	@test -n "$(id)" || (echo "usage: make build-asset id=enemy_drone" && exit 2)
 	python3 Tools/build_asset.py --id "$(id)"
+
+accept-asset:
+	@test -n "$(id)" || (echo "usage: make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone.jpg" && exit 2)
+	@test -n "$(screenshot)" || (echo "usage: make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone.jpg" && exit 2)
+	python3 Tools/accept_asset.py --id "$(id)" --screenshot "$(screenshot)"
 
 guide:
 	mkdir -p Build Docs/pdf

@@ -33,7 +33,7 @@
       "textureMaps": [
         "baseColor"
       ],
-      "notes": "Sprint 5 environment teaching asset. 3.2m x 3.2m flat floor plane, origin at center, 128 triangles. Uses 'st' UV primvar and embedded 512x512 arena_floor_basecolor.png. Imported replacement for the procedural floor; teaching focus is environment scale/origin, target readability, and UV tiling behavior."
+      "notes": "Sprint 5 environment teaching asset. 3.2m x 3.2m flat floor plane, origin at center, 128 triangles. Uses 'st' UV primvar and embedded 512x512 arena_floor_basecolor.png. Imported replacement for the procedural floor; teaching focus is environment scale/origin, target readability, and UV tiling behavior. Accepted with screenshot Docs/screenshots/arena_floor_imported.jpg."
     }
   ]
 }

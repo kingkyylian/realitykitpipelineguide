@@ -54,6 +54,14 @@ BLENDER=/Applications/Blender.app/Contents/MacOS/Blender make build-asset id=ene
 
 This runs `Tools/blender/create_<id>.py` and verifies `Assets/Imported/<id>.usdz` exists and is non-empty. It intentionally leaves manifest status unchanged.
 
+## Asset Acceptance
+
+```bash
+make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
+```
+
+Screenshot is required. The command marks the manifest entry imported, records screenshot evidence, updates `Docs/assets/<id>.md` when present, prepends a worklog acceptance entry, and runs `make doctor` through `Tools/pipeline_doctor.py`.
+
 ## Validate Manifest Only
 
 ```bash

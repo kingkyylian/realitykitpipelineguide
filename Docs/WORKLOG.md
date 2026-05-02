@@ -144,6 +144,8 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 - `resolveHit` içine projectile/target hâlâ aktif mi guard'ı eklendi; aynı collision için duplicate event gelirse double-score engelleniyor.
 - Simulator run sırasında alt controls alanının da ARView tap gesture tarafından projectile ateşleyebildiği görüldü; HUD/controls dışındaki gameplay alanı için tap guard eklendi.
 - Target'a dokununca anında patlatmayan delayed aim assist geri eklendi: tap projectile yönünü hedefe çevirir, skor/target removal yine collision event sonrası çalışır.
+- Showcase framing için imported target scale `0.90` yapıldı; ilk iki spawn slotu daha yakın, simetrik ve reticle çevresine alındı.
+- Collision radius `0.32`, bullseye/inner scoring eşikleri `0.104/0.215` olarak scale ile uyumlu güncellendi.
 
 **Verification:**
 
@@ -151,6 +153,7 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 make build: ok
 make release-check: ok
 build_run_sim: ok, iPhone 17 Pro Max simulator
+screenshot check: opening targets are larger, symmetric, and readable enough for first GIF test
 ```
 
 **Öğrenme notu:**

@@ -36,14 +36,14 @@ final class GameARView: ARView {
     private var nextTargetSlot = 0
     private var hasConfiguredScene = false
     private let importedTargetOrientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
-    private let importedTargetScale: Float = 0.48
+    private let importedTargetScale: Float = 0.90
     private let playerOrigin = SIMD3<Float>(0, 0.08, 0.2)
     private let targetSpawnSlots: [SIMD3<Float>] = [
-        [-0.58, 0.18, -2.25],
-        [0.58, 0.30, -2.35],
-        [0.0, 0.48, -2.55],
-        [-0.82, 0.42, -2.65],
-        [0.82, 0.12, -2.15]
+        [-0.32, 0.28, -1.92],
+        [0.32, 0.28, -1.92],
+        [0.0, 0.50, -2.05],
+        [-0.62, 0.18, -2.02],
+        [0.62, 0.18, -2.02]
     ]
 
     init(frame: CGRect, session: GameSession) {
@@ -167,9 +167,9 @@ final class GameARView: ARView {
             target.orientation *= simd_quatf(angle: .pi, axis: [0, 1, 0])
         }
 
-        target.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.17)]))
+        target.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.32)]))
         target.components.set(PhysicsBodyComponent(
-            shapes: [.generateSphere(radius: 0.17)],
+            shapes: [.generateSphere(radius: 0.32)],
             mass: 0,
             mode: .static
         ))
@@ -467,11 +467,11 @@ final class GameARView: ARView {
         let faceOffset = offset - simd_dot(offset, cameraDirection) * cameraDirection
         let radialDistance = simd_length(faceOffset)
 
-        if radialDistance < 0.055 {
+        if radialDistance < 0.104 {
             return (5, "Bullseye")
         }
 
-        if radialDistance < 0.115 {
+        if radialDistance < 0.215 {
             return (3, "Inner ring")
         }
 

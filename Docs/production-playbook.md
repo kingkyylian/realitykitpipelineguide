@@ -91,6 +91,7 @@ Default engineering rules:
 Use this minimum gate before commit:
 
 ```bash
+make doctor
 make release-check
 ```
 

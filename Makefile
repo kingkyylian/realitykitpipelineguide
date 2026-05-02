@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate guide release-check install-skill clean
+.PHONY: generate build validate doctor guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -16,13 +16,16 @@ build:
 validate:
 	node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
 
+doctor:
+	python3 Tools/pipeline_doctor.py
+
 guide:
 	mkdir -p Build Docs/pdf
 	pandoc Docs/guide.md --standalone --embed-resources --resource-path=Docs --css Docs/guide-style.css --metadata title="RealityKit Asset and Texture Pipeline Guide" -o Build/realitykit-pipeline-guide.html
 	weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-guide.pdf
 	cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 
-release-check: generate validate build
+release-check: doctor generate validate build
 
 install-skill:
 	mkdir -p "$(CODEX_HOME)/skills/$(SKILL_NAME)"

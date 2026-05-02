@@ -122,6 +122,12 @@ Validate the asset manifest:
 node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
 ```
 
+Run the pipeline doctor:
+
+```bash
+make doctor
+```
+
 Regenerate the guide PDF:
 
 ```bash
@@ -177,3 +183,4 @@ Reusable templates:
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
+- `Tools/pipeline_doctor.py`: static pipeline consistency checker for manifests, docs, links, CI paths, and skill packaging.

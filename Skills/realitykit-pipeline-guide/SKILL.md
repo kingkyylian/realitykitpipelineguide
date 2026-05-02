@@ -41,8 +41,13 @@ Use this skill to keep RealityKit game work tied to an asset pipeline contract, 
 Run this from the repo root for a fast structure check:
 
 ```bash
+make doctor
+```
+
+For a smaller skill-package-only check, run:
+
+```bash
 python3 Skills/realitykit-pipeline-guide/scripts/check_repo.py
 ```
 
-The script validates required guide, manifest, asset, and screenshot paths. It does not replace Xcode build verification.
-
+These checks do not replace Xcode build verification.

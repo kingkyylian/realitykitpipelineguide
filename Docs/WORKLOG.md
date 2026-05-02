@@ -12,6 +12,30 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 13: Pipeline Doctor
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 22:10 +03  
+**Amaç:** Repo'yu geliştiriciler için günlük kullanılabilir tool haline getirmek: asset manifest, imported USDZ, docs evidence, XcodeGen path, CI ve skill packaging sorunlarını tek komutla yakalamak.
+
+**Yapılanlar:**
+
+- `Tools/pipeline_doctor.py` eklendi.
+- `make doctor` hedefi eklendi.
+- `make release-check` artık doctor -> generate -> validate -> build sırasını kullanıyor.
+- README, production playbook ve skill command reference `make doctor` kullanımını anlatıyor.
+
+**Verification:**
+
+```text
+make doctor: ok, 1 known warning for actions/checkout@v4 Node 20 deprecation
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Guide'ın vazgeçilmez tool'a dönüşmesi için sadece anlatması yetmez; pipeline kırıldığında hızlı ve deterministik şekilde söylemesi gerekir. Doctor build'in yerini tutmaz, ama CI'a gitmeden önce en sık public repo/pipeline hatalarını yakalar.
+
 ### Sprint 12: Installable Skill Pack
 
 **Durum:** Tamamlandı  

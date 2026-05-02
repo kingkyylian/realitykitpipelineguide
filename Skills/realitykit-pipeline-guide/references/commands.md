@@ -15,7 +15,15 @@ make build
 make release-check
 ```
 
-This runs XcodeGen, manifest validation, and Xcode simulator build with workspace-local DerivedData.
+This runs the pipeline doctor, XcodeGen, manifest validation, and Xcode simulator build with workspace-local DerivedData.
+
+## Pipeline Doctor
+
+```bash
+make doctor
+```
+
+This runs `Tools/pipeline_doctor.py`, a fast static check for manifest/imported asset consistency, XcodeGen paths, Markdown evidence links, public local path leaks, CI basics, and skill packaging.
 
 ## Validate Manifest Only
 
@@ -44,4 +52,3 @@ This copies `Skills/realitykit-pipeline-guide` into `${CODEX_HOME:-$HOME/.codex}
 ```bash
 python3 Skills/realitykit-pipeline-guide/scripts/check_repo.py
 ```
-

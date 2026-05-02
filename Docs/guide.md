@@ -64,9 +64,10 @@ Tam oyun geliştirme eğitimine dönüşmesi için `Game Development Curriculum 
 
 - Xcode kurulu.
 - XcodeGen kurulu.
-- `rtk` CLI mevcut.
-- Blender veya Blender MCP tabanlı asset üretim yolu mevcut.
+- Blender 4.x veya Blender MCP tabanlı asset üretim yolu mevcut.
 - Temel terminal ve SwiftUI bilgisi.
+
+Not: Worklog ve agent dosyalarında `rtk` prefix'i görebilirsiniz. `rtk` bu çalışma ortamındaki lokal ajan wrapper'ıdır, public dependency değildir. Repo'yu normal klonladıysanız aynı komutu `rtk` olmadan çalıştırın veya `Makefile` hedeflerini kullanın.
 
 ### Önerilen Çalışma Formatı
 
@@ -83,7 +84,7 @@ Tam oyun geliştirme eğitimine dönüşmesi için `Game Development Curriculum 
 Bir asset işi, ancak şu kanıtlarla kapanır:
 
 - `Tools/asset_manifest.json` içinde doğru status ve not var.
-- `rtk xcodebuild ... -derivedDataPath Build/DerivedData build` geçiyor.
+- `make release-check` veya eşdeğer `xcodebuild ... -derivedDataPath Build/DerivedData build` geçiyor.
 - Simulator screenshot alındı.
 - HUD veya sahne asset'in gerçekten yüklendiğini gösteriyor.
 - Öğrenme notu `Docs/WORKLOG.md` veya checklist'e işlendi.
@@ -199,7 +200,7 @@ Asset pipeline'ı bir teslim zinciri gibi düşünün:
 
 **Tanım:** App build edildiğinde resource dosyalarının `.app` bundle içine kopyalanması.
 
-**Bu projedeki yol:** Asset `Assets/Imported` altına konur, sonra `rtk xcodegen generate` çalıştırılır.
+**Bu projedeki yol:** Asset `Assets/Imported` altına konur, sonra `xcodegen generate` veya `make generate` çalıştırılır.
 
 ### 3.8 RealityKit Loader Fallback
 
@@ -317,7 +318,7 @@ Bu görüntüde texture'lı target RealityKit'te yüklenmiş durumda. Halkalar m
 
 | Belirti | Muhtemel Sebep | Kontrol | Çözüm |
 | --- | --- | --- | --- |
-| Asset görünmüyor | Bundle'a girmedi veya path yanlış | `.app/Imported` içinde dosya var mı? | `rtk xcodegen generate`, manifest ve resource path kontrolü |
+| Asset görünmüyor | Bundle'a girmedi veya path yanlış | `.app/Imported` içinde dosya var mı? | `make generate`, manifest ve resource path kontrolü |
 | Procedural fallback görünüyor | Imported asset bulunamadı | HUD status ve loader sırası | Dosya adını asset id ile eşleştir |
 | Asset edge-on görünüyor | Export axis veya child rotation farklı | Simulator screenshot | Entity veya child orientation düzelt |
 | Asset çok büyük | Scale oyun kamerasına uygun değil | Screenshot ve floor referansı | RealityKit scale normalize et veya Blender scale düzelt |
@@ -631,11 +632,11 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 8. `.usdz` export al.
 9. Dosyayı `Assets/Imported` altına koy.
 10. Manifest status ve notları güncelle.
-11. `rtk xcodegen generate` çalıştır.
+11. `make generate` çalıştır.
 12. Workspace-local build al:
 
    ```bash
-   rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+   make build
    ```
 
 13. Simulator'da HUD ve görsel sonucu kontrol et.
@@ -673,9 +674,7 @@ Repo public hale gelmeden önce:
 PDF üretmek için:
 
 ```bash
-rtk pandoc Docs/guide.md --standalone --embed-resources --resource-path=Docs --css Docs/guide-style.css --metadata title="RealityKit Asset and Texture Pipeline Guide" -o Build/realitykit-pipeline-guide.html
-rtk weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-guide.pdf
-rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
+make guide
 ```
 
 ## 13. Appendix
@@ -691,8 +690,7 @@ rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pd
 ### Core Commands
 
 ```bash
-rtk xcodegen generate
-rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+make release-check
 ```
 
 ### Evidence Files

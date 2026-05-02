@@ -36,14 +36,14 @@
 - Export selected object only.
 - Export as `.usdz` for quick RealityKit testing.
 - Put final exports in `Assets/Imported`.
-- Keep source `.blend` files outside the app target or in a separate art repository.
+- Keep small teaching source files in `Assets/Source` or Blender automation in `Tools/blender`; use a separate art repository only if production source files become too heavy for Git.
 - Confirm textures are embedded in the USDZ or included by the export package before handing off.
-- The first texture handoff path is `Assets/Imported/target_basic_textured.usdz`.
+- Match the handoff path to the asset id: `Assets/Imported/<asset_id>.usdz`.
 
 ## Import Test
 
 - Open in Reality Composer Pro.
 - Confirm scale, pivot, material, and orientation.
 - Add to the app only after the standalone import looks correct.
-- In the app HUD, confirm the status changes to `target_basic_textured ready`.
-- Capture a simulator screenshot and compare it with the untextured `target_basic` screenshot.
+- In the app HUD or visual scene, confirm the imported asset is the loaded version, not the procedural fallback.
+- Capture a simulator screenshot and compare it with the previous evidence screenshot for that asset class.

@@ -27,7 +27,7 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ### Sprint 5: Arena Floor Environment Asset
 
-**Durum:** Aktif  
+**Durum:** Tamamlandı  
 **Tarih:** 2026-05-02 19:30 +03  
 **Amaç:** Procedural floor yerine `arena_floor.usdz` environment asset pipeline'ını öğretmek.
 
@@ -59,6 +59,25 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 - Environment asset scale/origin davranışı target asset'ten nasıl farklı?
 - Floor texture tiling veya atlas target readability'yi nasıl etkiler?
 - Procedural fallback environment pipeline'da nasıl korunur?
+
+### Sprint 6: Public Onboarding Polish
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02  
+**Amaç:** Repo'yu public clone eden birinin `rtk` veya önceki internal akışlara takılmadan projeyi üretebilmesi, build edebilmesi ve Blender asset loop'una başlayabilmesi.
+
+**Yapılanlar:**
+
+- README public quick start olarak yeniden düzenlendi.
+- `rtk` public dependency değil, local agent wrapper olarak açıklandı.
+- `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions CI, PR template ve issue template'leri eklendi.
+- `Tools/blender/create_arena_floor.py` ve `Tools/blender/README.md` eklendi.
+- `Assets/Source/README.md` ile source-art handoff alanı belirlendi.
+- `Docs/blender-usdz-checklist.md` içindeki Sprint 3'e özel stale handoff satırı genel asset id kontratına çevrildi.
+
+**Öğrenme notu:**
+
+Public repo onboarding'i local agent workflow'dan ayrılmalı. `rtk` gibi ekip içi wrapper'lar AGENTS/worklog içinde kalabilir, ama README normal kullanıcının çalıştıracağı çıplak komutları göstermeli.
 
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 

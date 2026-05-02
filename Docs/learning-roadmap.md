@@ -13,12 +13,15 @@ This file is only a quick index so sprint numbering does not drift from `Docs/WO
 | Sprint 2 | Complete | Imported target scale and spawn tuning |
 | Sprint 3 | Complete | First textured target asset |
 | Sprint 4 | Complete | Ring-based scoring and texture-gameplay link |
+| Sprint 5 | Complete | Arena floor environment asset |
 
-## Active Worklog Sprint
+## Next Worklog Sprint Candidates
 
-| Worklog Sprint | Status | Topic |
-| --- | --- | --- |
-| Sprint 5 | Active | Arena floor environment asset |
+| Candidate | Topic |
+| --- | --- |
+| Sprint 6 | Public onboarding polish: README, CI, Makefile, license, contribution templates |
+| Sprint 7 | Material response: roughness/metallic comparison assets |
+| Sprint 8 | VFX/audio feedback for hit confirmation |
 
 ## Full Curriculum
 

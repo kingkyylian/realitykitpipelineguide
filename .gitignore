@@ -17,6 +17,8 @@ DerivedData/
 # Swift Package Manager / tooling
 .build/
 .swiftpm/
+__pycache__/
+*.pyc
 
 # Local editor and OS noise
 .claude/

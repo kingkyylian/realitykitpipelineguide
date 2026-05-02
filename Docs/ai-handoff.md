@@ -35,7 +35,7 @@ It is not only a game prototype. It is also a teaching artifact for Kyylian and 
 
 Recommended order:
 
-1. GitHub repo polish: README, LICENSE, CI, issue/PR templates.
+1. GitHub repo polish: README, LICENSE, CI, issue/PR templates. Basic public onboarding exists; next polish should refine examples and source-art coverage.
 2. Module 4: Texture Maps and Material Response.
 3. Module 5: Performance and Mobile Asset Budget.
 4. Module 6: Collision, VFX, and Gameplay Feel. Ring scoring is started; VFX/audio remain.
@@ -46,12 +46,11 @@ Recommended order:
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Add `LICENSE`.
-2. Add `Makefile` with `generate`, `build`, `guide`, `validate`, `release-check`.
-3. Add `.github/workflows/ci.yml`.
-4. Add `.github/pull_request_template.md`.
-5. Add `.github/ISSUE_TEMPLATE/bug_report.md` and `learning_module.md`.
-6. Refactor README into a public-facing landing page.
+1. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
+2. Add README badges after the GitHub remote exists.
+3. Add a short demo GIF or hosted video link.
+4. Expand `Tools/blender` with target asset generation/export scripts.
+5. Add a first-good-issue list for learners.
 
 If the user asks to continue education content, do this next:
 
@@ -78,6 +77,7 @@ If the user asks to continue education content, do this next:
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
 - `arena_floor.usdz` is imported and manifest status is `imported`.
+- Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.
 

@@ -5,7 +5,13 @@ Use this before creating the public repository or pushing a first clean branch.
 ## Keep
 
 - `README.md`
+- `LICENSE`
+- `CONTRIBUTING.md`
+- `Makefile`
 - `AGENTS.md`
+- `.github/workflows/ci.yml`
+- `.github/pull_request_template.md`
+- `.github/ISSUE_TEMPLATE`
 - `project.yml`
 - `Sources/RealityKitPipelineDemo`
 - `Assets/Imported/*.usdz` that are part of the lesson
@@ -17,6 +23,7 @@ Use this before creating the public repository or pushing a first clean branch.
 - `Docs/pdf/realitykit-pipeline-guide.pdf`
 - `Docs/*checklist*.md`, `Docs/asset-budget.md`, `Docs/learning-roadmap.md`, `Docs/pipeline.md`
 - `Prompts`
+- `Tools/blender`
 
 ## Ignore
 
@@ -28,31 +35,29 @@ Use this before creating the public repository or pushing a first clean branch.
 
 ## Before Push
 
-1. Run `rtk xcodegen generate`.
+1. Run `xcodegen generate` or `make generate`.
 2. Run the workspace-local build:
 
    ```bash
-   rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+   xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination 'generic/platform=iOS Simulator' -derivedDataPath Build/DerivedData build
    ```
 
 3. Validate the manifest:
 
    ```bash
-   rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
+   node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
    ```
 
 4. Regenerate guide HTML/PDF if `Docs/guide.md` changed:
 
    ```bash
-   rtk pandoc Docs/guide.md --standalone --embed-resources --resource-path=Docs --css Docs/guide-style.css --metadata title="RealityKit Asset and Texture Pipeline Guide" -o Build/realitykit-pipeline-guide.html
-   rtk weasyprint Build/realitykit-pipeline-guide.html Build/realitykit-pipeline-guide.pdf
-   rtk cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
+   make guide
    ```
 
 5. Confirm selected evidence files exist:
 
    ```bash
-   rtk ls -lh Docs/screenshots Docs/pdf/realitykit-pipeline-guide.pdf
+   ls -lh Docs/screenshots Docs/pdf/realitykit-pipeline-guide.pdf
    ```
 
 6. Review `Docs/WORKLOG.md` for stale active sprint status.

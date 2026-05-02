@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 11: Wave Game Loop
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 21:45 +03  
+**Amaç:** Prototype'ı sonsuz target sandbox hissinden çıkarıp, açık wave/progress bilgisi olan mini oyun loop'una yaklaştırmak.
+
+**Yapılanlar:**
+
+- `GameSession` içine `wave`, `targetsThisWave`, `clearedTargets` ve `waveProgressText` eklendi.
+- Wave 1 artık 2 hedefle başlıyor; wave temizlenince hedef sayısı deterministic spawn slot limiti içinde artıyor.
+- HUD'da `Targets` metriği yerine `Wave` ve `Cleared` metriği gösteriliyor.
+- Manual `Spawn` butonu practice/debug hedefi olarak mevcut wave'in hedef sayısını artırıyor.
+- Feature brief kaydı: `Docs/features/wave-game-loop.md`.
+
+**Verification:**
+
+```text
+make release-check: ok
+simulator interaction: ok, HUD shows Wave and Cleared progress
+```
+
+**Öğrenme notu:**
+
+Oyun loop'u sadece "hedef bitince yenisini spawn et" değildir. Session state, HUD dili, reset davranışı ve edge case'ler aynı contract içinde tanımlanmadığında oyuncu ilerlemeyi anlayamaz.
+
 ### Sprint 10: Production Guide System
 
 **Durum:** Tamamlandı  

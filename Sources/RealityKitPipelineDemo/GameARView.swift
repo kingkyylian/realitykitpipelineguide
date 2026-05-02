@@ -72,8 +72,8 @@ final class GameARView: ARView {
         addLighting()
         addShowcaseBackdrop()
         addArena()
-        spawnTarget()
-        spawnTarget()
+        gameSession.startRun(targetCount: targetCountForCurrentWave())
+        spawnWaveTargets()
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         addGestureRecognizer(tap)
@@ -98,6 +98,7 @@ final class GameARView: ARView {
         if spawnToken != lastSpawnToken {
             lastSpawnToken = spawnToken
             spawnTarget()
+            gameSession.addTargetToCurrentWave()
         }
     }
 
@@ -377,6 +378,7 @@ final class GameARView: ARView {
             return false
         }
 
+        gameSession.recordTargetsDestroyed(hitTargets.count)
         gameSession.activeTargets = targets.count
 
         spawnNextWaveIfNeeded()
@@ -402,6 +404,7 @@ final class GameARView: ARView {
 
         projectiles.removeAll { ObjectIdentifier($0.entity) == projectileID }
         targets.removeAll { ObjectIdentifier($0) == targetID }
+        gameSession.recordTargetsDestroyed(1)
         gameSession.activeTargets = targets.count
 
         spawnNextWaveIfNeeded()
@@ -454,9 +457,21 @@ final class GameARView: ARView {
 
     private func spawnNextWaveIfNeeded() {
         if targets.isEmpty {
-            gameSession.status = "Wave cleared"
-            spawnTarget()
-            spawnTarget()
+            gameSession.advanceWave(targetCount: targetCountForNextWave())
+            spawnWaveTargets()
+        }
+    }
+
+    private func targetCountForCurrentWave() -> Int {
+        min(2 + max(gameSession.wave - 1, 0), targetSpawnSlots.count)
+    }
+
+    private func targetCountForNextWave() -> Int {
+        min(2 + gameSession.wave, targetSpawnSlots.count)
+    }
+
+    private func spawnWaveTargets() {
+        for _ in 0..<targetCountForCurrentWave() {
             spawnTarget()
         }
     }
@@ -590,7 +605,6 @@ final class GameARView: ARView {
         hitEffects.removeAll()
         nextTargetSlot = 0
         gameSession.reset()
-        spawnTarget()
-        spawnTarget()
+        spawnWaveTargets()
     }
 }

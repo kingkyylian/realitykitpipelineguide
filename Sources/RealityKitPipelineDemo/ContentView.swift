@@ -51,7 +51,8 @@ struct ContentView: View {
                 metric("Shots", "\(session.shots)")
                 metric("Hits", "\(session.hits)")
                 metric("Accuracy", session.accuracyText)
-                metric("Targets", "\(session.activeTargets)")
+                metric("Wave", "\(session.wave)")
+                metric("Cleared", session.waveProgressText)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

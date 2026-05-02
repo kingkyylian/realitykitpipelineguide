@@ -131,6 +131,7 @@ Completed:
 - UV primvar lesson: source USDZ uses `st`.
 - Ring-based scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - Arena floor import: `arena_floor.usdz`.
+- Wave loop: HUD shows current wave and cleared target progress.
 
 Canonical course material:
 
@@ -156,6 +157,7 @@ Reusable templates:
 - `Docs/guide.md`: public-facing learning guide for the asset and texture pipeline.
 - `Docs/production-playbook.md`: reusable production gates and team workflow.
 - `Docs/new-game-startup.md`: checklist for starting a future RealityKit game.
+- `Docs/features`: feature briefs and acceptance contracts.
 - `Docs/ai-handoff.md`: fast orientation page for AI agents and future sessions.
 - `Docs/diagrams`: Mermaid source diagrams for the guide or PDF export.
 - `Docs/screenshots`: selected visual evidence used by the guide.

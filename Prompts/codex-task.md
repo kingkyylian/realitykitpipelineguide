@@ -3,7 +3,7 @@
 Use this when assigning implementation work.
 
 ```text
-In /Users/kyylian/Developer/RealityKitPipelineDemo, implement the next small RealityKit feature.
+In <repo-root>, implement the next small RealityKit feature.
 
 Goal:
 

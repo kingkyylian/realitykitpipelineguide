@@ -1,5 +1,6 @@
 import Combine
 import RealityKit
+import SwiftUI
 import UIKit
 
 final class GameARView: ARView {
@@ -10,17 +11,13 @@ final class GameARView: ARView {
 
     private struct Projectile {
         let entity: ModelEntity
-        let velocity: SIMD3<Float>
-        let intendedTargetID: ObjectIdentifier?
-        let scoreOverride: (points: Int, zone: String)?
-        var canScore: Bool
         var age: TimeInterval
     }
 
     private struct HitEffect {
         let root: Entity
         let flash: ModelEntity
-        let sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)]
+        var sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)]
         var age: TimeInterval
         let duration: TimeInterval
     }
@@ -81,6 +78,11 @@ final class GameARView: ARView {
             self?.updateProjectiles(deltaTime: event.deltaTime)
         }
         subscriptions.append(update)
+
+        let collision = scene.subscribe(to: CollisionEvents.Began.self) { [weak self] event in
+            self?.handleCollision(event)
+        }
+        subscriptions.append(collision)
     }
 
     func apply(spawnToken: Int, resetToken: Int) {
@@ -103,7 +105,11 @@ final class GameARView: ARView {
     }
 
     private func addShowcaseBackdrop() {
-        let backdropMaterial = SimpleMaterial(color: UIColor(red: 0.08, green: 0.10, blue: 0.12, alpha: 1), isMetallic: false)
+        let backdropMaterial = makePBRMaterial(
+            color: UIColor(red: 0.08, green: 0.10, blue: 0.12, alpha: 1),
+            roughness: 0.82,
+            metallic: 0.0
+        )
         let backdrop = ModelEntity(mesh: .generateBox(size: [3.8, 1.6, 0.06]), materials: [backdropMaterial])
         backdrop.name = "showcase_backdrop"
         backdrop.position = [0, 0.18, -2.85]
@@ -118,13 +124,21 @@ final class GameARView: ARView {
             return
         }
 
-        let floorMaterial = SimpleMaterial(color: UIColor(red: 0.14, green: 0.18, blue: 0.20, alpha: 1), isMetallic: false)
+        let floorMaterial = makePBRMaterial(
+            color: UIColor(red: 0.14, green: 0.18, blue: 0.20, alpha: 1),
+            roughness: 0.9,
+            metallic: 0.0
+        )
         let floor = ModelEntity(mesh: .generateBox(size: [3.2, 0.04, 3.2]), materials: [floorMaterial])
         floor.name = "arena_floor"
         floor.position = [0, -0.42, -1.6]
         worldAnchor.addChild(floor)
 
-        let laneMaterial = SimpleMaterial(color: UIColor(red: 0.20, green: 0.30, blue: 0.34, alpha: 1), isMetallic: false)
+        let laneMaterial = makePBRMaterial(
+            color: UIColor(red: 0.20, green: 0.30, blue: 0.34, alpha: 1),
+            roughness: 0.74,
+            metallic: 0.0
+        )
         for x in stride(from: -1.2, through: 1.2, by: 0.6) {
             let lane = ModelEntity(mesh: .generateBox(size: [0.018, 0.012, 2.9]), materials: [laneMaterial])
             lane.position = [Float(x), -0.38, -1.6]
@@ -151,8 +165,14 @@ final class GameARView: ARView {
         }
 
         target.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.17)]))
+        target.components.set(PhysicsBodyComponent(
+            shapes: [.generateSphere(radius: 0.17)],
+            mass: 0,
+            mode: .static
+        ))
         targets.append(target)
         worldAnchor.addChild(target)
+        animateTargetSpawn(target)
         gameSession.activeTargets = targets.count
     }
 
@@ -183,60 +203,50 @@ final class GameARView: ARView {
     }
 
     private func makeProceduralTarget() -> ModelEntity {
-        let material = SimpleMaterial(color: UIColor(red: 0.95, green: 0.38, blue: 0.18, alpha: 1), isMetallic: false)
+        let material = makePBRMaterial(
+            color: UIColor(red: 0.95, green: 0.38, blue: 0.18, alpha: 1),
+            roughness: 0.44,
+            metallic: 0.0
+        )
         return ModelEntity(mesh: .generateSphere(radius: 0.15), materials: [material])
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
         let point = recognizer.location(in: self)
-        let aim = screenAim(for: point)
         let direction: SIMD3<Float>
-        let intendedTargetID: ObjectIdentifier?
-        let scoreOverride: (points: Int, zone: String)?
 
-        if let aim {
-            direction = simd_normalize(aim.targetPosition - playerOrigin)
-            intendedTargetID = aim.targetID
-            scoreOverride = aim.score
-        } else if let ray = ray(through: point) {
+        if let ray = ray(through: point) {
             direction = simd_normalize(ray.direction)
-            intendedTargetID = nil
-            scoreOverride = nil
         } else {
             direction = [0, 0, -1]
-            intendedTargetID = nil
-            scoreOverride = nil
         }
 
-        fireProjectile(
-            from: playerOrigin,
-            direction: direction,
-            intendedTargetID: intendedTargetID,
-            scoreOverride: scoreOverride
-        )
+        fireProjectile(from: playerOrigin, direction: direction)
     }
 
-    private func fireProjectile(
-        from origin: SIMD3<Float>,
-        direction: SIMD3<Float>,
-        intendedTargetID: ObjectIdentifier?,
-        scoreOverride: (points: Int, zone: String)?
-    ) {
-        let material = SimpleMaterial(color: UIColor(red: 0.30, green: 0.72, blue: 1.0, alpha: 1), isMetallic: false)
+    private func fireProjectile(from origin: SIMD3<Float>, direction: SIMD3<Float>) {
+        let material = makePBRMaterial(
+            color: UIColor(red: 0.30, green: 0.72, blue: 1.0, alpha: 1),
+            roughness: 0.26,
+            metallic: 0.0
+        )
         let projectile = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
         projectile.name = "projectile"
         projectile.position = origin
-        projectile.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.05)]))
+        let shape = ShapeResource.generateSphere(radius: 0.05)
+        projectile.components.set(CollisionComponent(shapes: [shape]))
+        projectile.components.set(PhysicsBodyComponent(
+            shapes: [shape],
+            mass: 0.04,
+            mode: .dynamic
+        ))
+        projectile.components.set(PhysicsMotionComponent(
+            linearVelocity: direction * 9.0,
+            angularVelocity: .zero
+        ))
 
         worldAnchor.addChild(projectile)
-        projectiles.append(Projectile(
-            entity: projectile,
-            velocity: direction * 4.8,
-            intendedTargetID: intendedTargetID,
-            scoreOverride: scoreOverride,
-            canScore: true,
-            age: 0
-        ))
+        projectiles.append(Projectile(entity: projectile, age: 0))
         gameSession.recordShot()
     }
 
@@ -245,12 +255,32 @@ final class GameARView: ARView {
 
         for index in projectiles.indices {
             projectiles[index].age += deltaTime
-            projectiles[index].entity.position += projectiles[index].velocity * Float(deltaTime)
         }
 
         resolveHits()
         updateHitEffects(deltaTime: deltaTime)
         removeExpiredProjectiles()
+    }
+
+    private func handleCollision(_ event: CollisionEvents.Began) {
+        let first = ObjectIdentifier(event.entityA)
+        let second = ObjectIdentifier(event.entityB)
+
+        guard let projectile = projectiles.first(where: {
+            let id = ObjectIdentifier($0.entity)
+            return id == first || id == second
+        }) else {
+            return
+        }
+
+        let projectileID = ObjectIdentifier(projectile.entity)
+        let otherID = projectileID == first ? second : first
+
+        guard let target = targets.first(where: { ObjectIdentifier($0) == otherID }) else {
+            return
+        }
+
+        resolveHit(projectile: projectile, target: target)
     }
 
     private func resolveHits() {
@@ -259,20 +289,14 @@ final class GameARView: ARView {
         var hitScores: [ObjectIdentifier: (points: Int, zone: String)] = [:]
 
         for projectile in projectiles {
-            guard projectile.canScore else { continue }
-
             for target in targets {
                 let distance = simd_distance(projectile.entity.position, target.position)
                 if distance < 0.22 {
                     let targetID = ObjectIdentifier(target)
-                    if let intendedTargetID = projectile.intendedTargetID, intendedTargetID != targetID {
-                        continue
-                    }
-
                     hitProjectiles.insert(ObjectIdentifier(projectile.entity))
                     hitTargets.insert(targetID)
 
-                    let score = projectile.scoreOverride ?? scoreForHit(projectilePosition: projectile.entity.position, target: target)
+                    let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
                     if score.points > (hitScores[targetID]?.points ?? 0) {
                         hitScores[targetID] = score
                     }
@@ -312,35 +336,22 @@ final class GameARView: ARView {
         spawnNextWaveIfNeeded()
     }
 
-    private func screenAim(for point: CGPoint) -> (
-        targetID: ObjectIdentifier,
-        targetPosition: SIMD3<Float>,
-        score: (points: Int, zone: String)
-    )? {
-        var bestTarget: ModelEntity?
-        var bestDistance = CGFloat.greatestFiniteMagnitude
+    private func resolveHit(projectile: Projectile, target: ModelEntity) {
+        let projectileID = ObjectIdentifier(projectile.entity)
+        let targetID = ObjectIdentifier(target)
+        let score = scoreForHit(projectilePosition: projectile.entity.position, target: target)
 
-        for target in targets {
-            let targetPoint = estimatedScreenPoint(for: target.position)
-            let distance = hypot(point.x - targetPoint.x, point.y - targetPoint.y)
-            let targetRadius = bounds.width * 0.09
-            if distance < targetRadius, distance < bestDistance {
-                bestDistance = distance
-                bestTarget = target
-            }
-        }
+        gameSession.recordHit(points: score.points, zone: score.zone)
+        addHitEffect(at: target.position, points: score.points)
 
-        guard let bestTarget else { return nil }
+        projectile.entity.removeFromParent()
+        target.removeFromParent()
 
-        let score = scoreForScreenHit(distance: bestDistance)
-        return (ObjectIdentifier(bestTarget), bestTarget.position, score)
-    }
+        projectiles.removeAll { ObjectIdentifier($0.entity) == projectileID }
+        targets.removeAll { ObjectIdentifier($0) == targetID }
+        gameSession.activeTargets = targets.count
 
-    private func estimatedScreenPoint(for position: SIMD3<Float>) -> CGPoint {
-        CGPoint(
-            x: bounds.midX + CGFloat(position.x) * bounds.width * 0.32,
-            y: bounds.height * 0.416 - CGFloat(position.y - 0.30) * bounds.height * 0.18
-        )
+        spawnNextWaveIfNeeded()
     }
 
     private func spawnNextWaveIfNeeded() {
@@ -363,21 +374,6 @@ final class GameARView: ARView {
         }
 
         if radialDistance < 0.115 {
-            return (3, "Inner ring")
-        }
-
-        return (1, "Outer ring")
-    }
-
-    private func scoreForScreenHit(distance: CGFloat) -> (points: Int, zone: String) {
-        let bullseyeRadius = bounds.width * 0.022
-        let innerRingRadius = bounds.width * 0.048
-
-        if distance < bullseyeRadius {
-            return (5, "Bullseye")
-        }
-
-        if distance < innerRingRadius {
             return (3, "Inner ring")
         }
 
@@ -433,6 +429,26 @@ final class GameARView: ARView {
         hitEffects.append(HitEffect(root: root, flash: flash, sparks: sparks, age: 0, duration: 0.36))
     }
 
+    private func animateTargetSpawn(_ target: Entity) {
+        guard #available(iOS 26.0, *) else {
+            return
+        }
+
+        let originalScale = target.scale
+        target.scale = originalScale * 0.18
+        Entity.animate(.spring(response: 0.34, dampingFraction: 0.72)) {
+            target.scale = originalScale
+        }
+    }
+
+    private func makePBRMaterial(color: UIColor, roughness: Float, metallic: Float) -> PhysicallyBasedMaterial {
+        var material = PhysicallyBasedMaterial()
+        material.baseColor = .init(tint: color)
+        material.roughness = .init(floatLiteral: roughness)
+        material.metallic = .init(floatLiteral: metallic)
+        return material
+    }
+
     private func updateHitEffects(deltaTime: TimeInterval) {
         guard !hitEffects.isEmpty else { return }
 
@@ -441,14 +457,15 @@ final class GameARView: ARView {
             let progress = min(Float(hitEffects[index].age / hitEffects[index].duration), 1.0)
             let dt = Float(deltaTime)
 
-            for spark in hitEffects[index].sparks {
-                spark.entity.position += spark.velocity * dt
-                let fadeScale = max(0.18, 1.0 - progress * 0.72)
-                spark.entity.scale = SIMD3<Float>(repeating: fadeScale)
+            for i in hitEffects[index].sparks.indices {
+                hitEffects[index].sparks[i].velocity.y -= 3.2 * dt
+                hitEffects[index].sparks[i].entity.position += hitEffects[index].sparks[i].velocity * dt
+                let fadeScale = max(0, 1.0 - progress * 1.1)
+                hitEffects[index].sparks[i].entity.scale = SIMD3<Float>(repeating: fadeScale)
             }
 
-            let flashScale = max(0.08, 1.0 - progress)
-            hitEffects[index].flash.scale = SIMD3<Float>(repeating: flashScale)
+            let flashScale = sin(progress * .pi) * 1.8
+            hitEffects[index].flash.scale = SIMD3<Float>(repeating: max(0, flashScale))
         }
 
         hitEffects.removeAll { effect in

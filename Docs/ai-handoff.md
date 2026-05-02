@@ -80,6 +80,7 @@ If the user asks to continue education content, do this next:
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
 - `arena_floor.usdz` is imported and manifest status is `imported`.
 - Showcase polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
+- Modern RealityKit pass exists: physics bodies, physics motion, collision events, PBR helper materials, and iOS 26-gated `Entity.animate` spawn animation.
 - Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.

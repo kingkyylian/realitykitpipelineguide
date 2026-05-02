@@ -126,6 +126,32 @@ specific iPhone 17 simulator build/screenshot: sandbox CoreSimulator destination
 
 Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşılır bir görsel hiyerarşi gerekiyor. Küçük HUD/framing/VFX işleri repo'nun öğretici değerini bozmadan ilk izlenimi yükseltir. Ancak showcase polish gameplay sözleşmesini bozmamalı: hedefler tıklanınca değil, projectile gerçekten temas edince düşmeli.
 
+### Sprint 9: Modern RealityKit Feel
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02  
+**Amaç:** Apple'ın güncel RealityKit yönüyle projeyi karşılaştırıp oyunun basit görünmesine sebep olan eksikleri azaltmak: physics, collision events, PBR material ve availability-gated entity animation.
+
+**Yapılanlar:**
+
+- Target entity'lerine `PhysicsBodyComponent(mode: .static)` eklendi.
+- Projectile entity'lerine `PhysicsBodyComponent(mode: .dynamic)` ve `PhysicsMotionComponent` eklendi.
+- `CollisionEvents.Began` subscription eklendi; projectile-target teması event üzerinden resolve ediliyor.
+- Manual distance check fallback olarak kaldı; ana davranış artık RealityKit collision event'i ile uyumlu.
+- Procedural target/fallback floor/showcase backdrop materyalleri `PhysicallyBasedMaterial` helper'ına taşındı.
+- Target spawn animasyonu `Entity.animate` ile eklendi; API iOS 26+ olduğu için availability guard kondu.
+
+**Verification:**
+
+```text
+make build: ok
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Physics tarafında da hareket eden entity için sadece `PhysicsBodyComponent` yetmez, `PhysicsMotionComponent` gerekir.
+
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 
 **Durum:** Tamamlandı  
@@ -135,8 +161,8 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 **Yapılanlar:**
 
 - Hit scoring artık tek sabit `+10` değil.
-- Tap anında deterministic spawn slotlarından türetilen screen-space target merkeziyle mesafe ölçülüyor; projectile görsel olarak uçmaya devam ediyor.
-- Impact bölgesi ekrandaki halka merkezine göre hesaplanıyor.
+- Projectile impact anında target merkezine göre mesafe ölçülüyor.
+- Impact bölgesi hedef yüzeyindeki halka merkezine göre hesaplanıyor.
 - Bullseye: `+5`, inner ring: `+3`, outer ring: `+1`.
 - HUD status hit bölgesini gösteriyor: `Bullseye +5`, `Inner ring +3`, `Outer ring +1`.
 - Görsel doğrulama çıktısı: `Docs/screenshots/ring_scoring_inner_hit.jpg`.

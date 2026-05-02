@@ -359,8 +359,9 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
 | Collision and gameplay asset fit | Started | ring-based score in `GameARView` | Visual texture gameplay scoring'e bağlandı; collision shape dersi genişletilecek. |
-| Hit VFX / animation | Planned | yok | Gameplay feedback ve RealityKit animation eklenecek. |
+| Hit VFX / animation | Started | spark VFX, iOS 26-gated `Entity.animate` | Gameplay feedback başladı; ParticleEmitter/audio açık. |
 | Environment asset | Complete | `arena_floor.usdz`, `arena_floor_imported.jpg` | Floor scale/origin, target readability, and UV grid behavior verified. |
+| Modern RealityKit feel | Started | physics bodies, collision events, PBR helper materials | ParticleEmitter/audio/material comparison still open. |
 | Device QA | Planned | simulator ağırlıklı | Gerçek cihaz frame time/thermal/touch kontrolü eklenecek. |
 | Authoring workflow | Planned | kısmi | `.blend` kaynakları, export scripts, asset versioning kararı verilecek. |
 
@@ -460,6 +461,20 @@ Current project note:
 1. Bir export script dosyasını `Tools` altına koy.
 2. Aynı asset'i script ile tekrar üret.
 3. Output hash, file size ve screenshot farkını kaydet.
+
+### Planned Module 9: Modern RealityKit Feel
+
+**Amaç:** Asset pipeline demosunu modern RealityKit gameplay hissine yaklaştırmak.
+
+Current project note:
+
+- Projectile and target entities now use `PhysicsBodyComponent`.
+- Moving projectiles also use `PhysicsMotionComponent`.
+- Hit resolution listens to `CollisionEvents.Began`, with the previous distance check retained as fallback.
+- Procedural showcase materials use a small `PhysicallyBasedMaterial` helper.
+- Target spawn uses `Entity.animate` only behind an iOS 26 availability check.
+
+**Ders:** Apple docs'taki modern API'leri körlemesine eklemek doğru değil. Önce deployment target ve availability okunmalı; sonra yeni API ya guarded kullanılmalı ya da eski platformda fallback kalmalı.
 
 ## 9. Game Development Curriculum Roadmap
 

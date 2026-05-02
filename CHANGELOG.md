@@ -14,6 +14,7 @@
 - Blender starter script for arena floor generation.
 - Public guide PDF, screenshots, release checklist, CI, contribution templates, and Makefile.
 - Showcase polish pass with a darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
+- Modern RealityKit feel pass with physics bodies, physics motion, collision events, PBR helper materials, and availability-gated entity animation.
 
 ### Verified
 
@@ -27,5 +28,6 @@
 
 - Add a README demo GIF.
 - Add target-generation Blender scripts.
+- Add true `ParticleEmitterComponent` hit effects after confirming deployment-target support.
 - Add audio feedback.
 - Add roughness/metallic material comparison assets.

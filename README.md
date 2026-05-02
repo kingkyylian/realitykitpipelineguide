@@ -56,6 +56,10 @@ Some internal docs and worklog entries use commands prefixed with `rtk`. That is
 
 For the teaching version of the pipeline, start from `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
 
+For reusable production practice, use `Docs/production-playbook.md`. It defines the feature brief, asset/runtime contract, quality gates, review checklist, and definition of done for future RealityKit games.
+
+For starting a new game from this repo's lessons, use `Docs/new-game-startup.md`.
+
 Start each work session from `Docs/WORKLOG.md`. It tracks sprints, decisions, verification results, and asset/code contracts.
 
 For AI agents or future handoff, start from `AGENTS.md` and `Docs/ai-handoff.md`.
@@ -132,6 +136,15 @@ Canonical course material:
 
 - `Docs/guide.md`
 - `Docs/pdf/realitykit-pipeline-guide.pdf`
+- `Docs/production-playbook.md`
+- `Docs/new-game-startup.md`
+
+Reusable templates:
+
+- `Prompts/asset-brief.md`
+- `Prompts/game-feature-brief.md`
+- `Prompts/codex-task.md`
+- `Prompts/qa-checklist.md`
 
 ## Folder Map
 
@@ -141,6 +154,8 @@ Canonical course material:
 - `Assets/Textures`: source or exported texture files.
 - `Docs`: pipeline, budgets, checklists.
 - `Docs/guide.md`: public-facing learning guide for the asset and texture pipeline.
+- `Docs/production-playbook.md`: reusable production gates and team workflow.
+- `Docs/new-game-startup.md`: checklist for starting a future RealityKit game.
 - `Docs/ai-handoff.md`: fast orientation page for AI agents and future sessions.
 - `Docs/diagrams`: Mermaid source diagrams for the guide or PDF export.
 - `Docs/screenshots`: selected visual evidence used by the guide.

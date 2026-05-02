@@ -12,6 +12,29 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 10: Production Guide System
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-02 21:30 +03  
+**Amaç:** Repo'yu sadece demo/öğrenme dokümanı olmaktan çıkarıp, ileride yeni RealityKit oyunları başlatırken tekrar kullanılacak production guide sistemine çevirmek.
+
+**Yapılanlar:**
+
+- `Docs/production-playbook.md` eklendi: feature brief, gameplay contract, asset contract, verification, worklog, quality gates ve definition of done.
+- `Docs/new-game-startup.md` eklendi: yeni RealityKit oyunu başlatma fazları, ilk hafta planı, asset class tablosu ve stop conditions.
+- `Prompts/game-feature-brief.md` eklendi: gameplay/UI/VFX/pipeline işleri için AI veya ekip arkadaşına verilecek kapsamlı brief şablonu.
+- `README.md`, `Docs/guide.md` ve `Docs/ai-handoff.md` yeni rehber sistemini gösterecek şekilde güncellendi.
+
+**Verification:**
+
+```text
+make release-check: ok
+```
+
+**Öğrenme notu:**
+
+Guide ile playbook ayrı tutulmalı. `Docs/guide.md` öğrenme anlatısıdır; `Docs/production-playbook.md` gerçek iş yaparken kapı/gate sistemidir; `Docs/new-game-startup.md` aynı disiplini gelecekteki oyunlara taşır.
+
 ### Teaching Goal: Asset + Texture Pipeline
 
 **Durum:** Tamamlandı  

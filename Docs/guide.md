@@ -20,6 +20,18 @@ Bu proje üç şeyi aynı anda öğretir:
 
 En önemli prensip: Kalıcı rol ayrımı yok. Bir kişi sadece Blender, diğer kişi sadece kod tarafını bilmeyecek. İş bölümü yapılabilir; fakat her handoff sonunda ikiniz de asset'in amacı, scale/origin kararı, UV/material davranışı, bundle yolu ve RealityKit doğrulamasını açıklayabilmelisiniz.
 
+## Guide System
+
+Bu repo artık üç katmanlı bir rehber sistemi olarak düşünülmeli:
+
+| Dosya | Ne zaman kullanılır? |
+| --- | --- |
+| `Docs/guide.md` | Asset ve texture pipeline'ını öğrenirken. |
+| `Docs/production-playbook.md` | Gerçek feature/asset işi planlarken, review ederken veya release hazırlarken. |
+| `Docs/new-game-startup.md` | Bu repo'dan öğrenilen sistemi yeni bir RealityKit oyununa taşırken. |
+
+Kural: Öğrenme sırasında önce bu dosyayı oku. Uygulama sırasında `production-playbook` kapısını kullan. Yeni proje başlatırken `new-game-startup` checklist'ini takip et.
+
 ## Scope Statement
 
 Bu rehber şu anda **tam bir oyun geliştirme kursu değildir**. Mevcut kapsam, RealityKit tabanlı küçük bir playable prototype içinde asset ve texture pipeline'ını öğretmektir.
@@ -657,6 +669,21 @@ Bu checklist yeni asset eklerken takip edilecek kısa reçetedir.
 13. Simulator'da HUD ve görsel sonucu kontrol et.
 14. Screenshot al.
 15. `Docs/WORKLOG.md` ve ilgili checklist'e öğrenme notunu yaz.
+
+## 10.5 Feature Planning Checklist
+
+Asset dışındaki gameplay, UI, VFX veya sistem işleri için `Prompts/game-feature-brief.md` ile başlayın.
+
+Minimum kabul standardı:
+
+1. Player-facing değer tek cümleyle yazıldı.
+2. Etkilenen game state veya runtime contract tanımlandı.
+3. Asset varsa manifest ve fallback davranışı yazıldı.
+4. Hit/miss/reset gibi edge case'ler belirtildi.
+5. `make release-check` ve simulator kabul kriteri eklendi.
+6. Worklog'a hangi dersin yazılacağı önceden biliniyor.
+
+Bu standardın detaylı versiyonu `Docs/production-playbook.md` içindedir.
 
 ## 11. Glossary
 

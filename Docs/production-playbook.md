@@ -1,0 +1,175 @@
+# RealityKit Game Production Playbook
+
+This playbook is the reusable operating manual for future RealityKit games built from this repo. Use `Docs/guide.md` when learning the pipeline; use this file when planning and shipping real work.
+
+## North Star
+
+Every gameplay or asset change must answer four questions:
+
+| Question | Required answer |
+| --- | --- |
+| What player-facing problem does this solve? | One sentence tied to gameplay, readability, or production speed. |
+| What asset/runtime contract changes? | File path, manifest id, scale, origin, collision, loader order, or UI state. |
+| How is it verified? | Build, manifest validation, simulator/device screenshot, short video, or profiling note. |
+| What did the team learn? | Worklog note that makes the next similar task faster. |
+
+If a task cannot answer these, it is not ready to start.
+
+## Production Loop
+
+```text
+Feature brief
+-> gameplay contract
+-> asset contract
+-> implementation
+-> local verification
+-> visual evidence
+-> worklog
+-> CI
+-> release note
+```
+
+### 1. Feature Brief
+
+Start with `Prompts/game-feature-brief.md` or `Prompts/asset-brief.md`.
+
+Minimum brief:
+
+- Player goal
+- Required asset ids
+- Runtime behavior
+- Acceptance screenshot or video
+- Mobile budget risk
+- Rollback/fallback behavior
+
+### 2. Gameplay Contract
+
+Before writing code, define:
+
+- Game state affected: `idle`, `playing`, `waveCleared`, `gameOver`, or `paused`.
+- Input source: tap, drag, button, gesture, controller, or AI/system event.
+- Output: score, spawn, VFX, sound, haptic, UI text, or persistence.
+- Failure behavior: miss, timeout, missing asset, duplicate event, old simulator cache.
+
+### 3. Asset Contract
+
+Every imported asset must have:
+
+- `asset_id` in `snake_case`.
+- File path: `Assets/Imported/<asset_id>.usdz`.
+- Manifest entry in `Tools/asset_manifest.json`.
+- Scale statement: real-world meters or intentional runtime scale.
+- Origin/pivot statement.
+- UV/material statement.
+- Texture budget.
+- Collision expectation.
+- Runtime fallback.
+- Evidence screenshot.
+
+### 4. Implementation
+
+Default engineering rules:
+
+- Keep procedural fallback until the imported asset is proven.
+- Prefer deterministic test scenes over random scenes while teaching or debugging.
+- Do not couple visual mesh bounds directly to gameplay scoring without documenting the mapping.
+- Keep public CI on the oldest supported SDK baseline.
+- Avoid latest Apple APIs unless the repository can compile with the CI Xcode version.
+
+### 5. Verification
+
+Use this minimum gate before commit:
+
+```bash
+make release-check
+```
+
+For visual or gameplay changes, also run the app on simulator and capture evidence under `Docs/screenshots` only when it is useful for the guide. Temporary screenshots stay in `Build/`.
+
+### 6. Worklog
+
+Every meaningful change should add a short `Docs/WORKLOG.md` note with:
+
+- goal
+- changed files or asset ids
+- verification
+- lesson learned
+
+Do not write diary prose. Write future debugging material.
+
+## Definition of Done
+
+| Work type | Done means |
+| --- | --- |
+| Code-only fix | Build passes, behavior verified, worklog updated if the bug taught a reusable lesson. |
+| Gameplay feature | Build passes, interaction tested, score/state edge cases checked, screenshot/video if visual. |
+| Imported asset | Manifest updated, USDZ in `Assets/Imported`, loader path verified, screenshot captured, worklog note written. |
+| Documentation | README/guide links updated, stale claims removed, commands tested when possible. |
+| Public release | CI green, release notes accurate, screenshots/PDF links valid, tag points to the intended commit. |
+
+## Decision Records
+
+Use this format in `Docs/WORKLOG.md` for decisions:
+
+```text
+Decision:
+Context:
+Options:
+Choice:
+Why:
+Tradeoff:
+Revisit when:
+```
+
+Example:
+
+```text
+Decision: Keep iOS deployment target at 18.0.
+Context: The repo should be usable by more learners and CI runs Xcode 16.
+Options: Raise to iOS 26, or keep iOS 18 and avoid SDK-only symbols.
+Choice: Keep iOS 18.
+Why: Better public compatibility.
+Tradeoff: Some latest RealityKit APIs are avoided or need fallback.
+Revisit when: The repo intentionally becomes an iOS 26 API showcase.
+```
+
+## Quality Gates
+
+### Asset Gate
+
+- `asset_id` matches file name.
+- USDZ opens outside the app.
+- Texture is embedded or intentionally external and documented.
+- UV direction is verified.
+- Origin and scale are verified in gameplay camera.
+- Collision shape matches gameplay, not just mesh bounds.
+- Fallback path still works.
+
+### Gameplay Gate
+
+- Input cannot trigger through HUD or controls.
+- Duplicate collision events cannot double-score.
+- Projectiles or temporary effects expire.
+- Misses have a defined behavior.
+- Reset clears scene state.
+- The same test can be repeated deterministically.
+
+### Public Repo Gate
+
+- `README.md` tells a new user what this is within 10 seconds.
+- Quick Start has only public commands.
+- Internal wrappers such as `rtk` are explained as non-dependencies.
+- CI is green.
+- License exists.
+- Release exists for the current public milestone.
+
+## Review Checklist
+
+Before merging or publishing, ask:
+
+- Does this make the repo easier to use six months from now?
+- Did we update the canonical doc instead of creating a duplicate explanation?
+- Can Kyylian and Mehmet both explain the asset/runtime contract?
+- Would a new AI agent understand the current state from `AGENTS.md` and `Docs/ai-handoff.md`?
+- Is the screenshot evidence still true after this change?
+

@@ -4,7 +4,7 @@ This repository is a teaching-oriented RealityKit asset and texture pipeline dem
 
 ## Primary Goal
 
-Build and document a small mobile RealityKit game pipeline that teaches Kyylian and Mehmet the full asset journey:
+Build and document a small mobile RealityKit game pipeline that teaches contributors the full asset journey:
 
 ```text
 gameplay need -> asset brief -> mesh/origin/scale -> UV/material/texture -> USDZ export -> Xcode resource bundle -> RealityKit loader -> simulator screenshot -> worklog/checklist
@@ -14,14 +14,14 @@ Do not treat this as only a code demo. Every asset change should improve the tea
 
 ## Communication
 
-- Use Turkish for user-facing updates.
 - Be concise and concrete.
 - Report verification evidence, not assumptions.
 - Do not say work is complete without running the relevant verification command.
 
 ## Shell Rules
 
-- Prefer `rtk` prefix for shell commands.
+- `rtk` is a project-internal CLI wrapper used by the original authors. External contributors can omit it and run the same commands directly (e.g. `xcodebuild` instead of `rtk xcodebuild`).
+- Prefer `rtk` prefix if available, otherwise run commands directly.
 - Use workspace-local DerivedData:
 
   ```bash

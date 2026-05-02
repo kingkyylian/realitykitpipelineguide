@@ -84,6 +84,7 @@ If the user asks to continue education content, do this next:
 - Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.
 - Public screenshots are copied to `Docs/screenshots`.
+- Reusable production docs exist: `Docs/production-playbook.md`, `Docs/new-game-startup.md`, and `Prompts/game-feature-brief.md`.
 
 ## Verification Commands
 

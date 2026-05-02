@@ -469,7 +469,7 @@ Current project note:
 Current project note:
 
 - Projectile and target entities now use `PhysicsBodyComponent`.
-- Moving projectiles also use `PhysicsMotionComponent`.
+- Projectile bodies are `.kinematic`, but their position is advanced manually in the game loop so they keep a flat aim line without gravity.
 - Hit resolution listens to `CollisionEvents.Began`, with the previous distance check retained as fallback.
 - Procedural showcase materials use a small `PhysicallyBasedMaterial` helper.
 - Target spawn uses `Entity.animate` only behind an iOS 26 availability check.

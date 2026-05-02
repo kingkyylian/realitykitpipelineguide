@@ -12,6 +12,7 @@ final class GameARView: ARView {
 
     private struct Projectile {
         let entity: ModelEntity
+        let velocity: SIMD3<Float>
         let intendedTargetID: ObjectIdentifier?
         let scoreOverride: (points: Int, zone: String)?
         var age: TimeInterval
@@ -272,14 +273,11 @@ final class GameARView: ARView {
             mass: 0.04,
             mode: .kinematic
         ))
-        projectile.components.set(PhysicsMotionComponent(
-            linearVelocity: direction * 9.0,
-            angularVelocity: .zero
-        ))
 
         worldAnchor.addChild(projectile)
         projectiles.append(Projectile(
             entity: projectile,
+            velocity: direction * 9.0,
             intendedTargetID: intendedTargetID,
             scoreOverride: scoreOverride,
             age: 0
@@ -288,15 +286,17 @@ final class GameARView: ARView {
     }
 
     private func updateProjectiles(deltaTime: TimeInterval) {
-        guard !projectiles.isEmpty else { return }
+        if !projectiles.isEmpty {
+            for index in projectiles.indices {
+                projectiles[index].age += deltaTime
+                projectiles[index].entity.position += projectiles[index].velocity * Float(deltaTime)
+            }
 
-        for index in projectiles.indices {
-            projectiles[index].age += deltaTime
+            resolveHits()
+            removeExpiredProjectiles()
         }
 
-        resolveHits()
         updateHitEffects(deltaTime: deltaTime)
-        removeExpiredProjectiles()
     }
 
     private func handleCollision(_ event: CollisionEvents.Began) {

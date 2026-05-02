@@ -146,6 +146,8 @@ Showcase GIF için önce "çalışıyor" kanıtı değil, ilk ekranda anlaşıl�
 - Target'a dokununca anında patlatmayan delayed aim assist geri eklendi: tap projectile yönünü hedefe çevirir, skor/target removal yine collision event sonrası çalışır.
 - Showcase framing için imported target scale `0.90` yapıldı; ilk iki spawn slotu daha yakın, simetrik ve reticle çevresine alındı.
 - Collision radius `0.32`, bullseye/inner scoring eşikleri `0.104/0.215` olarak scale ile uyumlu güncellendi.
+- Kinematic projectile hareketi frame başına manuel pozisyon update'ine taşındı; böylece gravity kapalı kalırken mermi havada donmuyor.
+- Hit VFX update'i aktif projectile sayısından bağımsız hale getirildi; patlama efektleri mermi listesi boşken de tamamlanıyor.
 
 **Verification:**
 
@@ -158,7 +160,7 @@ screenshot check: opening targets are larger, symmetric, and readable enough for
 
 **Öğrenme notu:**
 
-RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Physics tarafında da hareket eden entity için sadece `PhysicsBodyComponent` yetmez, `PhysicsMotionComponent` gerekir. Projectile gibi oyuncu aim çizgisini koruması gereken body'lerde `.dynamic` gravity hissi bozabilir; `.kinematic` daha doğru.
+RealityKit'in güncel API'leri her zaman deployment target ile uyumlu değil. `Entity.animate` Apple docs'ta modern öneri olarak var ama iOS 26+ gerektiriyor; iOS 18 hedefleyen projede availability guard şart. Projectile gibi oyuncu aim çizgisini koruması gereken body'lerde `.dynamic` gravity hissi bozabilir; `.kinematic` daha doğru. Bu projede kinematic projectile'ın hareketi bilinçli olarak game loop içinde manuel sürülüyor; collision event modern RealityKit tarafını, distance fallback ise öğretici ve stabil gameplay tarafını koruyor.
 
 ### Sprint 4: Ring Bazlı Skor ve Texture-Gameplay Bağlantısı
 

@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 40: Fresh Project Walkthrough
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 18:10 +03
+**Amaç:** Clone bilmeyen yeni kullanıcının GitHub install ile boş bir projede ilk asset contract ve USDZ draft'ına ulaşabildiğini kanıtlamak, Blender/fallback sınırını dürüstçe belgelemek.
+
+**Yapılanlar:**
+
+- `/private/tmp/rkp_walkthrough_project` içinde fresh external project denemesi yapıldı.
+- GitHub URL üzerinden izole `pipx install` çalıştırıldı; `rkp --version` `0.1.0` döndü.
+- `rkp init --force --project-name WalkthroughGame` minimal workspace oluşturdu.
+- `rkp doctor --json` external projede `0 error(s)` ve sadece `README.md`, `LICENSE`, `Makefile` warning'leri verdi.
+- `rkp make-asset walkthrough_drone --type gameplay_target --prompt "red bullseye drone target"` manifest, asset brief ve Blender script üretti.
+- Blender 4.5.8 background build bu makinede segmentation fault 11 ile düştü; RKP crash log path'ini raporladı ve `usdzip` fallback ile `Assets/Imported/walkthrough_drone.usdz` üretti.
+- README ve `Docs/cli-tool.md` fresh-project walkthrough, expected doctor output, Blender fallback davranışı ve v0.1 limitleriyle güncellendi.
+
+**Verification:**
+
+```text
+PIPX_HOME=/private/tmp/rkp_walkthrough_pipx_home PIPX_BIN_DIR=/private/tmp/rkp_walkthrough_pipx_bin pipx install --force git+https://github.com/kingkyylian/realitykitpipelineguide.git: ok
+/private/tmp/rkp_walkthrough_pipx_bin/rkp --version: ok, rkp 0.1.0
+/private/tmp/rkp_walkthrough_pipx_bin/rkp init --force --project-name WalkthroughGame: ok
+/private/tmp/rkp_walkthrough_pipx_bin/rkp doctor --json: ok, 0 errors / 3 warnings
+/private/tmp/rkp_walkthrough_pipx_bin/rkp make-asset walkthrough_drone --type gameplay_target --prompt "red bullseye drone target": ok
+BLENDER=/opt/homebrew/bin/blender /private/tmp/rkp_walkthrough_pipx_bin/rkp build-asset walkthrough_drone: Blender exit 139, fallback USDZ built via /usr/bin/usdzip, 16192 bytes
+/private/tmp/rkp_walkthrough_pipx_bin/rkp status --json: ok, asset next command points to screenshot acceptance
+/private/tmp/rkp_walkthrough_pipx_bin/rkp release-check: ok (doctor 0 errors/3 warnings, tests skipped, manifest ok, xcode skipped)
+```
+
+**Öğrenme notu:**
+
+İlk kullanıcı deneyimi artık "repo'yu clone'la" demeden çalışıyor. Kalan güven açığı CLI bootstrap değil; Blender background export'un makineye göre değişebilmesi ve arbitrary Xcode project resource wiring'in hâlâ manuel olması.
+
 ### Sprint 39: External Doctor Warning UX
 
 **Durum:** Tamamlandı  

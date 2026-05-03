@@ -31,6 +31,7 @@ It is not a game-first repository. Treat the fixture app as a test harness for t
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 | Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py` |
+| Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
 
 ## Planned Learning Modules
@@ -46,19 +47,18 @@ Recommended order:
 
 MCP status: no standalone MCP server ships yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for current automation and future MCP-style wrapping.
 
-Portability status: config decoupling and the first package slice are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"`, implementation modules live under `src/rkp`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, direct USDZ fallback, and `release-check` are config-aware. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation.
+Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"`, implementation modules live under `src/rkp`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, direct USDZ fallback, and `release-check` are config-aware. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
 
 ## Current Recommended Next Task
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
-2. Add README badges if they are not already present.
-3. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-4. Create or update the `v0.1.0` tag/release from `CHANGELOG.md`.
-5. Expand `Tools/blender` with target asset generation/export scripts.
-6. Add a first-good-issue list for learners.
-7. Next portability step is package hardening: update remaining public docs/examples toward `rkp ...`, decide whether to keep all `Tools/*.py` wrappers long-term, and add a CI/package install check.
+1. Harden the Blender gap: either document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only`/diagnostic path.
+2. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
+3. Add README badges if they are not already present.
+4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+5. Add a first-good-issue list for learners.
+6. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
 
 If the user asks to continue education content, do this next:
 

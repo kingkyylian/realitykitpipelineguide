@@ -67,6 +67,30 @@ rkp status --json
 rkp doctor --json
 ```
 
+### First Asset In Your Own Project
+
+This is the shortest "I do not know this repo, I just need a RealityKit asset" path:
+
+```bash
+mkdir MyRealityKitGame
+cd MyRealityKitGame
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
+rkp init --project-name MyRealityKitGame
+rkp doctor
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp build-asset enemy_drone
+rkp status
+rkp release-check
+```
+
+Expected first doctor result in a new project is `0 error(s)` with only recommended project hygiene warnings such as `README.md`, `LICENSE`, or `Makefile`.
+
+`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. A fallback-built USDZ is still only a draft; keep the asset `planned` until you load it in your app or the fixture and accept it with a real screenshot:
+
+```bash
+rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+```
+
 If you are developing this toolkit repo itself, clone it and use the repo-local wrapper or Makefile:
 
 ```bash
@@ -244,6 +268,14 @@ Manual integration path:
 5. Use `status --json` and `doctor --json` if you want to wrap this toolkit from another agent, script, or future MCP server.
 
 The manifest format is intentionally simple JSON and can travel to another repo. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate with a warning-style message.
+
+## Known Limits In v0.1
+
+- Blender background USDZ export is still machine-sensitive. On the current reference machine, Blender 4.5.8 crashed during the fresh-project walkthrough, and RKP recovered by building a fallback USDZ through `/usr/bin/usdzip`.
+- The fallback builder is for prompt-backed procedural drafts. It is enough to keep the asset loop moving, but visual acceptance still requires loading the USDZ in RealityKit and providing screenshot evidence.
+- RKP does not automatically edit arbitrary Xcode projects. Add `Assets/Imported` to your app bundle yourself, or set `xcode_project` and `xcode_scheme` in `rkp.json` when you want `release-check` to run the Xcode build gate.
+- There is no standalone MCP server yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for agents and future MCP wrappers.
+- The package version is currently `0.1.0`. Until release tags are cut, GitHub installs track the default branch.
 
 ## Use as a Codex Skill
 

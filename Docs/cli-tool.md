@@ -45,6 +45,31 @@ Generated default config:
 
 Set `xcode_project` and `xcode_scheme` when the project should run the Xcode build gate during `release-check`.
 
+## Fresh Project Walkthrough
+
+Use this when the goal is simply "I have a RealityKit project and need the first asset contract":
+
+```bash
+mkdir MyRealityKitGame
+cd MyRealityKitGame
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
+rkp --version
+rkp init --project-name MyRealityKitGame
+rkp doctor
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp build-asset enemy_drone
+rkp status --json
+rkp release-check
+```
+
+In a minimal external project, `doctor` should report zero errors. Missing `README.md`, `LICENSE`, and `Makefile` are recommendations, not pipeline blockers.
+
+`build-asset` runs Blender first. If Blender cannot export and `usdzip` is available, the CLI tries the direct USDZ fallback for prompt-backed procedural assets. The generated USDZ is still a draft until the app or fixture loads it and screenshot evidence is recorded:
+
+```bash
+rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+```
+
 To use the toolkit inside another RealityKit project, fork this repo or copy the toolkit folders and adapt the expected layout:
 
 ```text
@@ -153,6 +178,14 @@ Accept the asset after simulator verification:
 ```bash
 rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
+
+## v0.1 Limits
+
+- RKP generates asset contracts, Blender scripts, USDZ drafts, manifest status, and release checks; it does not automatically wire arbitrary Xcode project resources.
+- `release-check` skips Xcode unless `xcode_project` and `xcode_scheme` are configured in `rkp.json`.
+- Blender background export can fail on some machines. The USDZ fallback keeps the procedural prompt loop alive when `usdzip` exists, but it does not replace visual acceptance.
+- No standalone MCP server ships yet. Use `status --json` and `doctor --json` as the current automation surface.
+- The published package version is `0.1.0`; pin to a tag once release tags exist.
 
 Run the full release gate:
 

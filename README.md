@@ -109,6 +109,8 @@ make test
 
 `make-asset` is the one-command asset loop. It turns a short prompt into an asset contract and Blender generator script, then can optionally build, accept, and run the release gate.
 
+This is not full text-to-3D generation. The prompt is used for the brief, palette, and a small keyword-based archetype set: `drone`, `tower`, `crate`, `projectile`, and `target`. If no archetype is recognized, RKP writes the default procedural template for the asset type and tells you to edit the generated Blender script for prompt-specific geometry.
+
 If you are using a slash-command agent CLI, use:
 
 ```text
@@ -130,6 +132,8 @@ rkp make-asset enemy_drone \
 ```
 
 For this prompt the tool infers `drone`, then writes a procedural Blender draft with a central body, four arms, rotor discs, Smart UV projection, and an `st` UV layer for USDZ export.
+
+For prompts like `katana` or `spaceship`, the current v0.1 behavior is scaffold-first: RKP records the prompt and produces a default template, but it does not invent new geometry. Open `Tools/blender/create_<asset_id>.py` and replace the default geometry with the shape you want.
 
 If Blender is available, add `--build`:
 

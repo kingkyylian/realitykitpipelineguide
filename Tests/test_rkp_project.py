@@ -222,10 +222,15 @@ class RkpProjectTests(unittest.TestCase):
                 "archetype: unrecognized - using default (gameplay_target)",
                 result.stdout,
             )
+            self.assertIn(
+                "geometry: default gameplay_target procedural template; edit the Blender script for prompt-specific shape",
+                result.stdout,
+            )
             self.assertNotIn("type-default", result.stdout)
             manifest = json.loads((root / "Pipeline" / "manifest.json").read_text(encoding="utf-8"))
             self.assertIsNone(manifest["assets"][0]["archetype"])
             self.assertNotIn("type-default", manifest["assets"][0]["notes"])
+            self.assertIn("default geometry template", manifest["assets"][0]["notes"])
 
     def test_accept_asset_uses_external_project_relative_screenshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

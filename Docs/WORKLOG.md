@@ -12,6 +12,30 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 43: Prompt Geometry Boundary
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 19:25 +03
+**Amaç:** `prompt-asset` çıktısının full text-to-3D gibi algılanmasını engellemek ve default geometry fallback'i görünür yapmak.
+
+**Yapılanlar:**
+
+- Unrecognized prompt test'i genişletildi; stdout artık default geometry template sınırını açıkça söylemek zorunda.
+- `prompt-asset` unrecognized archetype durumunda `geometry: default <type> procedural template; edit the Blender script for prompt-specific shape` mesajı basıyor.
+- Manifest note'u `type-default` gibi internal string yerine default geometry template ve Blender script edit sınırını anlatıyor.
+- README ve `Docs/cli-tool.md` `prompt-asset` / `make-asset` davranışını scaffold-first olarak tanımlıyor; desteklenen archetype set'i ve katana/spaceship gibi prompt'larda elle Blender script düzenleme gereği belgelendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_prompt_asset_reports_unrecognized_archetype_without_internal_label: first run failed as expected; geometry fallback message was missing
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_prompt_asset_reports_unrecognized_archetype_without_internal_label: ok
+```
+
+**Öğrenme notu:**
+
+Prompt pipeline'ın güvenilirliği sadece ne ürettiğinde değil, ne üretmediğini açık söylemesinde. v0.1 prompt'u brief/archetype/template seçimi için kullanır; yeni 3D form icat etmez.
+
 ### Sprint 42: Texture Packaging Info Condition
 
 **Durum:** Tamamlandı

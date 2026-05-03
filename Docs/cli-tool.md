@@ -148,6 +148,8 @@ Create a prompt-backed procedural Blender draft:
 rkp prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
+`prompt-asset` is scaffold-first, not open-ended text-to-3D. The prompt is recorded in the manifest and brief, and it can select one of the built-in procedural archetypes: `drone`, `tower`, `crate`, `projectile`, or `target`. Unknown shapes use the asset type's default geometry template and require editing `Tools/blender/create_<asset_id>.py`.
+
 Run the same loop through one command:
 
 ```bash

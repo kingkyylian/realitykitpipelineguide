@@ -60,6 +60,12 @@ def archetype_label(archetype: str | None, asset_type: str) -> str:
     return f"unrecognized - using default ({asset_type})"
 
 
+def geometry_label(archetype: str | None, asset_type: str) -> str:
+    if archetype:
+        return f"procedural {archetype} template selected from prompt keywords"
+    return f"default {asset_type} procedural template; edit the Blender script for prompt-specific shape"
+
+
 def blender_template(asset_id: str, asset_type: str, prompt: str, archetype: str | None) -> str:
     palette_name, primary, secondary = infer_palette(prompt)
     prompt_json = json.dumps(prompt)
@@ -358,7 +364,10 @@ def update_manifest_prompt_metadata(
             if archetype:
                 note = f" Prompt-backed draft; archetype={archetype}."
             else:
-                note = " Prompt-backed draft; archetype unrecognized; using asset type default."
+                note = (
+                    " Prompt-backed draft; archetype unrecognized; using default geometry template. "
+                    "Edit the generated Blender script for prompt-specific shape."
+                )
             if note.strip() not in notes:
                 asset["notes"] = (notes.rstrip() + note).strip()
             break
@@ -424,6 +433,7 @@ def main() -> int:
 
     print(f"prompt asset ready: {asset_id} (archetype: {archetype_label(archetype, args.type)})")
     print(f"- prompt: {args.prompt}")
+    print(f"- geometry: {geometry_label(archetype, args.type)}")
     print(f"- blender script: {PROJECT.rel(script_path)}")
     print(f"- next: rkp build-asset {asset_id}")
 

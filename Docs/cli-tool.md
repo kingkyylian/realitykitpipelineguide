@@ -2,7 +2,65 @@
 
 `Tools/rkp.py` is the primary interface for this repository. The guide explains the system, but the CLI runs the system.
 
-Generated USDZ files are reusable asset outputs. Acceptance proves the asset can load in the sample app, but it does not mean the demo should permanently use that asset as its default target.
+Generated USDZ files are reusable asset outputs. Acceptance proves the asset can load in the RealityKit fixture, but it does not mean the fixture should permanently use that asset as its default target.
+
+This repository does not ship a standalone MCP server yet. Treat the JSON commands below as the current stable automation surface and the intended base for future MCP-style wrappers.
+
+## Portability
+
+v0.1 has a local Python package and portable project config. `rkp` discovers the project root by walking up from the current directory until it finds `rkp.json`.
+
+Install from a clone:
+
+```bash
+pipx install /path/to/RealityKitPipelineDemo
+rkp --version
+```
+
+Bootstrap another RealityKit project from that project's root:
+
+```bash
+rkp init --project-name MyGame
+```
+
+This writes `rkp.json`, an empty `Tools/asset_manifest.json`, and the minimal asset/doc/source directories used by the pipeline. It refuses to overwrite an existing project unless `--force` is passed, and existing directories are left in place.
+
+Generated default config:
+
+```json
+{
+  "manifest": "Tools/asset_manifest.json",
+  "assets_dir": "Assets/Imported",
+  "docs_dir": "Docs",
+  "blender_dir": "Tools/blender",
+  "textures_dir": "Assets/Textures",
+  "source_dir": "Assets/Source",
+  "tests_dir": "Tests",
+  "xcode_project": null,
+  "xcode_scheme": null,
+  "xcode_destination": "generic/platform=iOS Simulator",
+  "derived_data_path": "Build/DerivedData"
+}
+```
+
+Set `xcode_project` and `xcode_scheme` when the project should run the Xcode build gate during `release-check`.
+
+To use the toolkit inside another RealityKit project, fork this repo or copy the toolkit folders and adapt the expected layout:
+
+```text
+Tools/
+Skills/realitykit-pipeline-guide/
+Prompts/
+Docs/cli-tool.md
+Docs/blender-usdz-checklist.md
+Docs/production-playbook.md
+Tools/asset_manifest.json
+Assets/Imported/
+```
+
+The fixture app is optional. The required contract is that accepted assets have manifest metadata, runtime USDZ files under `Assets/Imported`, Xcode resource bundle inclusion, RealityKit load verification, and screenshot evidence.
+
+Current status: `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. The direct USDZ fallback also reads the configured manifest/assets paths. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate. Repo-local `Tools/*.py` files are wrappers around `src/rkp` package modules.
 
 ## Mental Model
 
@@ -19,23 +77,39 @@ The pipeline has three asset states:
 Show where the project stands:
 
 ```bash
+rkp --version
+rkp status
 python3 Tools/rkp.py status
 ```
 
 Check static pipeline health:
 
 ```bash
+rkp doctor
 python3 Tools/rkp.py doctor
 ```
 
 Use JSON output for CI, scripts, agents, or future MCP-style wrappers:
 
 ```bash
+rkp status --json
+rkp doctor --json
 python3 Tools/rkp.py status --json
 python3 Tools/rkp.py doctor --json
 ```
 
 `status --json` includes inferred prompt archetypes when available, so agents can distinguish a `drone` draft from a generic `gameplay_target`.
+
+Initialize a project:
+
+```bash
+rkp init
+rkp init --project-name MyGame
+rkp init --force
+python3 Tools/rkp.py init
+python3 Tools/rkp.py init --project-name MyGame
+python3 Tools/rkp.py init --force
+```
 
 Create a new asset task:
 
@@ -52,6 +126,7 @@ python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "r
 Run the same loop through one command:
 
 ```bash
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
@@ -83,6 +158,7 @@ python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enem
 Run the full release gate:
 
 ```bash
+rkp release-check
 python3 Tools/rkp.py release-check
 ```
 
@@ -93,6 +169,7 @@ The Makefile is a convenience wrapper around the CLI:
 ```bash
 make status
 make doctor
+make test
 make new-asset id=enemy_drone type=gameplay_target
 make build-asset id=enemy_drone
 make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
@@ -117,10 +194,17 @@ They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-co
 ## Tool Contract
 
 - `new-asset` may create manifest entries, asset briefs, and Blender starter scripts.
+- `init` may create `rkp.json`, an empty manifest, and minimal pipeline directories. It refuses to overwrite without `--force`.
 - `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
 - `make-asset` orchestrates prompt scaffolding, optional USDZ build, optional screenshot acceptance, and optional release check.
 - `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
 - `accept-asset` requires screenshot evidence and records production acceptance.
-- `doctor` reads project state and should not mutate files.
+- `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands.
 - `status --json` and `doctor --json` are the stable machine-readable surface for automation.
-- `release-check` runs the same gates expected before push or release.
+- `release-check` runs doctor, CLI tests when configured, manifest validation, and the optional Xcode build expected before push or release.
+
+Run the CLI smoke tests:
+
+```bash
+python3 -m unittest discover -s Tests
+```

@@ -19,6 +19,7 @@ DerivedData/
 .swiftpm/
 __pycache__/
 *.pyc
+*.egg-info/
 
 # Local editor and OS noise
 .claude/*

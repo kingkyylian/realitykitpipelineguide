@@ -1,8 +1,8 @@
-# RealityKit Pipeline Guide
+# RealityKit Pipeline Toolkit
 
-A command-first asset pipeline for building RealityKit iOS games with Blender-authored USDZ assets.
+A command-first RealityKit asset pipeline toolkit: CLI, installable Codex skill, agent slash commands, and reusable contracts for Blender-authored USDZ assets.
 
-This is a pipeline tool first. The included target-shooting game is the live example app used to prove the workflow: scaffold an asset, build it with Blender, accept it with simulator evidence, and ship it through Xcode.
+This is a developer tool first. The included target-shooting app is a verification fixture used to prove the workflow: scaffold an asset, build it with Blender, accept it with simulator evidence, and ship it through Xcode.
 
 Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, screenshot, and learning note.
 
@@ -10,12 +10,13 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 
 ## What This Is
 
-- `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, and release checks.
+- `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, tests, and release checks.
+- `Skills/realitykit-pipeline-guide`: an installable Codex skill that points agents at the same asset, build, and documentation contracts.
 - `.claude/commands`: slash commands such as `/rkp`, `/rkp-asset`, and `/rkp-status` for agent-style usage.
-- `Sources/RealityKitPipelineDemo`: a small playable RealityKit sample that proves the pipeline output inside an iOS app.
-- `Docs` and `Skills`: the teaching, production, and AI-agent handoff layer around the same pipeline.
+- `Sources/RealityKitPipelineDemo`: a small playable RealityKit verification fixture that proves pipeline output inside an iOS app.
+- `Docs`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
-Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy or load them in your own RealityKit game when needed; the demo app is only a verification harness and does not automatically switch its default gameplay target to every newly generated asset.
+Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy or load them in your own RealityKit game when needed; the fixture app is only a verification harness and does not automatically switch its default gameplay target to every newly generated asset.
 
 ## What You Learn
 
@@ -25,13 +26,13 @@ Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy
 - Connect visual texture design to gameplay with ring-based scoring.
 - Verify every asset with CLI checks, builds, screenshots, and worklog notes.
 
-## Live Example App
+## Verification Fixture
 
 | Textured target scoring | Imported arena floor |
 | --- | --- |
 | ![Ring scoring inner hit](Docs/screenshots/ring_scoring_inner_hit.jpg) | ![Imported arena floor](Docs/screenshots/arena_floor_imported.jpg) |
 
-The sample game starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
+The fixture app starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
 
 ## Quick Start
 
@@ -46,9 +47,21 @@ The sample game starts with procedural RealityKit fallbacks so it can compile be
 
 This repo is designed to be used as a small pipeline tool first. The guide is supporting material.
 
+Install the package locally if you want the `rkp` command:
+
+```bash
+pipx install .
+rkp --version
+rkp status
+rkp doctor
+```
+
+The repo-local wrapper remains available while developing the toolkit:
+
 ```bash
 python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
+python3 -m unittest discover -s Tests
 python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py release-check
 ```
@@ -64,6 +77,7 @@ The same flow is available through `make` for shorter local commands:
 
 ```bash
 make status
+make test
 make make-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
 make release-check
 ```
@@ -156,6 +170,83 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 
 Some internal docs and worklog entries use commands prefixed with `rtk`. That is this project's local agent wrapper, not a public dependency. If you cloned the repo normally, run the same command without `rtk`.
 
+## Use In Your Own Project
+
+v0.1 includes a local Python package. Install it from a clone:
+
+```bash
+pipx install /path/to/RealityKitPipelineDemo
+```
+
+Then bootstrap from your RealityKit project root:
+
+```bash
+rkp init --project-name MyGame
+```
+
+This creates a minimal RKP workspace:
+
+```text
+rkp.json
+Tools/asset_manifest.json
+Assets/Imported/
+Assets/Textures/
+Assets/Source/
+Docs/assets/
+Docs/screenshots/
+Tools/blender/
+```
+
+`rkp init` does not overwrite an existing `rkp.json` or manifest unless you pass `--force`, and it preserves existing directories such as `Assets/Imported`.
+
+After bootstrap, `rkp` discovers the project root by walking up from the current directory until it finds `rkp.json`.
+
+Generated default `rkp.json`:
+
+```json
+{
+  "manifest": "Tools/asset_manifest.json",
+  "assets_dir": "Assets/Imported",
+  "docs_dir": "Docs",
+  "blender_dir": "Tools/blender",
+  "textures_dir": "Assets/Textures",
+  "source_dir": "Assets/Source",
+  "tests_dir": "Tests",
+  "xcode_project": null,
+  "xcode_scheme": null,
+  "xcode_destination": "generic/platform=iOS Simulator",
+  "derived_data_path": "Build/DerivedData"
+}
+```
+
+Set `xcode_project` and `xcode_scheme` when you want `release-check` to include the Xcode build gate.
+
+Manual integration path:
+
+1. Fork this repo or copy the toolkit folders into your RealityKit project:
+
+   ```text
+   Tools/
+   Skills/realitykit-pipeline-guide/
+   Prompts/
+   Docs/cli-tool.md
+   Docs/blender-usdz-checklist.md
+   Docs/production-playbook.md
+   Tools/asset_manifest.json
+   ```
+
+2. Keep or replace `Sources/RealityKitPipelineDemo`. It is only the verification fixture. Your app can use its own RealityKit loader as long as accepted assets still prove the same path:
+
+   ```text
+   manifest -> Assets/Imported/<asset_id>.usdz -> Xcode resource bundle -> RealityKit load -> screenshot evidence
+   ```
+
+3. Update `project.yml` or your Xcode project so `Assets/Imported` is copied into the app bundle.
+4. Run `rkp doctor`, then adapt any missing path findings intentionally.
+5. Use `status --json` and `doctor --json` if you want to wrap this toolkit from another agent, script, or future MCP server.
+
+The manifest format is intentionally simple JSON and can travel to another repo. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate with a warning-style message.
+
 ## Use as a Codex Skill
 
 This repo includes a portable Codex skill at `Skills/realitykit-pipeline-guide`. Install it locally with:
@@ -164,7 +255,9 @@ This repo includes a portable Codex skill at `Skills/realitykit-pipeline-guide`.
 make install-skill
 ```
 
-After installing, ask Codex to use `realitykit-pipeline-guide` for RealityKit asset pipeline, gameplay, documentation, or release tasks. The skill points agents to the right workflow, contracts, commands, and repo gates without rereading the whole guide every time.
+After installing, ask Codex to use `realitykit-pipeline-guide` for RealityKit asset pipeline, fixture, documentation, or release tasks. The skill points agents to the right workflow, contracts, commands, and repo gates without rereading the whole guide every time.
+
+This repo does not ship a standalone MCP server yet. `status --json` and `doctor --json` are the stable machine-readable surfaces intended for future MCP-style wrappers and current agent automation.
 
 ## Start Here
 
@@ -187,19 +280,19 @@ For AI agents or future handoff, start from `AGENTS.md` and `Docs/ai-handoff.md`
 Suggested repo description:
 
 ```text
-Command-first Blender -> USDZ -> RealityKit asset pipeline, proven through a tiny SwiftUI iOS game.
+Command-first Blender -> USDZ -> RealityKit asset pipeline toolkit with CLI, Codex skill, slash commands, and an iOS verification fixture.
 ```
 
 Suggested topics:
 
 ```text
-realitykit, swift, swiftui, ios, ios-game, blender, usdz, game-development, 3d-pipeline, asset-pipeline
+realitykit, swift, swiftui, ios, blender, usdz, codex-skill, developer-tools, 3d-pipeline, asset-pipeline
 ```
 
 ## Goals
 
 - Learn SwiftUI + RealityKit app structure.
-- Practice a simple gameplay loop: spawn targets, fire projectiles, score hits.
+- Use a small fixture loop to prove imported assets under RealityKit.
 - Keep a CLI-driven path for Blender -> USDZ -> Xcode -> RealityKit.
 - Teach the asset and texture pipeline as a shared system, not as isolated Blender/code roles.
 - Use AI for repeatable planning, asset briefs, code tasks, and QA checklists.
@@ -328,7 +421,7 @@ Reusable templates:
 - `Prompts`: reusable AI prompts for Codex/Claude.
 - `Skills/realitykit-pipeline-guide`: installable Codex skill for this pipeline.
 - `Tools/blender`: Blender-side starter scripts and authoring notes.
-- `Tools/rkp.py`: primary CLI entrypoint for status, doctor, asset scaffolding, build, accept, and release checks.
+- `Tools/rkp.py`: primary CLI entrypoint for status, doctor, asset scaffolding, build, accept, tests, and release checks.
 - `Tools/accept_asset.py`: marks a built asset imported only when screenshot evidence is provided.
 - `Tools/asset_manifest.json`: source of truth for asset names and budgets.
 - `Tools/build_asset.py`: runs `Tools/blender/create_<id>.py` and verifies the expected USDZ exists.

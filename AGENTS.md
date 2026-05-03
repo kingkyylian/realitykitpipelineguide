@@ -1,16 +1,16 @@
 # AGENTS.md
 
-This repository is a teaching-oriented RealityKit asset and texture pipeline demo.
+This repository is a teaching-oriented RealityKit asset and texture pipeline toolkit.
 
 ## Primary Goal
 
-Build and document a small mobile RealityKit game pipeline that teaches contributors the full asset journey:
+Build and document a command-first RealityKit pipeline toolkit that teaches contributors the full asset journey:
 
 ```text
 gameplay need -> asset brief -> mesh/origin/scale -> UV/material/texture -> USDZ export -> Xcode resource bundle -> RealityKit loader -> simulator screenshot -> worklog/checklist
 ```
 
-Do not treat this as only a code demo. Every asset change should improve the teaching material.
+Do not treat this as a game-first app. The SwiftUI + RealityKit target shooter is a verification fixture for the CLI, skill, command, and documentation workflow. Every asset change should improve the teaching material.
 
 ## Communication
 

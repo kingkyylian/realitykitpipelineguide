@@ -45,7 +45,7 @@
       "textureMaps": [
         "baseColor"
       ],
-      "notes": "Scaffolded asset. Fill in size, origin, UV/material, export, simulator screenshot, and worklog notes before marking imported. Prompt-backed draft; archetype=drone. Accepted with screenshot Docs/screenshots/enemy_drone_imported.jpg.",
+      "notes": "Prompt-backed drone teaching asset generated from the red bullseye drone target brief. Direct USDZ fallback produced a compact imported asset with base color texture, archetype=drone, and simulator evidence. Accepted with screenshot Docs/screenshots/enemy_drone_imported.jpg.",
       "prompt": "red bullseye drone target",
       "archetype": "drone"
     }

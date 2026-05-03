@@ -23,5 +23,8 @@ jobs:
       - name: Validate asset manifest
         run: node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
 
+      - name: Test pipeline CLI
+        run: python3 -m unittest discover -s Tests
+
       - name: Build
         run: xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination 'generic/platform=iOS Simulator' -derivedDataPath Build/DerivedData build

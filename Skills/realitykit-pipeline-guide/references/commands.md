@@ -2,6 +2,15 @@
 
 Run from the repository root.
 
+For installed usage:
+
+```bash
+pipx install /path/to/RealityKitPipelineDemo
+rkp --version
+rkp status
+rkp doctor
+```
+
 Before running RKP commands, verify this is the repository root:
 
 ```bash
@@ -9,6 +18,8 @@ test -f Tools/rkp.py && test -f Tools/asset_manifest.json
 ```
 
 If this fails, do not invent a local `Tools/` pipeline. Use the real RKP repo or ask for bootstrap permission.
+
+Portable project discovery starts from `rkp.json`. In v0.1, `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` can read configured manifest/assets/docs/blender/test/Xcode paths from that file. If `xcode_project` is omitted, `release-check` skips the Xcode gate. `Tools/*.py` files are repo-local wrappers around the `src/rkp` package modules.
 
 ## Generate and Build
 
@@ -22,6 +33,7 @@ make build
 ```bash
 python3 Tools/rkp.py status
 python3 Tools/rkp.py doctor
+python3 Tools/rkp.py init --project-name MyGame
 python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
 python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
@@ -30,7 +42,19 @@ python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enem
 python3 Tools/rkp.py release-check
 ```
 
+Installed equivalents:
+
+```bash
+rkp status
+rkp doctor
+rkp init --project-name MyGame
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye target"
+rkp release-check
+```
+
 Use this interface for agent automation, future MCP-style wrappers, and reusable tooling. The Makefile remains a local convenience wrapper around the same tool.
+
+This skill package does not include a standalone MCP server. Prefer `status --json` and `doctor --json` as the stable machine-readable surface when building agent or MCP-style integrations.
 
 Machine-readable commands:
 
@@ -51,6 +75,12 @@ python3 Tools/rkp.py release-check
 
 This runs the pipeline doctor, XcodeGen, manifest validation, and Xcode simulator build with workspace-local DerivedData.
 
+It also runs the Python CLI smoke tests:
+
+```bash
+python3 -m unittest discover -s Tests
+```
+
 ## Pipeline Doctor
 
 ```bash
@@ -58,6 +88,14 @@ python3 Tools/rkp.py doctor
 ```
 
 This runs `Tools/pipeline_doctor.py`, a fast static check for manifest/imported asset consistency, XcodeGen paths, Markdown evidence links, public local path leaks, CLI docs, CI basics, and skill packaging.
+
+## Project Init
+
+```bash
+rkp init --project-name MyGame
+```
+
+This creates `rkp.json`, an empty `Tools/asset_manifest.json`, and the minimal asset/doc/source directories. It refuses to overwrite an existing config or manifest unless `--force` is passed.
 
 ## New Asset Scaffolder
 

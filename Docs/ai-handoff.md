@@ -6,17 +6,17 @@ This file is the fast orientation page for any AI agent opening the repository.
 
 Current state: public Git repo on `main`: `https://github.com/kingkyylian/realitykitpipelineguide`. Use `git log --oneline --decorate -6` for the latest commit list instead of relying on a fixed count in this document.
 
-The project now has a command-first pipeline CLI at `Tools/rkp.py`. The guide is supporting material; agents should prefer the CLI for status, asset scaffolding, build, acceptance, and release checks.
+The project is a command-first RealityKit pipeline toolkit. `Tools/rkp.py`, the installable Codex skill, and the slash commands are the main product; the SwiftUI + RealityKit target-shooting app is a verification fixture for proving imported assets in Xcode/RealityKit.
 
 ## What This Project Is
 
-RealityKitPipelineDemo is a small iOS RealityKit learning project. It teaches a complete asset and texture pipeline:
+RealityKitPipelineDemo is a small RealityKit asset-pipeline toolkit. It teaches and automates a complete asset and texture pipeline:
 
 ```text
 Blender / asset generation -> USDZ -> XcodeGen resource bundle -> RealityKit import -> simulator screenshot -> documented learning note
 ```
 
-It is not only a game prototype. It is also a teaching artifact for Kyylian and Mehmet.
+It is not a game-first repository. Treat the fixture app as a test harness for the CLI/skill workflow, not as the product architecture.
 
 ## Completed Learning Modules
 
@@ -30,30 +30,35 @@ It is not only a game prototype. It is also a teaching artifact for Kyylian and 
 | Arena floor fallback | Complete | `Docs/screenshots/arena_floor_fallback_ready.jpg` |
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
-| Pipeline CLI | Started | `Tools/rkp.py`, `Docs/cli-tool.md` |
+| Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py` |
+| CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
 
 ## Planned Learning Modules
 
 Recommended order:
 
-1. Expand `Tools/rkp.py` into a reusable developer tool: richer status output, JSON mode, and optional MCP wrapper.
+1. Expand `Tools/rkp.py` and the skill package as the reusable developer tool surface.
 2. Module 4: Texture Maps and Material Response.
 3. Module 5: Performance and Mobile Asset Budget.
 4. Module 6: Collision, VFX, and Gameplay Feel. Ring scoring is started; VFX/audio remain.
 5. Module 7: Environment Asset and Texture Atlas. Arena floor import is complete; future work can expand atlas/tiling variants.
 6. Module 8: Repo and Authoring Workflow.
 
+MCP status: no standalone MCP server ships yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for current automation and future MCP-style wrapping.
+
+Portability status: config decoupling and the first package slice are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"`, implementation modules live under `src/rkp`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, direct USDZ fallback, and `release-check` are config-aware. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation.
+
 ## Current Recommended Next Task
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Keep README command-first: `python3 Tools/rkp.py status` should be the first practical command.
-2. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
-3. Add README badges if they are not already present.
-4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-5. Create or update the `v0.1.0` tag/release from `CHANGELOG.md`.
-6. Expand `Tools/blender` with target asset generation/export scripts.
-7. Add a first-good-issue list for learners.
+1. Add a real source `.blend` for one teaching asset or confirm script-generated sources are enough.
+2. Add README badges if they are not already present.
+3. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+4. Create or update the `v0.1.0` tag/release from `CHANGELOG.md`.
+5. Expand `Tools/blender` with target asset generation/export scripts.
+6. Add a first-good-issue list for learners.
+7. Next portability step is package hardening: update remaining public docs/examples toward `rkp ...`, decide whether to keep all `Tools/*.py` wrappers long-term, and add a CI/package install check.
 
 If the user asks to continue education content, do this next:
 
@@ -74,14 +79,14 @@ If the user asks to continue education content, do this next:
 
 ## Known Implementation Details
 
-- `GameARView` uses non-AR RealityKit mode.
+- `GameARView` uses non-AR RealityKit mode as a verification fixture.
 - `GameARView` loads `target_basic_textured` first, then `target_basic`, then procedural fallback.
-- Imported target scale is normalized with `0.62`.
+- Imported target scale is normalized with `0.90`.
 - Spawn positions are deterministic slots for teaching/debugging.
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
 - `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
 - `arena_floor.usdz` is imported and manifest status is `imported`.
-- Showcase polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
+- Fixture polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
 - Modern RealityKit pass exists: physics bodies, collision events, PBR helper materials, and SDK-stable target spawn animation with `move(to:relativeTo:duration:)`.
 - Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.
@@ -100,6 +105,12 @@ Build:
 
 ```bash
 rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build
+```
+
+CLI tests:
+
+```bash
+rtk python3 -m unittest discover -s Tests
 ```
 
 Guide PDF:

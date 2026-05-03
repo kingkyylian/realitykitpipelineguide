@@ -2,25 +2,25 @@
 
 ## Purpose
 
-Gameplay purpose:
+Gameplay purpose: prompt-backed drone target used to prove the asset pipeline can create, build, accept, and document a non-default gameplay target.
 
 ## Runtime Contract
 
 - Asset id: `enemy_drone`
 - Type: `gameplay_target`
 - Runtime USDZ path: `Assets/Imported/enemy_drone.usdz`
-- Fallback behavior:
-- Collision expectation:
+- Fallback behavior: the demo fixture keeps its existing target fallback order and does not switch to this asset by default.
+- Collision expectation: accepted as a visual/pipeline asset; gameplay collision tuning is a future fixture task if the drone becomes an active target.
 
 ## Blender Contract
 
-- Approximate size in meters:
-- Origin/pivot:
-- Forward/up orientation:
-- Triangle budget:
-- Texture budget:
-- UV primvar:
-- Material count:
+- Approximate size in meters: compact target-scale drone draft.
+- Origin/pivot: centered for fixture placement.
+- Forward/up orientation: authored for RealityKit import and screenshot verification.
+- Triangle budget: max 1500.
+- Texture budget: max 1024, first pass base color.
+- UV primvar: `st`.
+- Material count: one base-color material target.
 
 ## Acceptance Criteria
 

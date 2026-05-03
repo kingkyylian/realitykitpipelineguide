@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate doctor status new-asset prompt-asset make-asset build-asset accept-asset guide release-check install-skill clean
+.PHONY: generate build validate test doctor status new-asset prompt-asset make-asset build-asset accept-asset guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -15,6 +15,9 @@ build:
 
 validate:
 	node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
+
+test:
+	python3 -m unittest discover -s Tests
 
 doctor:
 	python3 Tools/rkp.py doctor

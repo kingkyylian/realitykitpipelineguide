@@ -1,11 +1,11 @@
 ---
 name: realitykit-pipeline-guide
-description: Build, review, or extend RealityKit iOS game projects that use a Blender -> USDZ -> Xcode -> RealityKit asset pipeline. Use when working on imported USDZ assets, asset manifests, mobile 3D budgets, RealityKit loaders/fallbacks, gameplay features tied to assets, simulator screenshot evidence, production playbooks, or teaching/handoff docs for this repository style.
+description: Build, review, or extend command-first RealityKit asset pipeline projects that use Blender -> USDZ -> Xcode -> RealityKit. Use when working on imported USDZ assets, asset manifests, mobile 3D budgets, RealityKit fixture loaders/fallbacks, simulator screenshot evidence, production playbooks, or teaching/handoff docs for this repository style.
 ---
 
 # RealityKit Pipeline Guide
 
-Use this skill to keep RealityKit game work tied to an asset pipeline contract, not just code changes.
+Use this skill to keep RealityKit asset work tied to a pipeline contract, not just code changes. The demo app in this repo is a verification fixture for the toolkit.
 
 ## Quick Workflow
 
@@ -16,7 +16,8 @@ Use this skill to keep RealityKit game work tied to an asset pipeline contract, 
    - Documentation or release polish
    - New game startup
 2. Confirm the working directory is an RKP repo before editing:
-   - `Tools/rkp.py` must exist.
+   - `rkp.json` must exist at the project root.
+   - `Tools/rkp.py` must exist for repo-local v0.1 usage.
    - `Tools/asset_manifest.json` must exist.
    - If either is missing, do not create a fake/minimal pipeline. Tell the user this directory is not an RKP repo and ask them to `cd` into the repo, clone the template, or explicitly request a bootstrap.
 3. Read only the needed reference:

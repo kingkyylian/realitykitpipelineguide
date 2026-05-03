@@ -12,6 +12,333 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 36: Python Package Entry Point
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 16:20 +03  
+**Amaç:** Faz 3 packaging başlangıcı için CLI implementation'ını `src/rkp` paketine taşımak, local import kırılganlığını kapatmak ve subprocess çağrılarını package module formuna geçirmek.
+
+**Yapılanlar:**
+
+- `src/rkp` paketi eklendi; implementation modülleri `cli.py`, `new_asset.py`, `prompt_asset.py`, `build_asset.py`, `accept_asset.py`, `pipeline_doctor.py`, `rkp_project.py` ve `usdz_fallback_builder.py` altına taşındı.
+- `Tools/*.py` dosyaları repo-local geriye uyum wrapper'larına çevrildi.
+- Local import'lar `from rkp...` absolute package import'larına çevrildi.
+- `rkp.cli` subprocess çağrıları `python -m rkp.prompt_asset`, `python -m rkp.build_asset`, `python -m rkp.accept_asset` ve `python -m rkp.cli release-check` formuna geçti.
+- `pyproject.toml` eklendi; console entry point `rkp = "rkp.cli:main"`.
+- `Tests/test_rkp_package.py` eklendi; `make-asset` orchestration'ın package module subprocess vektörlerini kullandığını doğruluyor.
+- `rkp init` sonrası boş manifestin doctor/release-check için geçerli external başlangıç state'i olduğu testlendi; doctor boş `assets: []` listesini artık error saymıyor.
+- `Tools/*.py` wrapper'ları `src` path'ini her zaman `sys.path[0]` yapacak şekilde düzeltildi; release-check child process'lerinde `Tools/rkp.py` dosyasının `rkp` paketini gölgelemesi engellendi.
+- README, CLI docs, handoff ve skill command reference `rkp` entry point ve package/wrapper ayrımına göre güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_package.py: first run failed as expected; no rkp package existed
+python3 -m unittest Tests/test_rkp_package.py: ok
+python3 -m unittest Tests/test_rkp_init.py: first new doctor test failed as expected; empty assets list was an error
+python3 -m unittest Tests/test_rkp_init.py: ok, 6 tests
+python3 -m unittest discover -s Tests: ok, 20 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: first package run failed as expected; wrapper path order let Tools/rkp.py shadow the rkp package in child test processes
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 20 passed, manifest ok, iOS build ok; CoreSimulator sandbox warnings present)
+UV_CACHE_DIR=/private/tmp/uv-cache uv pip install --target /private/tmp/rkp_uv_pkg_install_test .: ok after network approval for setuptools
+PIPX_HOME=/private/tmp/rkp_pipx_home PIPX_BIN_DIR=/private/tmp/rkp_pipx_bin pipx install --force .: ok after network approval for build dependencies
+/private/tmp/rkp_pipx_bin/rkp status --json: ok
+/private/tmp/rkp_pipx_bin/rkp init --project-name PipxGame: ok in external temp project
+/private/tmp/rkp_pipx_bin/rkp release-check: ok in empty external temp project (0 errors, docs/showcase warnings, tests/xcode skipped)
+```
+
+**Öğrenme notu:**
+
+Package geçişinde en kırılgan kısım import'tan çok process boundary. Parent CLI package import etse bile child process ancak `python -m rkp.<module>` ve doğru install/PYTHONPATH ile aynı kodu görür.
+
+### Sprint 37: GitHub Install Probe
+
+**Durum:** Bloklu  
+**Tarih:** 2026-05-03 16:28 +03  
+**Amaç:** Faz 3 kapanışı için GitHub URL üzerinden `pipx install git+...` ve `rkp --version` smoke testini doğrulamak.
+
+**Yapılanlar:**
+
+- `rkp --version` eklendi; package version `src/rkp/__init__.py` içinde `0.1.0`.
+- `Tests/test_rkp_cli.py` `--version` regression testiyle genişletildi.
+- Local package install sonrası `/private/tmp/rkp_version_pipx_bin/rkp --version` `rkp 0.1.0` döndü.
+- Kullanıcının verdiği exact URL test edildi: `git+https://github.com/kyylian/RealityKitPipelineDemo`.
+- Repo'nun gerçek remote'u ayrıca test edildi: `git+https://github.com/kingkyylian/realitykitpipelineguide.git`.
+
+**Blok:**
+
+GitHub install henüz kapanmadı çünkü exact URL GitHub'da bulunamıyor, gerçek `origin` ise remote üzerinde henüz local package değişikliklerini içermiyor. Bu workspace'teki `pyproject.toml` ve `src/rkp` değişiklikleri push edilmeden GitHub URL install geçemez.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_cli.py: first version test failed as expected; parser required subcommand before --version
+python3 -m unittest Tests/test_rkp_cli.py: ok, 5 tests
+PIPX_HOME=/private/tmp/rkp_version_pipx_home PIPX_BIN_DIR=/private/tmp/rkp_version_pipx_bin pipx install --force .: ok
+/private/tmp/rkp_version_pipx_bin/rkp --version: ok, rkp 0.1.0
+pipx install git+https://github.com/kyylian/RealityKitPipelineDemo: failed, remote repository not found
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git: failed, remote has neither setup.py nor pyproject.toml
+```
+
+**Sonraki adım:**
+
+Package değişiklikleri commit/push edildikten sonra aynı GitHub install testi remote URL üzerinden tekrar koşulmalı.
+
+### Sprint 35: Minimal Project Init
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 16:08 +03  
+**Amaç:** Faz 2 portability için mevcut RealityKit projelerinde minimal RKP workspace bootstrap eden `rkp init` komutunu eklemek.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_init.py` eklendi; boş dizinde init, overwrite guard, `--force`, `--project-name` ve mevcut `Assets/Imported` içeriğini koruma senaryoları kapsandı.
+- `Tools/rkp.py` global `load_project()` çağrısından lazy project yüklemeye geçirildi; böylece `init` `rkp.json` yokken de çalışabiliyor.
+- `rkp init` `rkp.json`, boş `Tools/asset_manifest.json` ve minimal pipeline klasörlerini oluşturuyor.
+- `rkp init` mevcut config/manifest varsa `--force` olmadan hata veriyor.
+- README, CLI docs, handoff ve skill command reference `init` scope'unu ve Faz 3 paketleme sınırını anlatacak şekilde güncellendi.
+
+**Sınır:**
+
+`rkp init` CLI'ı pip/pipx ile kurmaz. Faz 3 hâlâ `Tools/*.py` dosyalarını `src/rkp` paket modüllerine taşımak, console entry point eklemek ve local import'ları düzeltmek.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_init.py: first run failed as expected; rkp.py imported load_project before parsing init
+python3 -m unittest Tests/test_rkp_init.py: ok, 5 tests
+python3 -m unittest Tests/test_rkp_project.py Tests/test_rkp_cli.py: ok, 13 tests
+python3 -m unittest discover -s Tests: ok, 18 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 18 passed, manifest ok, iOS build ok; CoreSimulator sandbox warnings present)
+```
+
+**Öğrenme notu:**
+
+Bootstrap komutu en tehlikeli yerde yazıyor: proje kökü. Bu yüzden default davranış "create only" olmalı; reinitialize ancak `--force` ile açıkça istenmeli.
+
+### Sprint 28: Toolkit Framing and CLI Smoke Tests
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 15:08 +03  
+**Amaç:** Repo framing'ini game-first yerine command-first RealityKit pipeline toolkit olarak netleştirmek ve CLI yüzeyine ilk otomatik smoke test kapısını eklemek.
+
+**Yapılanlar:**
+
+- README, AGENTS, handoff, GitHub showcase, changelog ve skill metinleri toolkit/skill/commands ana ürün; SwiftUI + RealityKit app verification fixture olacak şekilde güncellendi.
+- `status --json` artık `project` ve `scale` metadata'sı döndürüyor.
+- `Tests/test_rkp_cli.py` eklendi; `status --json`, `doctor --json`, `make-asset` acceptance guard'ı ve unknown asset rejection test ediliyor.
+- `make test`, CI test adımı ve `release-check` içindeki `tests` gate'i eklendi.
+- `enemy_drone` manifest/brief drift'i temizlendi; stale imported scale notu `0.90` ile güncellendi.
+- MCP beklentisi açıklandı: standalone MCP server henüz yok, JSON yüzeyleri future MCP-style wrapper için stabil interface.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_cli.py: first run failed as expected because status JSON had no project metadata
+python3 -m unittest Tests/test_rkp_cli.py: ok
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 4 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Repo'nun profesyonel sinyali demo oyun mimarisinden çok tekrar kullanılabilir CLI/skill/command kontratından geliyor. Fixture app asset acceptance kanıtı sağlar; ürün kimliği toolkit yüzeyinde kalmalı.
+
+### Sprint 29: External Project Integration Stance
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 15:18 +03  
+**Amaç:** README'nin sadece "bu repo içinde kullan" akışını değil, kendi RealityKit projesine taşımak isteyen kullanıcı için mevcut v0.1 sınırını net anlatması.
+
+**Yapılanlar:**
+
+- README'ye `Use In Your Own Project` bölümü eklendi.
+- `Docs/cli-tool.md` içine portability notu eklendi.
+- `Docs/ai-handoff.md` v0.1 portability durumunu repo-template/fork modeli olarak kaydetti.
+
+**Karar:**
+
+v0.1 standalone package değil. `Tools/rkp.py` repo kökünü ve RKP layout'unu varsayıyor; `--project-root` yok. En dürüst entegrasyon yolu fork/copy toolkit folders + kendi Xcode resource setup'ına `Assets/Imported` bağlamak.
+
+**Verification:**
+
+```text
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 4 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Developer tool framing sadece "öğrenme" senaryosunu değil "mevcut projeme nasıl taşırım?" sorusunu da cevaplamalı. Paketlenmemiş bir aracı paketlenmiş gibi göstermemek daha profesyonel.
+
+### Sprint 30: Project Config Discovery Start
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 15:32 +03  
+**Amaç:** Faz 1 portability için `ROOT = __file__` bağımlılığını kırmaya başlamak.
+
+**Yapılanlar:**
+
+- `rkp.json` eklendi; manifest/assets/docs/blender/textures/source path'leri config'e taşındı.
+- `Tools/rkp_project.py` eklendi; CWD'den yukarı `rkp.json` arayan `find_project_root()` ve `ProjectPaths` context'i sağlıyor.
+- `Tools/rkp.py status --json` artık script konumunu değil, çalışılan dizinden bulunan `rkp.json` projesini okuyor.
+- `Tools/pipeline_doctor.py` `ProjectPaths` kabul edecek şekilde güncellendi; manifest/assets/textures path'leri config'ten okunuyor.
+- `Tests/test_rkp_project.py` eklendi; external temp project içinde `status --json` config manifestini okuyabildiğini doğruluyor.
+- README, CLI docs, handoff ve skill command reference portability durumunu güncelledi.
+
+**Sınır:**
+
+Bu ilk slice sadece `status` ve `doctor` için config-aware. `new_asset`, `prompt_asset`, `build_asset`, `accept_asset`, `usdz_fallback_builder` ve generated Blender script path'leri hâlâ sonraki slice'ta `ProjectPaths` üstüne taşınacak.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected; no rkp_project module and status read script repo manifest
+python3 -m unittest discover -s Tests: ok, 6 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 6 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Portable CLI için ilk kırılacak yer entrypoint değil project context. `rkp.json` bulunmadan package veya MCP wrapper yapmak sadece path problemini başka yere taşır.
+
+### Sprint 31: Portable Asset Scaffolding
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 15:47 +03  
+**Amaç:** Faz 1 portability içinde `new-asset` ve `prompt-asset` komutlarını external `rkp.json` projesinde çalışır hale getirmek.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_project.py` external temp project için `new-asset` ve `prompt-asset` regression testleriyle genişletildi.
+- `Tools/rkp.py` subprocess script path'leri artık temp proje kökündeki `Tools/` klasörünü değil, gerçek RKP tool script dizinini kullanıyor.
+- `Tools/new_asset.py` `ProjectPaths` kullanacak şekilde güncellendi; manifest, brief, blender script, assets ve textures klasörleri `rkp.json` config'inden türetiliyor.
+- `Tools/prompt_asset.py` `ProjectPaths` kullanacak şekilde güncellendi; prompt metadata, brief ve generated Blender script config path'lerine yazılıyor.
+- Generated Blender stub/template artık `rkp.json` arayarak `assets_dir`, `source_dir` ve `textures_dir` değerlerini okuyacak bootstrapping kodu içeriyor.
+
+**Sınır:**
+
+Bu slice `new-asset` ve `prompt-asset` için portable scaffolding sağlar. `build-asset`, `accept-asset`, `usdz_fallback_builder` ve full `release-check` hâlâ sonraki slice'ta `ProjectPaths` üstüne taşınacak.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected; rkp.py temp project root under Tools/new_asset.py and Tools/prompt_asset.py searched
+python3 -m unittest Tests/test_rkp_project.py: ok, 4 tests
+python3 -m unittest discover -s Tests: ok, 8 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 8 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Subprocess path'i config path'i değildir. External project testinde gerçek subprocess kullanmak, script path'in proje root'una göre yanlış çözülmesini otomatik yakaladı.
+
+### Sprint 32: Portable Asset Acceptance
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 16:03 +03  
+**Amaç:** `accept-asset` komutunu external `rkp.json` projelerinde relative ve absolute screenshot path'leriyle çalışır hale getirmek.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_project.py` external temp project için iki `accept-asset` testiyle genişletildi:
+  - `--screenshot Docs/screenshots/<file>` project root'a göre çözülüyor.
+  - Absolute screenshot path project `Docs/screenshots/<asset_id>_accepted.<ext>` altına kopyalanıyor.
+- `Tools/accept_asset.py` `ProjectPaths` kullanacak şekilde güncellendi.
+- Manifest, USDZ path, asset brief, worklog, screenshot dir ve doctor subprocess path'i config-aware oldu.
+- `Tools/pipeline_doctor.py` minimal external project kullanımını destekleyecek şekilde core pipeline path'lerini error, public showcase path'lerini warning olarak ayırdı.
+- README, CLI docs, handoff ve skill command reference portability durumunu `accept-asset` dahil olacak şekilde güncelledi.
+
+**Sınır:**
+
+`build-asset`, `usdz_fallback_builder` ve full `release-check` hâlâ sonraki slice'ta `ProjectPaths` üstüne taşınacak.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected; accept_asset.py repo-local manifest read and unknown asset id returned
+python3 -m unittest Tests/test_rkp_project.py: ok, 6 tests
+python3 -m unittest discover -s Tests: ok, 10 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 10 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Portable acceptance için screenshot path çözümü asset path çözümü kadar kritik. Relative screenshot project root'a göre, absolute screenshot ise kopyalanarak public evidence dizinine göre kaydedilmeli.
+
+### Sprint 33: Portable Asset Build and Fallback Paths
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 16:20 +03  
+**Amaç:** `build-asset` ve direct USDZ fallback komutlarını external `rkp.json` projelerinde config manifest/assets/blender path'leriyle çalışır hale getirmek.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_project.py` external temp project için iki build testiyle genişletildi:
+  - `BLENDER=/nonexistent/blender` graceful failure veriyor, traceback üretmiyor ve expected USDZ path'i config `assets_dir` üzerinden raporluyor.
+  - `usdz_fallback_builder.py` external manifest'i okuyup `usdzip` yokken 127 ile açık hata veriyor.
+- `Tools/build_asset.py` `ProjectPaths` kullanacak şekilde güncellendi.
+- Blender script path, output USDZ path, fallback subprocess cwd ve fallback script path'i config-aware oldu.
+- Geçersiz `BLENDER` override artık Python traceback yerine açık executable hatası döndürüyor.
+- `Tools/usdz_fallback_builder.py` manifest ve output USDZ path için `ProjectPaths` kullanıyor.
+- README, CLI docs, handoff ve skill command reference portability durumunu `build-asset` dahil olacak şekilde güncelledi.
+
+**Sınır:**
+
+Full `release-check` hâlâ repo'nun XcodeGen/build layout'una bağlı. Sonraki slice release-check'i portable doctor/test/manifest gates ve optional Xcode build gates olarak ayırmalı.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected; build/fallback scripts repo-local manifest read
+python3 -m unittest Tests/test_rkp_project.py: ok, 8 tests
+python3 -m unittest discover -s Tests: ok, 12 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 12 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+External process failures must be product behavior, not Python traceback. `BLENDER=/nonexistent` regression test'i build command'in path portability ve failure semantics'ini aynı anda kilitledi.
+
+### Sprint 34: Portable Release Check Gates
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 16:34 +03  
+**Amaç:** `release-check` komutunu external `rkp.json` projelerinde repo-local `Tools/rkp.py`, hardcoded manifest path ve zorunlu Xcode layout varsayımlarından çıkarmak.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_project.py` external temp project için `release-check` testiyle genişletildi.
+- `rkp.json` `tests_dir`, `xcode_project`, `xcode_scheme`, `xcode_destination` ve `derived_data_path` alanlarıyla genişletildi.
+- `Tools/rkp_project.py` bu alanlar için typed path/property yüzeyleri aldı.
+- `Tools/rkp.py release-check` artık:
+  - `Doctor(PROJECT).run()` doğrudan çalıştırıyor.
+  - `tests_dir` yoksa test gate'ini skip ediyor.
+  - Manifest validation'ı config manifest üzerinden yapıyor.
+  - `xcode_project` yoksa Xcode gate'ini skip ediyor.
+  - `xcode_project` varsa `project.yml` üzerinden generate ve config project/scheme/destination/DerivedData ile build çalıştırıyor.
+- README, CLI docs, handoff ve skill command reference release-check portability durumunu güncelledi.
+
+**Sınır:**
+
+Faz 1 config decoupling ana CLI yüzeyi için tamamlandı. Sonraki büyük adım Faz 3'e hazırlık: `Tools/*.py` scriptlerini `src/rkp` paket modüllerine taşımak ve local imports (`from pipeline_doctor import Doctor`, `from prompt_asset import infer_palette`) kırılganlığını kaldırmak.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected; release-check external project root under Tools/rkp.py searched
+python3 -m unittest Tests/test_rkp_project.py: ok, 9 tests
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 13 passed, manifest ok, iOS build ok)
+```
+
+**Öğrenme notu:**
+
+Portable release gate tek komut kalabilir ama gate'ler optional olmalı. External project minimumunda doctor/test/manifest yeterli; Xcode build ancak `xcode_project` contract'ı verilirse çalışmalı.
+
 ### Accepted Asset: enemy_drone
 
 **Durum:** Tamamlandı  

@@ -1,6 +1,6 @@
 # Contributing
 
-This repo is a teaching project. A good contribution should make the game or the learning path clearer.
+This repo is a RealityKit pipeline toolkit. A good contribution should make the CLI, skill, command surface, fixture, or learning path clearer.
 
 ## Local Setup
 

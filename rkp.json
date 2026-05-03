@@ -1,0 +1,13 @@
+{
+  "manifest": "Tools/asset_manifest.json",
+  "assets_dir": "Assets/Imported",
+  "docs_dir": "Docs",
+  "blender_dir": "Tools/blender",
+  "textures_dir": "Assets/Textures",
+  "source_dir": "Assets/Source",
+  "tests_dir": "Tests",
+  "xcode_project": "RealityKitPipelineDemo.xcodeproj",
+  "xcode_scheme": "RealityKitPipelineDemo",
+  "xcode_destination": "generic/platform=iOS Simulator",
+  "derived_data_path": "Build/DerivedData"
+}

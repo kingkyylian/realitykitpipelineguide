@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import sys
@@ -11,9 +10,4 @@ if SRC_TEXT in sys.path:
     sys.path.remove(SRC_TEXT)
 sys.path.insert(0, SRC_TEXT)
 
-from rkp.pipeline_doctor import *  # noqa: F403
-from rkp.pipeline_doctor import main
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+from rkp.rkp_project import *  # noqa: F403

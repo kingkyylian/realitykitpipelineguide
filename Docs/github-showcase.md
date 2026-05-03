@@ -12,7 +12,7 @@ Use this when preparing the public repository page, release, or outreach post.
 ## Repository Description
 
 ```text
-Learn a complete Blender -> USDZ -> RealityKit asset pipeline through a tiny SwiftUI iOS game.
+Command-first RealityKit asset pipeline toolkit with CLI, Codex skill, slash commands, and a tiny SwiftUI fixture.
 ```
 
 ## Topics
@@ -22,10 +22,10 @@ realitykit
 swift
 swiftui
 ios
-ios-game
+codex-skill
 blender
 usdz
-game-development
+developer-tools
 3d-pipeline
 asset-pipeline
 ```
@@ -47,7 +47,7 @@ v0.1.0 - Public learning pipeline preview
 Release summary:
 
 ```text
-First public preview of a teaching-oriented RealityKit game pipeline. Includes a SwiftUI + RealityKit prototype, imported Blender/USDZ target assets, a textured scoring target, an imported arena floor, asset manifest budgets, simulator screenshot evidence, Blender starter tooling, and a shareable PDF guide.
+First public preview of a teaching-oriented RealityKit asset pipeline toolkit. Includes the `rkp` CLI, installable Codex skill, agent slash commands, CLI smoke tests, imported Blender/USDZ target assets, a SwiftUI + RealityKit verification fixture, asset manifest budgets, simulator screenshot evidence, Blender starter tooling, and a shareable PDF guide.
 ```
 
 ## Outreach Angle

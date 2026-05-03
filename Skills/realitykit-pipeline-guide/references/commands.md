@@ -5,7 +5,7 @@ Run from the repository root.
 For installed usage:
 
 ```bash
-pipx install /path/to/RealityKitPipelineDemo
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
 rkp --version
 rkp status
 rkp doctor

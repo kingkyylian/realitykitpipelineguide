@@ -10,7 +10,7 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 
 ## What This Is
 
-- `Tools/rkp.py`: the primary CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, tests, and release checks.
+- `rkp`: the installable CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, tests, and release checks.
 - `Skills/realitykit-pipeline-guide`: an installable Codex skill that points agents at the same asset, build, and documentation contracts.
 - `.claude/commands`: slash commands such as `/rkp`, `/rkp-asset`, and `/rkp-status` for agent-style usage.
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit verification fixture that proves pipeline output inside an iOS app.
@@ -38,48 +38,45 @@ The fixture app starts with procedural RealityKit fallbacks so it can compile be
 
 ### Prerequisites
 
-- macOS with Xcode installed.
-- XcodeGen installed and available as `xcodegen`.
-- Blender 4.x for authoring or regenerating art assets.
-- Optional for guide PDF export: `pandoc` and `weasyprint`.
+- Python 3.10+ and `pipx`.
+- Blender 4.x if you want to build generated Blender assets locally.
+- macOS with Xcode and XcodeGen only if you want to run the included iOS verification fixture.
 
 ### Use The Pipeline CLI
 
-This repo is designed to be used as a small pipeline tool first. The guide is supporting material.
-
-Install the package locally if you want the `rkp` command:
+Install the toolkit directly from GitHub. You do not need to clone this repo for normal CLI usage.
 
 ```bash
-pipx install .
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
 rkp --version
-rkp status
-rkp doctor
 ```
 
-The repo-local wrapper remains available while developing the toolkit:
+Bootstrap any RealityKit project from that project's root:
 
 ```bash
-python3 Tools/rkp.py status
-python3 Tools/rkp.py doctor
-python3 -m unittest discover -s Tests
-python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
-python3 Tools/rkp.py release-check
+rkp init --project-name MyGame
+rkp doctor
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp release-check
 ```
 
 Machine-readable status and doctor output are available for scripts and agents:
 
 ```bash
-python3 Tools/rkp.py status --json
-python3 Tools/rkp.py doctor --json
+rkp status --json
+rkp doctor --json
 ```
 
-The same flow is available through `make` for shorter local commands:
+If you are developing this toolkit repo itself, clone it and use the repo-local wrapper or Makefile:
 
 ```bash
+git clone https://github.com/kingkyylian/realitykitpipelineguide.git
+cd realitykitpipelineguide
+python3 Tools/rkp.py status
+python3 -m unittest discover -s Tests
+python3 Tools/rkp.py release-check
 make status
 make test
-make make-asset id=enemy_drone type=gameplay_target prompt="red bullseye drone target"
-make release-check
 ```
 
 ### Prompt To Asset
@@ -101,7 +98,7 @@ The longer direct slash command is also available:
 For terminal usage, run the same pipeline directly:
 
 ```bash
-python3 Tools/rkp.py make-asset enemy_drone \
+rkp make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target"
 ```
@@ -111,7 +108,7 @@ For this prompt the tool infers `drone`, then writes a procedural Blender draft 
 If Blender is available, add `--build`:
 
 ```bash
-python3 Tools/rkp.py make-asset enemy_drone \
+rkp make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build
@@ -122,7 +119,7 @@ If Blender crashes or is unavailable but `usdzip` exists, RKP falls back to a di
 After verifying the result in the simulator and saving a screenshot, run the same command with acceptance:
 
 ```bash
-python3 Tools/rkp.py make-asset enemy_drone \
+rkp make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build \
@@ -133,7 +130,7 @@ python3 Tools/rkp.py make-asset enemy_drone \
 Use status JSON when an agent or script needs to inspect the inferred archetype:
 
 ```bash
-python3 Tools/rkp.py status --json
+rkp status --json
 ```
 
 ### Generate and Build
@@ -150,20 +147,20 @@ To run visually, open `RealityKitPipelineDemo.xcodeproj` in Xcode and choose an 
 1. Start the asset loop:
 
    ```bash
-   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+   rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
    ```
 
 2. If Blender is available, build the USDZ in the same command:
 
    ```bash
-   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
+   rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build
    ```
 
 3. Verify the asset in the simulator and capture a screenshot.
 4. Accept it and run the release gate:
 
    ```bash
-   python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build --screenshot Docs/screenshots/enemy_drone_imported.jpg --release-check
+   rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target" --build --screenshot Docs/screenshots/enemy_drone_imported.jpg --release-check
    ```
 
 ### About `rtk`
@@ -172,10 +169,11 @@ Some internal docs and worklog entries use commands prefixed with `rtk`. That is
 
 ## Use In Your Own Project
 
-v0.1 includes a local Python package. Install it from a clone:
+v0.1 includes a Python package. Install it from GitHub:
 
 ```bash
-pipx install /path/to/RealityKitPipelineDemo
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
+rkp --version
 ```
 
 Then bootstrap from your RealityKit project root:
@@ -299,7 +297,22 @@ realitykit, swift, swiftui, ios, blender, usdz, codex-skill, developer-tools, 3d
 
 ## Common Commands
 
-Generate the Xcode project:
+These commands assume `rkp` was installed with `pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git`.
+
+Show pipeline health:
+
+```bash
+rkp status
+rkp doctor
+```
+
+Initialize a project:
+
+```bash
+rkp init --project-name MyGame
+```
+
+Generate the Xcode project for the included fixture app:
 
 ```bash
 xcodegen generate
@@ -326,43 +339,43 @@ node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8
 Run the pipeline doctor:
 
 ```bash
-python3 Tools/rkp.py doctor
+rkp doctor
 ```
 
 Scaffold a new asset:
 
 ```bash
-python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+rkp new-asset enemy_drone --type gameplay_target
 ```
 
 Create a prompt-backed procedural Blender draft:
 
 ```bash
-python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
 Run the one-command asset loop:
 
 ```bash
-python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
 Run the Blender build script for an asset:
 
 ```bash
-python3 Tools/rkp.py build-asset enemy_drone
+rkp build-asset enemy_drone
 ```
 
 If Blender is not on `PATH`, provide it explicitly:
 
 ```bash
-BLENDER=/custom/path/to/blender python3 Tools/rkp.py build-asset enemy_drone
+BLENDER=/custom/path/to/blender rkp build-asset enemy_drone
 ```
 
 Accept a built asset with required visual evidence:
 
 ```bash
-python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
 Regenerate the guide PDF:

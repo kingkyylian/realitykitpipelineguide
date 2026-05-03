@@ -10,10 +10,10 @@ This repository does not ship a standalone MCP server yet. Treat the JSON comman
 
 v0.1 has a local Python package and portable project config. `rkp` discovers the project root by walking up from the current directory until it finds `rkp.json`.
 
-Install from a clone:
+Install from GitHub:
 
 ```bash
-pipx install /path/to/RealityKitPipelineDemo
+pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git
 rkp --version
 ```
 
@@ -114,26 +114,25 @@ python3 Tools/rkp.py init --force
 Create a new asset task:
 
 ```bash
-python3 Tools/rkp.py new-asset enemy_drone --type gameplay_target
+rkp new-asset enemy_drone --type gameplay_target
 ```
 
 Create a prompt-backed procedural Blender draft:
 
 ```bash
-python3 Tools/rkp.py prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
 Run the same loop through one command:
 
 ```bash
 rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
-python3 Tools/rkp.py make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
 Add build, screenshot acceptance, and release gate as the asset moves forward:
 
 ```bash
-python3 Tools/rkp.py make-asset enemy_drone \
+rkp make-asset enemy_drone \
   --type gameplay_target \
   --prompt "red bullseye drone target" \
   --build \
@@ -144,7 +143,7 @@ python3 Tools/rkp.py make-asset enemy_drone \
 Build the asset through Blender:
 
 ```bash
-python3 Tools/rkp.py build-asset enemy_drone
+rkp build-asset enemy_drone
 ```
 
 If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate.
@@ -152,7 +151,7 @@ If Blender exits before export, `build-asset` reports the crash log and then tri
 Accept the asset after simulator verification:
 
 ```bash
-python3 Tools/rkp.py accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
 Run the full release gate:

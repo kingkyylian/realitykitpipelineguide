@@ -26,5 +26,12 @@ jobs:
       - name: Test pipeline CLI
         run: python3 -m unittest discover -s Tests
 
+      - name: Test GitHub pipx install
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          brew list pipx || brew install pipx
+          PIPX_HOME="$RUNNER_TEMP/pipx-home" PIPX_BIN_DIR="$RUNNER_TEMP/pipx-bin" pipx install --force git+https://github.com/kingkyylian/realitykitpipelineguide.git
+          "$RUNNER_TEMP/pipx-bin/rkp" --version
+
       - name: Build
         run: xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination 'generic/platform=iOS Simulator' -derivedDataPath Build/DerivedData build

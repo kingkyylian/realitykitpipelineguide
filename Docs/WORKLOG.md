@@ -12,6 +12,34 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 38: Install-First README and CI Smoke
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 17:18 +03  
+**Amaç:** Yeni kullanıcı için README'yi clone-first değil `pipx install git+...` + `rkp` flow'una çevirmek ve GitHub install güvenini CI'a taşımak.
+
+**Yapılanlar:**
+
+- README Quick Start artık normal kullanımda clone gerektirmeyen `pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git` akışıyla başlıyor.
+- README `Prompt To Asset`, `First Asset Loop` ve `Common Commands` örnekleri `python3 Tools/rkp.py` yerine `rkp ...` komutlarını ana yol yaptı.
+- Repo-local wrapper anlatımı maintainer/toolkit development akışına indirildi.
+- `Docs/cli-tool.md` ve skill command reference install örnekleri GitHub pipx install URL'ine güncellendi.
+- GitHub Actions CI'a `push` + `main` için `pipx install git+https://github.com/kingkyylian/realitykitpipelineguide.git` ve `rkp --version` smoke adımı eklendi.
+- CI smoke adımı PEP 668 riskinden kaçınmak için `python3 -m pip install --user pipx` yerine Homebrew `pipx` kullanıyor.
+
+**Verification:**
+
+```text
+brew list pipx: ok
+PYTHONUSERBASE=/private/tmp/rkp_ci_userbase python3 -m pip install --user pipx: failed as expected on this Homebrew Python due to externally-managed-environment; CI changed to brew-managed pipx
+PIPX_HOME=/private/tmp/rkp_ci_smoke_home PIPX_BIN_DIR=/private/tmp/rkp_ci_smoke_bin pipx install --force git+https://github.com/kingkyylian/realitykitpipelineguide.git: ok
+/private/tmp/rkp_ci_smoke_bin/rkp --version: ok, rkp 0.1.0
+```
+
+**Öğrenme notu:**
+
+CI package smoke test'i PR'da default branch'i test etmemeli. Bu yüzden GitHub URL install gate'i `push` + `main` ile sınırlı; PR'lar checkout üstündeki unit/release gates ile korunuyor.
+
 ### Sprint 36: Python Package Entry Point
 
 **Durum:** Tamamlandı  

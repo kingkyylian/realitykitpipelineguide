@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 from rkp.cli import module_command, package_env
@@ -62,6 +63,15 @@ def expected_basecolor_texture(asset: dict, project: ProjectPaths = PROJECT) -> 
     if texture_maps is not None and "baseColor" not in texture_maps:
         return None
     return project.textures_dir / f"{asset['id']}_basecolor.png"
+
+
+def usdz_contains_texture(usdz_path: Path, texture_path: Path) -> bool:
+    try:
+        with zipfile.ZipFile(usdz_path) as archive:
+            expected_name = texture_path.name
+            return any(Path(name).name == expected_name for name in archive.namelist())
+    except zipfile.BadZipFile:
+        return False
 
 
 def main() -> int:
@@ -125,10 +135,10 @@ def main() -> int:
 
     print(f"asset built: {PROJECT.rel(output_path)} ({size} bytes)")
     texture_path = expected_basecolor_texture(asset)
-    if texture_path is not None and not texture_path.exists():
+    if texture_path is not None and not usdz_contains_texture(output_path, texture_path):
         print(
             "info: no texture file found - USDZ built without texture "
-            f"(expected {PROJECT.rel(texture_path)})"
+            f"(expected packaged texture {texture_path.name})"
         )
     print("manifest status is unchanged; run accept-asset later after visual verification")
     return 0

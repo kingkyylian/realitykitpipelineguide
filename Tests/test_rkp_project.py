@@ -351,6 +351,90 @@ path.write_bytes(b"fake-usdz")
                 result.stdout,
             )
 
+    def test_build_asset_reports_when_texture_exists_but_is_not_packaged_in_usdz(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_buildable_asset(root, "portable_unpacked_texture")
+            fake_blender = root / "fake_blender.py"
+            fake_blender.write_text(
+                f"""#!{sys.executable}
+from pathlib import Path
+import zipfile
+texture = Path("Textures/portable_unpacked_texture_basecolor.png")
+texture.parent.mkdir(parents=True, exist_ok=True)
+texture.write_bytes(b"png")
+output = Path("GameAssets/portable_unpacked_texture.usdz")
+output.parent.mkdir(parents=True, exist_ok=True)
+with zipfile.ZipFile(output, "w") as zf:
+    zf.writestr("portable_unpacked_texture.usda", "#usda 1.0")
+""",
+                encoding="utf-8",
+            )
+            fake_blender.chmod(0o755)
+            env = os.environ.copy()
+            env["BLENDER"] = str(fake_blender)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "build-asset",
+                    "portable_unpacked_texture",
+                ],
+                cwd=nested,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "info: no texture file found - USDZ built without texture",
+                result.stdout,
+            )
+
+    def test_build_asset_does_not_report_texture_info_when_usdz_contains_texture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_buildable_asset(root, "portable_packaged_texture")
+            fake_blender = root / "fake_blender.py"
+            fake_blender.write_text(
+                f"""#!{sys.executable}
+from pathlib import Path
+import zipfile
+texture = Path("Textures/portable_packaged_texture_basecolor.png")
+texture.parent.mkdir(parents=True, exist_ok=True)
+texture.write_bytes(b"png")
+output = Path("GameAssets/portable_packaged_texture.usdz")
+output.parent.mkdir(parents=True, exist_ok=True)
+with zipfile.ZipFile(output, "w") as zf:
+    zf.writestr("portable_packaged_texture.usda", "#usda 1.0")
+    zf.write(texture, "textures/portable_packaged_texture_basecolor.png")
+""",
+                encoding="utf-8",
+            )
+            fake_blender.chmod(0o755)
+            env = os.environ.copy()
+            env["BLENDER"] = str(fake_blender)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "build-asset",
+                    "portable_packaged_texture",
+                ],
+                cwd=nested,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn("USDZ built without texture", result.stdout)
+
     def test_fallback_builder_uses_external_config_and_reports_missing_usdzip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

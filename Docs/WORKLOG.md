@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 42: Texture Packaging Info Condition
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 19:10 +03
+**Amaç:** `build-asset` başarılı olduğunda texture info mesajının gerçek Blender/USDZ durumunu ölçmesini sağlamak.
+
+**Yapılanlar:**
+
+- Root cause bulundu: önceki condition kaynak `Assets/Textures/<id>_basecolor.png` dosyasını kontrol ediyordu. Blender bu dosyayı oluşturup USDZ içine paketleyemeyince info mesajı susuyordu.
+- `build-asset` artık USDZ paketinin içindeki dosya listesini kontrol ediyor ve `<asset_id>_basecolor.png` paketlenmemişse info mesajı basıyor.
+- USDZ içinde texture varsa info mesajı basılmadığını doğrulayan ters yön regression testi eklendi.
+- `chown: Operation not permitted` repo kodunda bulunmadı; `strings /usr/bin/usdzip` ve Blender binary output'unda external tool kaynaklı izin mesajı izi var.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_when_texture_exists_but_is_not_packaged_in_usdz: first run failed as expected; source texture existed so old condition did not print info
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_when_texture_exists_but_is_not_packaged_in_usdz Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_missing_texture_as_info_after_successful_build: ok, 2 tests
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_when_texture_exists_but_is_not_packaged_in_usdz Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_missing_texture_as_info_after_successful_build Tests.test_rkp_project.RkpProjectTests.test_build_asset_does_not_report_texture_info_when_usdz_contains_texture: ok, 3 tests
+```
+
+**Öğrenme notu:**
+
+Build UX için doğru soru kaynak texture dosyası var mı değil, kullanıcıya verilen USDZ içinde texture var mı. Testin de aynı artifact boundary'yi ölçmesi gerekiyor.
+
 ### Sprint 41: First Asset UX Copy
 
 **Durum:** Tamamlandı

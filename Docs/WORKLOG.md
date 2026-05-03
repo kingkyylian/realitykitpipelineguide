@@ -12,6 +12,32 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 41: First Asset UX Copy
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-03 18:45 +03
+**Amaç:** Fresh asset loop'ta başarılı build çıktısını yanlış alarm gibi gösteren iki küçük CLI mesajını düzeltmek.
+
+**Yapılanlar:**
+
+- Prompt archetype tanınmadığında kullanıcı çıktısı `type-default` yerine `unrecognized - using default (<asset_type>)` gösteriyor.
+- Manifest note'ları artık internal `type-default` string'ini yazmıyor.
+- Başarılı `build-asset` sonrası beklenen basecolor texture yoksa `warning` yerine açıklayıcı `info: no texture file found - USDZ built without texture` mesajı basılıyor.
+- README First Asset bölümüne `accept-asset` için Xcode/simulator screenshot gerektiği, bu yoksa asset'in `planned` draft olarak kalabileceği notu eklendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_project.py: first run failed as expected on archetype fallback and missing-texture info tests
+python3 -m unittest Tests/test_rkp_project.py: ok, 11 tests
+python3 -m unittest discover -s Tests: ok, 24 tests
+rtk python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 24 passed, manifest ok, iOS build ok; CoreSimulator sandbox warnings present)
+```
+
+**Öğrenme notu:**
+
+CLI copy'si pipeline doğruluğunun parçası. USDZ başarıyla üretildiyse eksik texture veya tanınmayan prompt sınıflandırması kullanıcıda build failure hissi yaratmamalı.
+
 ### Sprint 40: Fresh Project Walkthrough
 
 **Durum:** Tamamlandı

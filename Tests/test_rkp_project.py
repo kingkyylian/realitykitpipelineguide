@@ -196,6 +196,37 @@ class RkpProjectTests(unittest.TestCase):
             self.assertTrue(script.exists())
             self.assertIn("rkp.json", script.read_text(encoding="utf-8"))
 
+    def test_prompt_asset_reports_unrecognized_archetype_without_internal_label(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "prompt-asset",
+                    "portable_ship",
+                    "--type",
+                    "gameplay_target",
+                    "--prompt",
+                    "sleek spaceship fighter",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "archetype: unrecognized - using default (gameplay_target)",
+                result.stdout,
+            )
+            self.assertNotIn("type-default", result.stdout)
+            manifest = json.loads((root / "Pipeline" / "manifest.json").read_text(encoding="utf-8"))
+            self.assertIsNone(manifest["assets"][0]["archetype"])
+            self.assertNotIn("type-default", manifest["assets"][0]["notes"])
+
     def test_accept_asset_uses_external_project_relative_screenshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -281,6 +312,44 @@ class RkpProjectTests(unittest.TestCase):
             self.assertIn("GameAssets/portable_build.usdz", result.stderr)
             self.assertIn("Blender executable", result.stderr)
             self.assertFalse((root / "Tools" / "asset_manifest.json").exists())
+
+    def test_build_asset_reports_missing_texture_as_info_after_successful_build(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_buildable_asset(root, "portable_textureless")
+            fake_blender = root / "fake_blender.py"
+            fake_blender.write_text(
+                f"""#!{sys.executable}
+from pathlib import Path
+path = Path("GameAssets/portable_textureless.usdz")
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_bytes(b"fake-usdz")
+""",
+                encoding="utf-8",
+            )
+            fake_blender.chmod(0o755)
+            env = os.environ.copy()
+            env["BLENDER"] = str(fake_blender)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "build-asset",
+                    "portable_textureless",
+                ],
+                cwd=nested,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(
+                "info: no texture file found - USDZ built without texture",
+                result.stdout,
+            )
 
     def test_fallback_builder_uses_external_config_and_reports_missing_usdzip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

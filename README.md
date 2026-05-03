@@ -91,6 +91,8 @@ Expected first doctor result in a new project is `0 error(s)` with only recommen
 rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
 ```
 
+`accept-asset` expects simulator or device screenshot evidence. If you do not have Xcode or a simulator on this machine, skip that step; the USDZ can still stay as a `planned` draft without blocking the rest of the pipeline.
+
 If you are developing this toolkit repo itself, clone it and use the repo-local wrapper or Makefile:
 
 ```bash

@@ -57,6 +57,13 @@ def run_direct_usdz_fallback(asset_id: str, project: ProjectPaths = PROJECT) -> 
     ).returncode
 
 
+def expected_basecolor_texture(asset: dict, project: ProjectPaths = PROJECT) -> Path | None:
+    texture_maps = asset.get("textureMaps")
+    if texture_maps is not None and "baseColor" not in texture_maps:
+        return None
+    return project.textures_dir / f"{asset['id']}_basecolor.png"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Blender build script for one asset.")
     parser.add_argument("--id", required=True, help="Asset id from Tools/asset_manifest.json")
@@ -117,6 +124,12 @@ def main() -> int:
         return 1
 
     print(f"asset built: {PROJECT.rel(output_path)} ({size} bytes)")
+    texture_path = expected_basecolor_texture(asset)
+    if texture_path is not None and not texture_path.exists():
+        print(
+            "info: no texture file found - USDZ built without texture "
+            f"(expected {PROJECT.rel(texture_path)})"
+        )
     print("manifest status is unchanged; run accept-asset later after visual verification")
     return 0
 

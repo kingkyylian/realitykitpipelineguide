@@ -54,6 +54,12 @@ def infer_archetype(prompt: str) -> str | None:
     return None
 
 
+def archetype_label(archetype: str | None, asset_type: str) -> str:
+    if archetype:
+        return archetype
+    return f"unrecognized - using default ({asset_type})"
+
+
 def blender_template(asset_id: str, asset_type: str, prompt: str, archetype: str | None) -> str:
     palette_name, primary, secondary = infer_palette(prompt)
     prompt_json = json.dumps(prompt)
@@ -349,7 +355,10 @@ def update_manifest_prompt_metadata(
             asset["prompt"] = prompt
             asset["archetype"] = archetype
             notes = asset.get("notes", "")
-            note = f" Prompt-backed draft; archetype={archetype or 'type-default'}."
+            if archetype:
+                note = f" Prompt-backed draft; archetype={archetype}."
+            else:
+                note = " Prompt-backed draft; archetype unrecognized; using asset type default."
             if note.strip() not in notes:
                 asset["notes"] = (notes.rstrip() + note).strip()
             break
@@ -413,8 +422,7 @@ def main() -> int:
     append_prompt_to_brief(asset_id, args.prompt, args.type, archetype)
     update_manifest_prompt_metadata(asset_id, args.prompt, archetype)
 
-    archetype_label = archetype or "type-default"
-    print(f"prompt asset ready: {asset_id} (archetype: {archetype_label})")
+    print(f"prompt asset ready: {asset_id} (archetype: {archetype_label(archetype, args.type)})")
     print(f"- prompt: {args.prompt}")
     print(f"- blender script: {PROJECT.rel(script_path)}")
     print(f"- next: rkp build-asset {asset_id}")

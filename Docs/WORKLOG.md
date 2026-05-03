@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 39: External Doctor Warning UX
+
+**Durum:** Tamamlandı  
+**Tarih:** 2026-05-03 17:26 +03  
+**Amaç:** Yeni kullanıcı `rkp init -> rkp doctor` akışında toolkit development repo dosyaları eksik diye 20+ warning görmesin.
+
+**Yapılanlar:**
+
+- `Tests/test_rkp_init.py` external init projesinde doctor warning set'ini regression test ile kilitledi.
+- `Doctor.is_toolkit_repo()` eklendi; `pyproject.toml` + `src/rkp/cli.py` varsa toolkit repo-specific recommended path'leri kontrol ediliyor.
+- External projelerde recommended warning set'i sadece `README.md`, `LICENSE`, `Makefile` olarak kaldı.
+- Toolkit repo içinde mevcut doctor coverage korunuyor; package/dev dosyaları hâlâ bu repo için recommended.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests/test_rkp_init.py: first new warning-set test failed as expected; external init project emitted toolkit repo warnings
+python3 -m unittest Tests/test_rkp_init.py: ok, 7 tests
+python3 -m unittest discover -s Tests: ok, 22 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors / 1 checkout warning
+python3 Tools/rkp.py release-check: ok (doctor 0 errors/1 checkout warning, tests 22 passed, manifest ok, iOS build ok; CoreSimulator sandbox warnings present)
+```
+
+**Öğrenme notu:**
+
+Doctor aynı anda iki persona'ya hizmet ediyor: toolkit maintainer ve external project user. Bu iki warning budget'ı ayrılmadan onboarding UX yanlış sinyal veriyor.
+
 ### Sprint 38: Install-First README and CI Smoke
 
 **Durum:** Tamamlandı  

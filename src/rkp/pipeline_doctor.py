@@ -54,6 +54,9 @@ class Doctor:
     def warning(self, message: str, path: str | None = None) -> None:
         self.findings.append(Finding("warning", message, path))
 
+    def is_toolkit_repo(self) -> bool:
+        return (self.root / "pyproject.toml").exists() and (self.root / "src" / "rkp" / "cli.py").exists()
+
     def check_required_paths(self) -> None:
         required = [
             self.project.config.get("manifest", "Tools/asset_manifest.json"),
@@ -63,6 +66,8 @@ class Doctor:
             "README.md",
             "LICENSE",
             "Makefile",
+        ]
+        toolkit_recommended = [
             "pyproject.toml",
             "rkp.json",
             "project.yml",
@@ -86,6 +91,8 @@ class Doctor:
             ".claude/commands/rkp-status.md",
             "Skills/realitykit-pipeline-guide/SKILL.md",
         ]
+        if self.is_toolkit_repo():
+            recommended.extend(toolkit_recommended)
         for rel in required:
             if not (self.root / rel).exists():
                 self.error("required path is missing", rel)

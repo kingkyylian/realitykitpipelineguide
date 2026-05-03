@@ -103,6 +103,22 @@ class RkpInitTests(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual(payload["errors"], 0)
 
+    def test_init_project_doctor_does_not_warn_for_toolkit_repo_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(self.run_rkp(root, "init").returncode, 0)
+
+            result = self.run_rkp(root, "doctor", "--json")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            warning_paths = {
+                finding["path"]
+                for finding in payload["findings"]
+                if finding["level"] == "warning"
+            }
+            self.assertEqual(warning_paths, {"README.md", "LICENSE", "Makefile"})
+
 
 if __name__ == "__main__":
     unittest.main()

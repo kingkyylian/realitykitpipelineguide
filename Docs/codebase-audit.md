@@ -180,6 +180,8 @@ python3 -m unittest Tests.test_rkp_project
 
 ### P3 - Local Cleanup Command Is Too Narrow
 
+Status: implemented in Sprint 57. `rkp clean --dry-run` and explicit `rkp clean --apply` are available.
+
 `make clean` only removes `Build/DerivedData`. The scan found ignored local outputs that accumulate during tests/builds: `Build/`, `__pycache__/`, `src/rkp.egg-info/`, and empty usdzip temp directories under `Assets/Imported`.
 
 Route:

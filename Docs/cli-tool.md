@@ -273,6 +273,8 @@ make verify-asset id=enemy_drone build=1 screenshot=Docs/screenshots/enemy_drone
 make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
 make release-check
 make release-check assets=1
+python3 Tools/rkp.py clean --dry-run
+python3 Tools/rkp.py clean --apply
 ```
 
 Prefer direct CLI commands when building automation, agents, or future MCP-style integrations. Prefer `make` for short local terminal usage.
@@ -303,6 +305,7 @@ They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-co
 - `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands. `--blender` adds an explicit Blender executable diagnostic.
 - `status --json` and `doctor --json` are the stable machine-readable surface for automation.
 - `release-check` runs doctor, CLI tests when configured, manifest validation, optional imported-asset inspection with `--assets`, and the optional Xcode build expected before push or release.
+- `clean --dry-run` lists ignored local scratch output; `clean --apply` removes those candidates explicitly.
 
 Run the CLI smoke tests:
 

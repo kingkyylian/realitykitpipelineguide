@@ -118,6 +118,35 @@ class RkpPackageTests(unittest.TestCase):
         self.assertEqual(payload["triangleStatus"], "ok")
         self.assertEqual(payload["uv"]["status"], "present")
 
+    def test_cleanup_dry_run_reports_candidates_without_removing(self) -> None:
+        from rkp import cleanup
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "rkp.json").write_text("{}", encoding="utf-8")
+            build = root / "Build"
+            pycache = root / "src" / "__pycache__"
+            egg_info = root / "src" / "rkp.egg-info"
+            usdzip_scratch = root / "Assets" / "Imported" / "(A Document Being Saved By usdzip)"
+            ds_store = root / ".DS_Store"
+            for path in (build, pycache, egg_info, usdzip_scratch):
+                path.mkdir(parents=True)
+            ds_store.write_text("local", encoding="utf-8")
+            project = SimpleNamespace(root=root, rel=lambda path: str(Path(path).relative_to(root)))
+
+            candidates = cleanup.collect_candidates(project)
+
+        self.assertEqual(
+            [candidate.rel_path for candidate in candidates],
+            [
+                ".DS_Store",
+                "Assets/Imported/(A Document Being Saved By usdzip)",
+                "Build",
+                "src/__pycache__",
+                "src/rkp.egg-info",
+            ],
+        )
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 57: Safe Cleanup Command
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 21:05 +03
+**Amaç:** Audit rotasındaki local scratch cleanup işini destructive olmayan keşif modu ve explicit apply modu ile CLI'a taşımak.
+
+**Yapılanlar:**
+
+- `src/rkp/cleanup.py` eklendi.
+- `rkp clean --dry-run` ignored local output adaylarını listeliyor.
+- `rkp clean --apply` sadece explicit istendiğinde adayları kaldırıyor.
+- Cleanup adayları: `Build`, `__pycache__`, `*.egg-info`, `.DS_Store`, boş `Assets/Imported/(A Document Being Saved By usdzip*)` klasörleri.
+- Makefile `clean` hedefi `python3 Tools/rkp.py clean --apply` kullanıyor.
+- README ve `Docs/cli-tool.md` clean komutlarıyla güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_cleanup_dry_run_reports_candidates_without_removing: first run failed as expected; rkp.cleanup module was missing
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_cleanup_dry_run_reports_candidates_without_removing: ok
+python3 Tools/rkp.py clean --dry-run: ok, listed 9 candidates and removed nothing
+python3 -m unittest Tests.test_rkp_package Tests.test_rkp_cli: ok, 22 tests
+python3 -m compileall -q src Tools Tests: ok
+```
+
+**Öğrenme notu:**
+
+Cleanup komutu güvenli keşif moduyla başlamalı. `--apply` bilinçli bir kullanıcı aksiyonu; release verification sırasında otomatik temizlik yapılmıyor.
+
 ### Sprint 56: Game Rules Extraction
 
 **Durum:** Tamamlandı

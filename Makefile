@@ -71,4 +71,4 @@ install-skill:
 	@echo "installed $(SKILL_NAME) to $(CODEX_HOME)/skills/$(SKILL_NAME)"
 
 clean:
-	rm -rf Build/DerivedData
+	python3 Tools/rkp.py clean --apply

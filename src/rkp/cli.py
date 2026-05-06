@@ -376,6 +376,11 @@ def main() -> int:
     release_check = subparsers.add_parser("release-check", help="Run doctor, XcodeGen, manifest validation, and iOS build")
     release_check.add_argument("--assets", action="store_true", help="Inspect all imported USDZ assets before Xcode build")
 
+    clean = subparsers.add_parser("clean", help="List or remove ignored local scratch files")
+    clean_mode = clean.add_mutually_exclusive_group(required=True)
+    clean_mode.add_argument("--dry-run", action="store_true", help="List cleanup candidates without removing them")
+    clean_mode.add_argument("--apply", action="store_true", help="Remove cleanup candidates")
+
     new_asset = subparsers.add_parser("new-asset", help="Scaffold a manifest entry, asset brief, and Blender stub")
     new_asset.add_argument("id", help="Asset id in snake_case")
     new_asset.add_argument("--type", default="prop", help="Asset type, for example gameplay_target or environment")
@@ -435,6 +440,9 @@ def main() -> int:
         return Doctor(project()).run(include_blender=args.blender)
     if args.command == "release-check":
         return run_release_check(include_assets=args.assets)
+    if args.command == "clean":
+        command = module_command("rkp.cleanup", "--apply" if args.apply else "--dry-run")
+        return run(command)
     if args.command == "new-asset":
         command = module_command("rkp.new_asset", "--id", args.id, "--type", args.type)
         if args.triangles is not None:

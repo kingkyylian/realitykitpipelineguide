@@ -118,6 +118,7 @@ python3 Tools/rkp.py status
 python3 -m unittest discover -s Tests
 python3 Tools/rkp.py release-check
 python3 Tools/rkp.py release-check --assets
+python3 Tools/rkp.py clean --dry-run
 make status
 make test
 ```

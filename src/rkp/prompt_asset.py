@@ -9,9 +9,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from rkp.cli import module_command, package_env
 from rkp.new_asset import DEFAULT_BUDGETS, snake_case
 from rkp.rkp_project import ProjectPaths, load_project
+from rkp.runtime import module_command, package_env
 
 
 PROJECT = load_project()

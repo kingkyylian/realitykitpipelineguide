@@ -74,6 +74,8 @@ python3 Tools/rkp.py doctor --json
 
 ### P1 - CLI Runtime Helpers Create Coupling Back Into `cli.py`
 
+Status: implemented in Sprint 52. Runtime subprocess helpers now live in `src/rkp/runtime.py`.
+
 `accept_asset.py`, `build_asset.py`, and `prompt_asset.py` import `module_command` and `package_env` from `rkp.cli`. This works, but it makes `cli.py` both the command entrypoint and a shared runtime helper module. As the CLI grows, this increases circular-import risk and makes unit tests patch the wrong layer.
 
 Route:

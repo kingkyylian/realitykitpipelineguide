@@ -15,6 +15,15 @@ if str(SRC) not in sys.path:
 
 
 class RkpPackageTests(unittest.TestCase):
+    def test_runtime_helpers_expose_package_subprocess_contract(self) -> None:
+        from rkp import runtime
+
+        command = runtime.module_command("rkp.inspect_usdz", "target_basic")
+        env = runtime.package_env()
+
+        self.assertEqual(command, [sys.executable, "-m", "rkp.inspect_usdz", "target_basic"])
+        self.assertEqual(env["PYTHONPATH"].split(":")[0], str(SRC))
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

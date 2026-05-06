@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 52: Runtime Helper Extraction
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:35 +03
+**Amaç:** Audit rotasındaki P2 coupling riskini azaltmak; subprocess helper'larını `cli.py` entrypoint'inden çıkarıp shared runtime modülüne taşımak.
+
+**Yapılanlar:**
+
+- `src/rkp/runtime.py` eklendi.
+- `package_env`, `module_command` ve subprocess `run` helper'ı runtime modülüne taşındı.
+- `cli.py`, `accept_asset.py`, `build_asset.py` ve `prompt_asset.py` runtime helper import'larına geçirildi.
+- `cli.py` artık shared helper modülü gibi kullanılmıyor; entrypoint/orchestration rolüne yaklaştırıldı.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_runtime_helpers_expose_package_subprocess_contract: first run failed as expected; rkp.runtime module was missing
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_runtime_helpers_expose_package_subprocess_contract: ok
+python3 -m unittest Tests.test_rkp_package Tests.test_rkp_cli: ok, 18 tests
+python3 -m compileall -q src Tools Tests: ok
+rg "from rkp\\.cli import module_command|from rkp\\.cli import package_env|def package_env|def module_command|def run\\(" src/rkp Tests: ok; runtime helper definitions only in src/rkp/runtime.py
+```
+
+**Öğrenme notu:**
+
+Küçük shared runtime modülü, sonraki manifest/tool-discovery refactor'ları için daha temiz bağımlılık yönü sağlıyor. CLI artık alt komutlar için helper sağlayan merkez değil, komut yüzeyi.
+
 ### Sprint 51: Release Asset Gate and Starter Stub Contract
 
 **Durum:** Tamamlandı

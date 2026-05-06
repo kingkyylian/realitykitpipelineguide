@@ -11,8 +11,8 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from rkp.cli import module_command, package_env
 from rkp.rkp_project import ProjectPaths, load_project
+from rkp.runtime import module_command, package_env
 
 PROJECT = load_project()
 MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")

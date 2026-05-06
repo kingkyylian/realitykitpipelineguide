@@ -5,13 +5,13 @@ import argparse
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 from rkp import __version__
 from rkp.pipeline_doctor import Doctor
 from rkp.rkp_project import CONFIG_FILE, DEFAULT_CONFIG, ProjectPaths, load_project
+from rkp.runtime import module_command, package_env, run
 
 
 _PROJECT: ProjectPaths | None = None
@@ -22,23 +22,6 @@ def project() -> ProjectPaths:
     if _PROJECT is None:
         _PROJECT = load_project()
     return _PROJECT
-
-
-def package_env() -> dict[str, str]:
-    env = dict(os.environ)
-    source_root = Path(__file__).resolve().parents[1]
-    pythonpath = env.get("PYTHONPATH")
-    env["PYTHONPATH"] = str(source_root) if not pythonpath else f"{source_root}:{pythonpath}"
-    return env
-
-
-def module_command(module: str, *args: str) -> list[str]:
-    return [sys.executable, "-m", module, *args]
-
-
-def run(command: list[str], active_project: ProjectPaths | None = None) -> int:
-    active_project = active_project or project()
-    return subprocess.run(command, cwd=active_project.root, env=package_env()).returncode
 
 
 def load_manifest(active_project: ProjectPaths | None = None) -> dict:

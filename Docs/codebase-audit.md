@@ -114,6 +114,8 @@ python3 Tools/rkp.py verify-asset target_basic_textured
 
 ### P2 - Blender Discovery Logic Is Duplicated
 
+Status: implemented in Sprint 54. Blender discovery now lives in `src/rkp/tool_discovery.py`.
+
 `MACOS_BLENDER_APP` and executable discovery exist in both `build_asset.py` and `pipeline_doctor.py`. They are currently aligned, but this will drift when version diagnostics are added.
 
 Route:

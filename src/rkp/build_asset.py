@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,25 +11,9 @@ from pathlib import Path
 from rkp.asset_manifest import asset_usdz_path, expected_basecolor_texture, load_asset
 from rkp.rkp_project import ProjectPaths, load_project
 from rkp.runtime import module_command, package_env
+from rkp.tool_discovery import resolve_blender
 
 PROJECT = load_project()
-MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
-
-
-def blender_executable() -> str | None:
-    override = os.environ.get("BLENDER")
-    if override:
-        return override
-    executable = shutil.which("blender")
-    if executable:
-        return executable
-    if MACOS_BLENDER_APP.exists():
-        return str(MACOS_BLENDER_APP)
-    return None
-
-
-def is_executable(path: str) -> bool:
-    return Path(path).exists() and os.access(path, os.X_OK)
 
 
 def latest_blender_crash_log() -> Path | None:
@@ -74,18 +56,15 @@ def main() -> int:
         print(f"error: missing Blender script: {PROJECT.rel(script_path)}", file=sys.stderr)
         return 1
 
-    blender = blender_executable()
-    if blender is None:
-        print(
-            "error: Blender executable not found. Install Blender or run with "
-            "BLENDER=/path/to/blender make build-asset id=<asset_id>",
-            file=sys.stderr,
-        )
+    blender_resolution = resolve_blender()
+    if blender_resolution.path is None:
+        print(f"error: {blender_resolution.error}", file=sys.stderr)
         return 127
-    if not is_executable(blender):
+    blender = str(blender_resolution.path)
+    if not blender_resolution.is_executable:
         output_path = asset_usdz_path(asset, PROJECT)
         print(
-            f"error: Blender executable is not available: {blender}. "
+            f"error: {blender_resolution.error}. "
             f"Expected USDZ would be {PROJECT.rel(output_path)}",
             file=sys.stderr,
         )

@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
-import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 from rkp.rkp_project import DEFAULT_CONFIG, ProjectPaths, load_project
+from rkp.tool_discovery import resolve_blender
 
 
 TEXT_EXTENSIONS = {
@@ -23,7 +22,6 @@ TEXT_EXTENSIONS = {
     ".py",
     ".txt",
 }
-MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
 
 
 @dataclass
@@ -246,24 +244,9 @@ class Doctor:
             self.warning("actions/checkout@v4 currently emits Node 20 deprecation warnings", ".github/workflows/ci.yml")
 
     def check_blender(self) -> None:
-        override = os.environ.get("BLENDER")
-        if override:
-            blender = Path(override)
-            if not blender.exists() or not os.access(blender, os.X_OK):
-                self.error(f"Blender executable is not available: {override}", "BLENDER")
-            return
-
-        executable = shutil.which("blender")
-        if executable:
-            return
-
-        if MACOS_BLENDER_APP.exists() and os.access(MACOS_BLENDER_APP, os.X_OK):
-            return
-
-        self.error(
-            "Blender executable not found. Install Blender or set BLENDER=/path/to/blender.",
-            "BLENDER",
-        )
+        blender = resolve_blender()
+        if blender.error:
+            self.error(blender.error, "BLENDER")
 
     def collect(self, include_blender: bool = False) -> list[Finding]:
         self.check_required_paths()

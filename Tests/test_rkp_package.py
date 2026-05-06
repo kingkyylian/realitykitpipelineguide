@@ -60,6 +60,17 @@ class RkpPackageTests(unittest.TestCase):
             root / "Textures" / "textured_basecolor.png",
         )
 
+    def test_tool_discovery_reports_invalid_blender_override(self) -> None:
+        from rkp import tool_discovery
+
+        with patch.dict("os.environ", {"BLENDER": "/nonexistent/blender"}):
+            result = tool_discovery.resolve_blender()
+
+        self.assertEqual(result.source, "BLENDER")
+        self.assertEqual(result.path, Path("/nonexistent/blender"))
+        self.assertFalse(result.is_executable)
+        self.assertEqual(result.error, "Blender executable is not available: /nonexistent/blender")
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

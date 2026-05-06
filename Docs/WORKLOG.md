@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 54: Shared Blender Discovery
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:48 +03
+**Amaç:** `doctor --blender` ve `build-asset` arasındaki Blender executable discovery duplication'ını kaldırmak.
+
+**Yapılanlar:**
+
+- `src/rkp/tool_discovery.py` eklendi.
+- `resolve_blender()` env override, PATH lookup ve macOS app fallback sonucunu structured `ToolResolution` olarak döndürüyor.
+- `pipeline_doctor.py` ve `build_asset.py` aynı resolver'a geçirildi.
+- Invalid `BLENDER` override hata mesajı korunarak testle sabitlendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_tool_discovery_reports_invalid_blender_override: first run failed as expected; rkp.tool_discovery module was missing
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_tool_discovery_reports_invalid_blender_override Tests.test_rkp_cli.RkpCliTests.test_doctor_blender_reports_invalid_override: ok
+python3 -m compileall -q src Tools Tests: ok
+rg "MACOS_BLENDER_APP|shutil\\.which\\(\"blender\"\\)|BLENDER" src/rkp: ok; executable discovery lives in src/rkp/tool_discovery.py
+python3 -m unittest discover -s Tests: ok, 46 tests
+python3 Tools/rkp.py doctor --blender --json: ok, 0 errors, 1 checkout warning
+BLENDER=/nonexistent/blender python3 Tools/rkp.py doctor --blender --json: expected failure, BLENDER error reported
+```
+
+**Öğrenme notu:**
+
+Tool discovery bir CLI alt komutu değil, paylaşılan platform bilgisi. Aynı resolver build, doctor ve gelecekte version matrix için tek doğruluk kaynağı olmalı.
+
 ### Sprint 53: Manifest Helper Consolidation
 
 **Durum:** Tamamlandı

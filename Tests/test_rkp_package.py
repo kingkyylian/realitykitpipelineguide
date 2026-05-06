@@ -1,6 +1,8 @@
+import json
 import sys
 import tempfile
 import unittest
+import zipfile
 from argparse import Namespace
 from pathlib import Path
 from types import SimpleNamespace
@@ -70,6 +72,51 @@ class RkpPackageTests(unittest.TestCase):
         self.assertEqual(result.path, Path("/nonexistent/blender"))
         self.assertFalse(result.is_executable)
         self.assertEqual(result.error, "Blender executable is not available: /nonexistent/blender")
+
+    def test_inspect_usdz_uses_usdcat_for_binary_geometry_when_available(self) -> None:
+        from rkp import inspect_usdz
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "manifest.json"
+            assets_dir = root / "Assets"
+            assets_dir.mkdir()
+            project = SimpleNamespace(
+                manifest=manifest_path,
+                assets_dir=assets_dir,
+                rel=lambda path: str(Path(path).relative_to(root)),
+            )
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "assets": [
+                            {
+                                "id": "binary_target",
+                                "file": "binary_target.usdz",
+                                "status": "imported",
+                                "maxTriangles": 4,
+                                "textureMaps": [],
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with zipfile.ZipFile(assets_dir / "binary_target.usdz", "w") as archive:
+                archive.writestr("binary_target.usdc", b"binary")
+            usdcat_text = "#usda 1.0\nint[] faceVertexCounts = [3, 3]\ntexCoord2f[] primvars:st = [(0, 0)]\n"
+
+            with patch.object(inspect_usdz.shutil, "which", return_value="/usr/bin/usdcat"), patch.object(
+                inspect_usdz.subprocess,
+                "run",
+                return_value=SimpleNamespace(returncode=0, stdout=usdcat_text),
+            ):
+                payload = inspect_usdz.inspect_asset("binary_target", project)
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["triangles"], 2)
+        self.assertEqual(payload["triangleStatus"], "ok")
+        self.assertEqual(payload["uv"]["status"], "present")
 
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli

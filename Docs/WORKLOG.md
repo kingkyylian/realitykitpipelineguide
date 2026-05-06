@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 55: Binary USDZ Inspection via usdcat
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:55 +03
+**Amaç:** `inspect-usdz` kalite kapısındaki binary `.usdc` geometry/UV blind spot'unu gidermek.
+
+**Yapılanlar:**
+
+- `inspect-usdz`, text `.usda`/`.usd` üye bulamazsa ve `usdcat` mevcutsa USDZ paketini text'e decode edip aynı triangle/UV parser'larını kullanıyor.
+- `usdcat` yoksa veya hata dönerse mevcut güvenli davranış korunuyor: geometry/UV `unknown`, sahte count yok.
+- Binary `.usdc` decode yolu unit testle mock'landı.
+- `Docs/cli-tool.md` binary inspection davranışıyla güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_inspect_usdz_uses_usdcat_for_binary_geometry_when_available: first run failed as expected; inspect_usdz had no usdcat path
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_inspect_usdz_uses_usdcat_for_binary_geometry_when_available: ok
+python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, triangles=284, triangleStatus=ok, uv st=present, baseColor 512x512 / 1024
+python3 -m unittest Tests.test_rkp_package Tests.test_rkp_project: ok, 31 tests
+python3 -m compileall -q src Tools Tests: ok
+```
+
+**Öğrenme notu:**
+
+Binary USDZ için doğru yaklaşım "bilinmiyor" demekten "araç varsa ölç, yoksa bilinmiyor de" seviyesine çıktı. Bu, release gate'i daha anlamlı yapıyor ama tool-less makinelerde deterministik fallback'i koruyor.
+
 ### Sprint 54: Shared Blender Discovery
 
 **Durum:** Tamamlandı

@@ -215,7 +215,7 @@ rkp inspect-usdz enemy_drone
 rkp inspect-usdz enemy_drone --json
 ```
 
-`inspect-usdz` checks whether the package exists, whether the expected base color texture is inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether a text USDA member exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. Binary-only USD content reports unknown geometry instead of inventing a count.
+`inspect-usdz` checks whether the package exists, whether the expected base color texture is inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether USD text exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. Binary `.usdc` packages are decoded through `usdcat` when that tool is available; otherwise geometry/UV status remains `unknown` instead of being invented.
 
 Use `verify-asset` as the one-command asset quality gate:
 

@@ -4,7 +4,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import struct
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -26,6 +28,18 @@ def _read_text_members(archive: zipfile.ZipFile) -> str:
         except UnicodeDecodeError:
             continue
     return "\n".join(chunks)
+
+
+def _read_usdcat_text(usdz_path: Path, entries: list[str]) -> str:
+    if not any(Path(name).suffix.lower() in {".usdc", ".usd"} for name in entries):
+        return ""
+    usdcat = shutil.which("usdcat")
+    if not usdcat:
+        return ""
+    result = subprocess.run([usdcat, str(usdz_path)], text=True, capture_output=True)
+    if result.returncode != 0:
+        return ""
+    return result.stdout
 
 
 def _parse_face_vertex_counts(text: str) -> int | None:
@@ -134,6 +148,8 @@ def inspect_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict:
                 payload["baseColorTexture"]["present"] = None
                 payload["baseColorTexture"]["sizeStatus"] = "not_required"
             text = _read_text_members(archive)
+            if not text:
+                text = _read_usdcat_text(usdz_path, entries)
     except zipfile.BadZipFile:
         payload["errors"].append("USDZ is not a readable zip package")
         return payload

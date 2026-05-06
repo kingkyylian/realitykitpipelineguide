@@ -14,7 +14,7 @@ python3 -m compileall -q src Tools Tests: ok
 python3 -m unittest discover -s Tests: ok, 41 tests
 python3 Tools/rkp.py doctor --json: ok, 0 errors, 1 warning
 python3 Tools/rkp.py doctor --blender --json: ok, Blender discovery passes, same CI warning
-python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, baseColor 512x512 / 1024, geometry/uv unknown because binary .usdc
+python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, baseColor 512x512 / 1024; later Sprint 55 adds usdcat decoding for binary geometry/UV
 rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild ok, CoreSimulator sandbox warnings only
 python3 Tools/rkp.py release-check: ok; doctor warning only, tests ok, xcodegen ok, xcodebuild ok
 ```
@@ -157,6 +157,8 @@ manual screenshot check for target load and hit feedback
 ```
 
 ### P2 - USDZ Inspection Has a Binary Geometry Blind Spot
+
+Status: implemented in Sprint 55. `inspect-usdz` now uses `usdcat` when available to decode binary `.usdc` packages.
 
 `inspect-usdz` can inspect text `.usda`/`.usd` members, but binary `.usdc` packages report triangle and UV status as unknown. This is honest, but it weakens acceptance for Blender-built binary packages.
 

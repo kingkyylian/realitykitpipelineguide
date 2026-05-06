@@ -89,9 +89,9 @@ def print_json(payload: dict) -> None:
     print(json.dumps(payload, indent=2, sort_keys=True))
 
 
-def run_doctor_json() -> int:
+def run_doctor_json(include_blender: bool = False) -> int:
     doctor = Doctor(project())
-    doctor.collect()
+    doctor.collect(include_blender=include_blender)
     summary = doctor.summary()
     print_json(summary)
     return 0 if summary["ok"] else 1
@@ -237,7 +237,6 @@ def run_release_check() -> int:
 
 
 def run_make_asset_meshy(args: argparse.Namespace) -> int:
-    import os
     from rkp.meshy_asset import generate_usdz
 
     api_key = os.environ.get("MESHY_API_KEY")
@@ -382,6 +381,7 @@ def main() -> int:
 
     doctor = subparsers.add_parser("doctor", help="Run the static pipeline doctor")
     doctor.add_argument("--json", action="store_true", help="Print machine-readable doctor summary")
+    doctor.add_argument("--blender", action="store_true", help="Also verify Blender executable discovery")
 
     subparsers.add_parser("release-check", help="Run doctor, XcodeGen, manifest validation, and iOS build")
 
@@ -440,8 +440,8 @@ def main() -> int:
         return 0
     if args.command == "doctor":
         if args.json:
-            return run_doctor_json()
-        return Doctor(project()).run()
+            return run_doctor_json(include_blender=args.blender)
+        return Doctor(project()).run(include_blender=args.blender)
     if args.command == "release-check":
         return run_release_check()
     if args.command == "new-asset":

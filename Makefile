@@ -20,7 +20,7 @@ test:
 	python3 -m unittest discover -s Tests
 
 doctor:
-	python3 Tools/rkp.py doctor
+	python3 Tools/rkp.py doctor $(if $(blender),--blender,) $(if $(json),--json,)
 
 status:
 	python3 Tools/rkp.py status

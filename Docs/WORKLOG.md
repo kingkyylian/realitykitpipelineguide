@@ -12,6 +12,41 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 49: Blender Diagnostic and Dead Code Cleanup
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 14:25 +03
+**Amaç:** Release öncesi Blender kurulum kırılma noktasını açık diagnostic'e taşımak ve son eklenen CLI kodundaki bariz dead code'u temizlemek.
+
+**Yapılanlar:**
+
+- `rkp doctor --blender` flag'i eklendi.
+- JSON ve text doctor akışları Blender executable discovery kontrolünü opsiyonel olarak çalıştırabiliyor.
+- `BLENDER=/path/to/blender rkp doctor --blender` override path'ini doğruluyor; invalid override explicit error veriyor.
+- Makefile `make doctor blender=1 [json=1]` destekliyor.
+- README, `Docs/cli-tool.md` ve `Docs/ai-handoff.md` Blender diagnostic durumuyla güncellendi.
+- Dead code temizliği: `src/rkp/meshy_asset.py` içindeki kullanılmayan `urllib.error` import'u kaldırıldı; `src/rkp/cli.py` içindeki redundant lokal `import os` kaldırıldı.
+- `Tools/*.py` wrapper'ları temizlenmedi; package sonrası bile geriye dönük CLI uyumluluğu sağladıkları için intentional compatibility layer olarak bırakıldı.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_cli.RkpCliTests.test_doctor_blender_reports_invalid_override: first run failed as expected because doctor --blender was not implemented
+python3 -m unittest Tests.test_rkp_cli.RkpCliTests.test_doctor_blender_reports_invalid_override Tests.test_rkp_cli.RkpCliTests.test_doctor_json_reports_no_errors: ok
+python3 -m unittest Tests.test_rkp_cli Tests.test_rkp_init: ok, 16 tests
+python3 -m unittest discover -s Tests: ok, 41 tests
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+BLENDER=/nonexistent/blender python3 Tools/rkp.py doctor --blender --json: expected failure, BLENDER error reported
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py verify-asset target_basic_textured: ok, baseColor size 512x512 / 1024
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok; CoreSimulator sandbox warnings only
+git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Blender sorunu `build-asset` sırasında sürpriz olmamalı. Normal `doctor` minimal projeleri gürültüsüz tutar; explicit `--blender` ise setup debugging için bilinçli, fail-fast bir kapı sağlar.
+
 ### Sprint 48: Guide and PDF Refresh
 
 **Durum:** Tamamlandı

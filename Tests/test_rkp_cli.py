@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import unittest
@@ -36,6 +37,26 @@ class RkpCliTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["errors"], 0)
+
+    def test_doctor_blender_reports_invalid_override(self) -> None:
+        env = os.environ.copy()
+        env["BLENDER"] = "/nonexistent/blender"
+
+        result = subprocess.run(
+            [sys.executable, "Tools/rkp.py", "doctor", "--blender", "--json"],
+            cwd=ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertEqual(result.returncode, 1)
+        payload = json.loads(result.stdout)
+        self.assertFalse(payload["ok"])
+        self.assertGreaterEqual(payload["errors"], 1)
+        self.assertTrue(
+            any("Blender executable is not available" in finding["message"] for finding in payload["findings"])
+        )
 
     def test_make_asset_blocks_screenshot_acceptance_without_build(self) -> None:
         result = self.run_rkp(

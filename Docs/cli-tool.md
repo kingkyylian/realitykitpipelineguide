@@ -115,6 +115,14 @@ rkp doctor
 python3 Tools/rkp.py doctor
 ```
 
+Add Blender discovery diagnostics when troubleshooting build setup:
+
+```bash
+rkp doctor --blender
+rkp doctor --blender --json
+BLENDER=/custom/path/to/blender rkp doctor --blender
+```
+
 Use JSON output for CI, scripts, agents, or future MCP-style wrappers:
 
 ```bash
@@ -250,6 +258,8 @@ The Makefile is a convenience wrapper around the CLI:
 ```bash
 make status
 make doctor
+make doctor blender=1
+make doctor blender=1 json=1
 make test
 make new-asset id=enemy_drone type=gameplay_target
 make build-asset id=enemy_drone
@@ -286,7 +296,7 @@ They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-co
 - `inspect-usdz` reads a built USDZ package and reports texture presence, texture dimensions, UV, and known triangle budget gates without mutating files.
 - `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release check, stopping at the first failed gate.
 - `accept-asset` requires screenshot evidence and records production acceptance.
-- `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands.
+- `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands. `--blender` adds an explicit Blender executable diagnostic.
 - `status --json` and `doctor --json` are the stable machine-readable surface for automation.
 - `release-check` runs doctor, CLI tests when configured, manifest validation, and the optional Xcode build expected before push or release.
 

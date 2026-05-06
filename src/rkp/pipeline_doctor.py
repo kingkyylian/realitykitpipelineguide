@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
+import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,6 +23,7 @@ TEXT_EXTENSIONS = {
     ".py",
     ".txt",
 }
+MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
 
 
 @dataclass
@@ -242,7 +245,27 @@ class Doctor:
         if "actions/checkout@v4" in text:
             self.warning("actions/checkout@v4 currently emits Node 20 deprecation warnings", ".github/workflows/ci.yml")
 
-    def collect(self) -> list[Finding]:
+    def check_blender(self) -> None:
+        override = os.environ.get("BLENDER")
+        if override:
+            blender = Path(override)
+            if not blender.exists() or not os.access(blender, os.X_OK):
+                self.error(f"Blender executable is not available: {override}", "BLENDER")
+            return
+
+        executable = shutil.which("blender")
+        if executable:
+            return
+
+        if MACOS_BLENDER_APP.exists() and os.access(MACOS_BLENDER_APP, os.X_OK):
+            return
+
+        self.error(
+            "Blender executable not found. Install Blender or set BLENDER=/path/to/blender.",
+            "BLENDER",
+        )
+
+    def collect(self, include_blender: bool = False) -> list[Finding]:
         self.check_required_paths()
         self.check_manifest()
         self.check_project_paths()
@@ -250,6 +273,8 @@ class Doctor:
         self.check_public_text()
         self.check_skill_pack()
         self.check_ci()
+        if include_blender:
+            self.check_blender()
         return self.findings
 
     def summary(self) -> dict:
@@ -262,8 +287,8 @@ class Doctor:
             "findings": [finding.to_dict() for finding in self.findings],
         }
 
-    def run(self) -> int:
-        self.collect()
+    def run(self, include_blender: bool = False) -> int:
+        self.collect(include_blender=include_blender)
         summary = self.summary()
 
         if not self.findings:
@@ -310,8 +335,9 @@ class Doctor:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate the RealityKit pipeline repo structure.")
-    parser.parse_args()
-    return Doctor(load_project()).run()
+    parser.add_argument("--blender", action="store_true", help="Also verify Blender executable discovery")
+    args = parser.parse_args()
+    return Doctor(load_project()).run(include_blender=args.blender)
 
 
 if __name__ == "__main__":

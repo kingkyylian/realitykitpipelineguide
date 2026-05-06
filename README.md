@@ -65,6 +65,7 @@ Machine-readable status and doctor output are available for scripts and agents:
 ```bash
 rkp status --json
 rkp doctor --json
+rkp doctor --blender --json
 ```
 
 ### First Asset In Your Own Project
@@ -86,7 +87,7 @@ rkp release-check
 
 Expected first doctor result in a new project is `0 error(s)` with only recommended project hygiene warnings such as `README.md`, `LICENSE`, or `Makefile`.
 
-`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. Run `inspect-usdz` before acceptance to check the package, expected base color texture, texture size budget, `st` UV signal, and known triangle budget status:
+`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. Use `rkp doctor --blender` to diagnose Blender discovery. Run `inspect-usdz` before acceptance to check the package, expected base color texture, texture size budget, `st` UV signal, and known triangle budget status:
 
 ```bash
 rkp inspect-usdz enemy_drone

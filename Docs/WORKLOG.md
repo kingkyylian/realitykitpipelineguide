@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 58: Ruff Lint Configuration
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 21:10 +03
+**Amaç:** Audit rotasındaki first-class Python lint altyapısını yapılandırmak.
+
+**Yapılanlar:**
+
+- `pyproject.toml` içine `dev` optional dependency olarak `ruff` eklendi.
+- Ruff config eklendi: Python 3.10 target, `src/Tests/Tools` kapsamı, temel `E/F/I/UP/B` lint seçimi.
+- Makefile `lint` hedefi eklendi.
+- GitHub Actions içine editable dev install ve `python3 -m ruff check src Tests Tools` adımı eklendi.
+- README, `Docs/cli-tool.md` ve audit dosyası lint komutuyla güncellendi.
+
+**Verification:**
+
+```text
+command -v ruff: not installed in current local environment
+python3 Tools/rkp.py doctor --json: ok, 0 errors, 1 checkout warning
+python3 -m unittest discover -s Tests: ok
+git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Lint gate'i CI'da kurulabilir hale geldi; local makinede çalıştırmak için önce `python3 -m pip install -e ".[dev]"` gerekiyor.
+
 ### Sprint 57: Safe Cleanup Command
 
 **Durum:** Tamamlandı

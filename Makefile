@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate test doctor status new-asset prompt-asset make-asset build-asset inspect-usdz verify-asset accept-asset guide release-check install-skill clean
+.PHONY: generate build validate test lint doctor status new-asset prompt-asset make-asset build-asset inspect-usdz verify-asset accept-asset guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -18,6 +18,9 @@ validate:
 
 test:
 	python3 -m unittest discover -s Tests
+
+lint:
+	python3 -m ruff check src Tests Tools
 
 doctor:
 	python3 Tools/rkp.py doctor $(if $(blender),--blender,) $(if $(json),--json,)

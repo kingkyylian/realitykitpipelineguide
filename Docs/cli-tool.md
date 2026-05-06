@@ -273,6 +273,7 @@ make verify-asset id=enemy_drone build=1 screenshot=Docs/screenshots/enemy_drone
 make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
 make release-check
 make release-check assets=1
+make lint
 python3 Tools/rkp.py clean --dry-run
 python3 Tools/rkp.py clean --apply
 ```

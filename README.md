@@ -119,6 +119,8 @@ python3 -m unittest discover -s Tests
 python3 Tools/rkp.py release-check
 python3 Tools/rkp.py release-check --assets
 python3 Tools/rkp.py clean --dry-run
+python3 -m pip install -e ".[dev]"
+make lint
 make status
 make test
 ```

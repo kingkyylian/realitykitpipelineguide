@@ -23,6 +23,12 @@ jobs:
       - name: Validate asset manifest
         run: node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')"
 
+      - name: Install Python dev dependencies
+        run: python3 -m pip install -e ".[dev]"
+
+      - name: Lint Python
+        run: python3 -m ruff check src Tests Tools
+
       - name: Test pipeline CLI
         run: python3 -m unittest discover -s Tests
 

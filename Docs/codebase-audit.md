@@ -200,6 +200,8 @@ python3 -m unittest Tests.test_rkp_cli
 
 ### P3 - Tooling Lacks First-Class Lint
 
+Status: configured in Sprint 58. Ruff dev dependency/config, Makefile target, and CI lint step were added; local execution still requires installing `rkp[dev]`.
+
 `ruff` and `pyflakes` are not installed in the current environment, and `pyproject.toml` has no lint configuration. Current quality relies on tests, compileall, doctor, and Xcode build.
 
 Route:

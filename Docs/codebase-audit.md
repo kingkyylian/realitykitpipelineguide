@@ -135,6 +135,8 @@ python3 -m unittest Tests.test_rkp_cli
 
 ### P2 - `GameARView.swift` Has Too Many Responsibilities
 
+Status: started in Sprint 56. Pure wave and target scoring rules moved to `Sources/RealityKitPipelineDemo/GameRules.swift`; visual builders/effects are still future slices.
+
 `GameARView.swift` is 641 lines and owns scene setup, asset loading, target spawning, projectile simulation, scoring, collision handling, hit effects, haptics, demo playback, and reset behavior. It is the highest-risk app file by git-history overlap.
 
 Route:

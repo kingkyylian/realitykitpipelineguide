@@ -10,6 +10,7 @@
 		0515FABC11CCA3BF3BE6A837 /* RealityKitGameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97002C5EF854364A5E2AC171 /* RealityKitGameView.swift */; };
 		0577EF05568007206B908E75 /* Imported in Resources */ = {isa = PBXBuildFile; fileRef = 15A336B08811341663187E38 /* Imported */; };
 		602894F2C6BD598AD67A382A /* RealityKitPipelineDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76090916ED84D87581CDEE16 /* RealityKitPipelineDemoApp.swift */; };
+		7EBD120881A0D095C7B258D6 /* GameRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3679AEBBA153BC3ABAC2D61B /* GameRules.swift */; };
 		812214F8F6DB09CC542D1A7B /* ImportedAssetLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F51B414AADAECDE7560D194 /* ImportedAssetLoader.swift */; };
 		95EF463D1BE7D2A1209E5A7C /* Textures in Resources */ = {isa = PBXBuildFile; fileRef = 71C2D95612170C24DC692C34 /* Textures */; };
 		CF02B611DFCDC9A163F9FAFF /* GameARView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4F43F5E075728327FD21B9 /* GameARView.swift */; };
@@ -21,6 +22,7 @@
 		08CA27768D54216F2F1811C1 /* RealityKitPipelineDemo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = RealityKitPipelineDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		15A336B08811341663187E38 /* Imported */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Imported; path = Assets/Imported; sourceTree = SOURCE_ROOT; };
 		1F51B414AADAECDE7560D194 /* ImportedAssetLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedAssetLoader.swift; sourceTree = "<group>"; };
+		3679AEBBA153BC3ABAC2D61B /* GameRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameRules.swift; sourceTree = "<group>"; };
 		71C2D95612170C24DC692C34 /* Textures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Textures; path = Assets/Textures; sourceTree = SOURCE_ROOT; };
 		76090916ED84D87581CDEE16 /* RealityKitPipelineDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealityKitPipelineDemoApp.swift; sourceTree = "<group>"; };
 		97002C5EF854364A5E2AC171 /* RealityKitGameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealityKitGameView.swift; sourceTree = "<group>"; };
@@ -45,6 +47,7 @@
 			children = (
 				98A1A38D52160C4F88199030 /* ContentView.swift */,
 				AF4F43F5E075728327FD21B9 /* GameARView.swift */,
+				3679AEBBA153BC3ABAC2D61B /* GameRules.swift */,
 				FCBD8F17F1B30320B8A47298 /* GameSession.swift */,
 				1F51B414AADAECDE7560D194 /* ImportedAssetLoader.swift */,
 				97002C5EF854364A5E2AC171 /* RealityKitGameView.swift */,
@@ -132,6 +135,7 @@
 			files = (
 				D85B7B651F5C2C0830F23000 /* ContentView.swift in Sources */,
 				CF02B611DFCDC9A163F9FAFF /* GameARView.swift in Sources */,
+				7EBD120881A0D095C7B258D6 /* GameRules.swift in Sources */,
 				EA04CC8A877AE3DA8BCD848D /* GameSession.swift in Sources */,
 				812214F8F6DB09CC542D1A7B /* ImportedAssetLoader.swift in Sources */,
 				0515FABC11CCA3BF3BE6A837 /* RealityKitGameView.swift in Sources */,

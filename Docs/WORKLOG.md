@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 56: Game Rules Extraction
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 21:00 +03
+**Amaç:** `GameARView.swift` sorumluluklarını azaltma rotasının ilk güvenli dilimini uygulamak.
+
+**Yapılanlar:**
+
+- `Sources/RealityKitPipelineDemo/GameRules.swift` eklendi.
+- Wave target count hesapları `WaveRules` içine taşındı.
+- Screen-space ve spatial target scoring eşikleri `TargetScoring` içine taşındı.
+- `GameARView.swift` bu pure helper'ları kullanacak şekilde sadeleştirildi.
+- XcodeGen yeniden çalıştırıldı; yeni Swift dosyası projeye eklendi.
+
+**Verification:**
+
+```text
+xcodegen generate: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Bu refactor behavior değiştirmeden sadece pure math/rules katmanını ayırdı. Sonraki güvenli dilimler target factory, arena builder ve hit effect system olabilir.
+
 ### Sprint 55: Binary USDZ Inspection via usdcat
 
 **Durum:** Tamamlandı

@@ -472,18 +472,7 @@ final class GameARView: ARView {
     }
 
     private func scoreForScreenHit(distance: CGFloat) -> (points: Int, zone: String) {
-        let bullseyeRadius = bounds.width * 0.022
-        let innerRingRadius = bounds.width * 0.048
-
-        if distance < bullseyeRadius {
-            return (5, "Bullseye")
-        }
-
-        if distance < innerRingRadius {
-            return (3, "Inner ring")
-        }
-
-        return (1, "Outer ring")
+        TargetScoring.screenHit(distance: distance, boundsWidth: bounds.width)
     }
 
     private func spawnNextWaveIfNeeded() {
@@ -494,11 +483,11 @@ final class GameARView: ARView {
     }
 
     private func targetCountForCurrentWave() -> Int {
-        min(2 + max(gameSession.wave - 1, 0), targetSpawnSlots.count)
+        WaveRules.targetCountForCurrentWave(wave: gameSession.wave, maxTargets: targetSpawnSlots.count)
     }
 
     private func targetCountForNextWave() -> Int {
-        min(2 + gameSession.wave, targetSpawnSlots.count)
+        WaveRules.targetCountForNextWave(wave: gameSession.wave, maxTargets: targetSpawnSlots.count)
     }
 
     private func spawnWaveTargets() {
@@ -513,15 +502,7 @@ final class GameARView: ARView {
         let faceOffset = offset - simd_dot(offset, cameraDirection) * cameraDirection
         let radialDistance = simd_length(faceOffset)
 
-        if radialDistance < 0.104 {
-            return (5, "Bullseye")
-        }
-
-        if radialDistance < 0.215 {
-            return (3, "Inner ring")
-        }
-
-        return (1, "Outer ring")
+        return TargetScoring.spatialHit(radialDistance: radialDistance)
     }
 
     private func removeExpiredProjectiles() {

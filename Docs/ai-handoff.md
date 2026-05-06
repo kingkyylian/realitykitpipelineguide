@@ -32,6 +32,7 @@ It is not a game-first repository. Treat the fixture app as a test harness for t
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 | Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz` package gate, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
+| Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
 
 ## Planned Learning Modules
@@ -53,12 +54,14 @@ Portability status: config decoupling and packaging are in place. `pyproject.tom
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
-2. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
-3. Add README badges if they are not already present.
-4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-5. Add a first-good-issue list for learners.
-6. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
+1. Execute the first item in `Docs/codebase-audit.md`: add `release-check --assets` or `verify-all-assets` so imported USDZ inspection is part of the release gate.
+2. Fix the plain `new-asset` Blender stub contract so its generated asset can satisfy the baseColor/texture export expectations.
+3. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
+4. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
+5. Add README badges if they are not already present.
+6. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+7. Add a first-good-issue list for learners.
+8. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
 
 If the user asks to continue education content, do this next:
 

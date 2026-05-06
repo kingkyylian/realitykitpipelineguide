@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 50: Whole Repo Audit and Cleanup Route
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:20 +03
+**Amaç:** Tüm projeyi dead code, optimizasyon, kalite kapısı ve refactor riski açısından tarayıp uygulanabilir rota çıkarmak.
+
+**Yapılanlar:**
+
+- Git history hotspot/bug-magnet taraması yapıldı; en riskli kod dosyası `Sources/RealityKitPipelineDemo/GameARView.swift` olarak işaretlendi.
+- Python AST dead-code taraması yapıldı; public top-level fonksiyon/class için doğrulanmış silinebilir tracked dead code bulunmadı.
+- Swift referans taraması yapıldı; tek false-positive sonuçlar `UIViewRepresentable` protocol method'larıydı.
+- Local hygiene taraması yapıldı; ignored `Build/`, `__pycache__/`, `src/rkp.egg-info/`, `.DS_Store` ve boş usdzip scratch klasörleri cleanup adayı olarak kaydedildi.
+- `Docs/codebase-audit.md` eklendi; P1/P2/P3 rota, acceptance komutları ve bulgu gerekçeleri yazıldı.
+- `Docs/ai-handoff.md` yeni audit rotasına bağlandı.
+
+**Verification:**
+
+```text
+python3 -m compileall -q src Tools Tests: ok
+python3 -m unittest discover -s Tests: ok, 41 tests
+python3 Tools/rkp.py doctor --json: ok, 0 errors, 1 warning (.github/workflows/ci.yml Node 20 deprecation)
+python3 Tools/rkp.py doctor --blender --json: ok, Blender discovery passes
+python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, baseColor 512x512 / 1024
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok; CoreSimulator sandbox warnings only
+python3 Tools/rkp.py release-check: ok; doctor warning only, tests ok, xcodegen ok, xcodebuild ok
+```
+
+**Öğrenme notu:**
+
+Bu repo şu an kırık değil; ana risk sessiz asset regresyonu. Bu yüzden ilk rota maddesi refactor değil, imported asset inspection'ı release gate içine almak.
+
 ### Sprint 49: Blender Diagnostic and Dead Code Cleanup
 
 **Durum:** Tamamlandı

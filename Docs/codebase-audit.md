@@ -94,6 +94,8 @@ python3 Tools/rkp.py make-asset smoke_runtime --type gameplay_target --prompt "r
 
 ### P2 - Manifest and Asset Lookup Logic Is Duplicated
 
+Status: implemented in Sprint 53. Shared manifest/asset helpers now live in `src/rkp/asset_manifest.py`.
+
 `load_asset` and related manifest reads are duplicated in `build_asset.py`, `inspect_usdz.py`, and `usdz_fallback_builder.py`. `load_manifest`/`write_manifest` also exist in multiple modules.
 
 Route:

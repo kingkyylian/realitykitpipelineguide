@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
@@ -11,19 +10,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from rkp.asset_manifest import asset_usdz_path, expected_basecolor_texture, load_asset
 from rkp.rkp_project import ProjectPaths, load_project
 from rkp.runtime import module_command, package_env
 
 PROJECT = load_project()
 MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
-
-
-def load_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict | None:
-    manifest = json.loads(project.manifest.read_text(encoding="utf-8"))
-    for asset in manifest.get("assets", []):
-        if asset.get("id") == asset_id:
-            return asset
-    return None
 
 
 def blender_executable() -> str | None:
@@ -56,13 +48,6 @@ def run_direct_usdz_fallback(asset_id: str, project: ProjectPaths = PROJECT) -> 
         cwd=project.root,
         env=package_env(),
     ).returncode
-
-
-def expected_basecolor_texture(asset: dict, project: ProjectPaths = PROJECT) -> Path | None:
-    texture_maps = asset.get("textureMaps")
-    if texture_maps is not None and "baseColor" not in texture_maps:
-        return None
-    return project.textures_dir / f"{asset['id']}_basecolor.png"
 
 
 def usdz_contains_texture(usdz_path: Path, texture_path: Path) -> bool:
@@ -98,7 +83,7 @@ def main() -> int:
         )
         return 127
     if not is_executable(blender):
-        output_path = PROJECT.assets_dir / asset["file"]
+        output_path = asset_usdz_path(asset, PROJECT)
         print(
             f"error: Blender executable is not available: {blender}. "
             f"Expected USDZ would be {PROJECT.rel(output_path)}",
@@ -106,7 +91,7 @@ def main() -> int:
         )
         return 127
 
-    output_path = PROJECT.assets_dir / asset["file"]
+    output_path = asset_usdz_path(asset, PROJECT)
     command = [blender, "--background", "--factory-startup", "--python", str(script_path)]
     print("running:", " ".join(command), flush=True)
     result = subprocess.run(command, cwd=PROJECT.root)
@@ -134,7 +119,7 @@ def main() -> int:
         return 1
 
     print(f"asset built: {PROJECT.rel(output_path)} ({size} bytes)")
-    texture_path = expected_basecolor_texture(asset)
+    texture_path = expected_basecolor_texture(asset, PROJECT)
     if texture_path is not None and not usdz_contains_texture(output_path, texture_path):
         print(
             "info: no texture file found - USDZ built without texture "

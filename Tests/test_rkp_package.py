@@ -24,6 +24,42 @@ class RkpPackageTests(unittest.TestCase):
         self.assertEqual(command, [sys.executable, "-m", "rkp.inspect_usdz", "target_basic"])
         self.assertEqual(env["PYTHONPATH"].split(":")[0], str(SRC))
 
+    def test_asset_manifest_helpers_expose_shared_contract(self) -> None:
+        from rkp import asset_manifest
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest_path = root / "Pipeline" / "manifest.json"
+            manifest_path.parent.mkdir()
+            project = SimpleNamespace(
+                manifest=manifest_path,
+                assets_dir=root / "Assets",
+                textures_dir=root / "Textures",
+            )
+            manifest = {
+                "assets": [
+                    {"id": "plain", "file": "plain.usdz", "status": "imported", "textureMaps": []},
+                    {"id": "textured", "file": "textured.usdz", "status": "imported"},
+                    {"id": "draft", "file": "draft.usdz", "status": "planned"},
+                ]
+            }
+            asset_manifest.write_manifest(manifest, project)
+
+            loaded = asset_manifest.load_manifest(project)
+            plain = asset_manifest.load_asset("plain", project)
+            textured = asset_manifest.load_asset("textured", project)
+
+        self.assertEqual(loaded["assets"][0]["id"], "plain")
+        self.assertEqual(asset_manifest.imported_asset_ids(loaded), ["plain", "textured"])
+        self.assertEqual(asset_manifest.asset_file_name("new_target"), "new_target.usdz")
+        self.assertIsNone(asset_manifest.expected_basecolor_name(plain))
+        self.assertEqual(asset_manifest.expected_basecolor_name(textured), "textured_basecolor.png")
+        self.assertEqual(asset_manifest.asset_usdz_path(textured, project), root / "Assets" / "textured.usdz")
+        self.assertEqual(
+            asset_manifest.expected_basecolor_texture(textured, project),
+            root / "Textures" / "textured_basecolor.png",
+        )
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

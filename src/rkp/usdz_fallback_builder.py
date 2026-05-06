@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import shutil
 import struct
@@ -12,19 +11,12 @@ import tempfile
 import zlib
 from pathlib import Path
 
+from rkp.asset_manifest import asset_usdz_path, basecolor_texture_name, load_asset
 from rkp.prompt_asset import infer_palette
 from rkp.rkp_project import ProjectPaths, load_project
 
 
 PROJECT = load_project()
-
-
-def load_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict | None:
-    manifest = json.loads(project.manifest.read_text(encoding="utf-8"))
-    for asset in manifest.get("assets", []):
-        if asset.get("id") == asset_id:
-            return asset
-    return None
 
 
 def png_chunk(kind: bytes, data: bytes) -> bytes:
@@ -281,8 +273,8 @@ def main() -> int:
         print("error: usdzip not found; direct USDZ fallback cannot run", file=sys.stderr)
         return 127
 
-    output_path = PROJECT.assets_dir / asset["file"]
-    texture_name = f"{asset['id']}_basecolor.png"
+    output_path = asset_usdz_path(asset, PROJECT)
+    texture_name = basecolor_texture_name(str(asset["id"]))
     with tempfile.TemporaryDirectory(prefix=f"rkp_{asset['id']}_") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
         usda_path = temp_dir / f"{asset['id']}.usda"

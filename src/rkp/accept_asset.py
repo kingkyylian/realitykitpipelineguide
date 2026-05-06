@@ -2,32 +2,17 @@
 from __future__ import annotations
 
 import argparse
-import json
 import shutil
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
+from rkp.asset_manifest import asset_usdz_path, find_asset, load_manifest, write_manifest
 from rkp.rkp_project import ProjectPaths, load_project
 from rkp.runtime import module_command, package_env
 
 PROJECT = load_project()
-
-
-def load_manifest(project: ProjectPaths = PROJECT) -> dict:
-    return json.loads(project.manifest.read_text(encoding="utf-8"))
-
-
-def write_manifest(manifest: dict, project: ProjectPaths = PROJECT) -> None:
-    project.manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def find_asset(manifest: dict, asset_id: str) -> dict | None:
-    for asset in manifest.get("assets", []):
-        if asset.get("id") == asset_id:
-            return asset
-    return None
 
 
 def relative(path: Path, project: ProjectPaths = PROJECT) -> str:
@@ -134,7 +119,7 @@ def main() -> int:
         print(f"error: unknown asset id: {args.id}", file=sys.stderr)
         return 1
 
-    usdz_path = PROJECT.assets_dir / asset["file"]
+    usdz_path = asset_usdz_path(asset, PROJECT)
     if not usdz_path.exists() or usdz_path.stat().st_size <= 0:
         print(f"error: built USDZ is missing or empty: {relative(usdz_path)}", file=sys.stderr)
         return 1

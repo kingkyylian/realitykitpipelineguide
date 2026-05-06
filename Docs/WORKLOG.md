@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 53: Manifest Helper Consolidation
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:42 +03
+**Amaç:** Audit rotasındaki manifest/asset lookup duplication riskini azaltmak ve baseColor contract semantiğini tek helper modülünde toplamak.
+
+**Yapılanlar:**
+
+- `src/rkp/asset_manifest.py` eklendi.
+- `load_manifest`, `write_manifest`, `find_asset`, `load_asset`, `imported_asset_ids`, `asset_usdz_path`, `expected_basecolor_name` ve `expected_basecolor_texture` helper'ları merkezileştirildi.
+- `build_asset.py`, `inspect_usdz.py`, `usdz_fallback_builder.py`, `accept_asset.py`, `new_asset.py` ve `cli.py` shared helper'lara geçirildi.
+- `textureMaps` eksikse baseColor required; açık `textureMaps: []` varsa baseColor not-required davranışı testle sabitlendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_asset_manifest_helpers_expose_shared_contract: first run failed as expected; rkp.asset_manifest module was missing
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_asset_manifest_helpers_expose_shared_contract: ok
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_asset_manifest_helpers_expose_shared_contract Tests.test_rkp_package.RkpPackageTests.test_release_check_assets_inspects_imported_assets_before_xcode: ok
+python3 -m compileall -q src Tools Tests: ok
+rg "def load_asset|def load_manifest|def write_manifest|def find_asset|def expected_basecolor_name|def expected_basecolor_texture" src/rkp: ok; definitions only in src/rkp/asset_manifest.py
+python3 -m unittest discover -s Tests: ok, 45 tests
+python3 Tools/rkp.py verify-asset target_basic_textured: ok
+python3 Tools/rkp.py doctor --json: ok, 0 errors, 1 checkout warning
+```
+
+**Öğrenme notu:**
+
+Manifest contract semantiği tek yerde durmalı; aksi halde `build-asset`, `inspect-usdz` ve `release-check --assets` aynı asset için farklı gerçeklikler üretebilir.
+
 ### Sprint 52: Runtime Helper Extraction
 
 **Durum:** Tamamlandı

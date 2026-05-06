@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from rkp import __version__
+from rkp.asset_manifest import imported_asset_ids, load_manifest
 from rkp.pipeline_doctor import Doctor
 from rkp.rkp_project import CONFIG_FILE, DEFAULT_CONFIG, ProjectPaths, load_project
 from rkp.runtime import module_command, package_env, run
@@ -22,11 +23,6 @@ def project() -> ProjectPaths:
     if _PROJECT is None:
         _PROJECT = load_project()
     return _PROJECT
-
-
-def load_manifest(active_project: ProjectPaths | None = None) -> dict:
-    active_project = active_project or project()
-    return json.loads(active_project.manifest.read_text(encoding="utf-8"))
 
 
 def build_status_payload(active_project: ProjectPaths | None = None) -> dict:
@@ -176,11 +172,7 @@ def run_release_check(include_assets: bool = False) -> int:
 
     if include_assets:
         print("==> assets", flush=True)
-        imported_assets = [
-            asset.get("id", "")
-            for asset in manifest.get("assets", [])
-            if asset.get("status") == "imported" and asset.get("id")
-        ]
+        imported_assets = imported_asset_ids(manifest)
         if not imported_assets:
             print("skip assets: no imported assets")
         for asset_id in imported_assets:

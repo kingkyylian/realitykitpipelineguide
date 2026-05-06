@@ -9,25 +9,11 @@ import sys
 import zipfile
 from pathlib import Path
 
+from rkp.asset_manifest import asset_usdz_path, expected_basecolor_name, load_asset
 from rkp.rkp_project import ProjectPaths, load_project
 
 
 PROJECT = load_project()
-
-
-def load_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict | None:
-    manifest = json.loads(project.manifest.read_text(encoding="utf-8"))
-    for asset in manifest.get("assets", []):
-        if asset.get("id") == asset_id:
-            return asset
-    return None
-
-
-def expected_basecolor_name(asset: dict) -> str | None:
-    texture_maps = asset.get("textureMaps")
-    if texture_maps is not None and "baseColor" not in texture_maps:
-        return None
-    return f"{asset['id']}_basecolor.png"
 
 
 def _read_text_members(archive: zipfile.ZipFile) -> str:
@@ -95,7 +81,7 @@ def inspect_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict:
     if asset is None:
         return {"ok": False, "asset": asset_id, "errors": [f"unknown asset id: {asset_id}"]}
 
-    usdz_path = project.assets_dir / asset["file"]
+    usdz_path = asset_usdz_path(asset, project)
     payload: dict = {
         "ok": False,
         "asset": asset_id,

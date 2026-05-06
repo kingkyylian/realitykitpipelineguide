@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
 
+from rkp.asset_manifest import asset_file_name, ensure_assets, find_asset, load_manifest, write_manifest
 from rkp.rkp_project import ProjectPaths, load_project
 
 PROJECT = load_project()
@@ -21,14 +21,6 @@ DEFAULT_BUDGETS = {
 
 def snake_case(value: str) -> str:
     return re.sub(r"_+", "_", re.sub(r"[^a-z0-9]+", "_", value.lower())).strip("_")
-
-
-def load_manifest(project: ProjectPaths = PROJECT) -> dict:
-    return json.loads(project.manifest.read_text(encoding="utf-8"))
-
-
-def write_manifest(manifest: dict, project: ProjectPaths = PROJECT) -> None:
-    project.manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def create_brief(asset_id: str, asset_type: str, output: Path) -> None:
@@ -222,18 +214,19 @@ def main() -> int:
         return 2
 
     manifest = load_manifest()
-    assets = manifest.setdefault("assets", [])
-    if any(asset.get("id") == asset_id for asset in assets):
+    assets = ensure_assets(manifest)
+    if find_asset(manifest, asset_id) is not None:
         print(f"error: asset id already exists: {asset_id}", file=sys.stderr)
         return 1
-    if any(asset.get("file") == f"{asset_id}.usdz" for asset in assets):
-        print(f"error: asset file already exists in manifest: {asset_id}.usdz", file=sys.stderr)
+    file_name = asset_file_name(asset_id)
+    if any(asset.get("file") == file_name for asset in assets):
+        print(f"error: asset file already exists in manifest: {file_name}", file=sys.stderr)
         return 1
 
     budgets = DEFAULT_BUDGETS[args.type]
     entry = {
         "id": asset_id,
-        "file": f"{asset_id}.usdz",
+        "file": file_name,
         "type": args.type,
         "status": "planned",
         "maxTriangles": args.triangles or budgets["maxTriangles"],

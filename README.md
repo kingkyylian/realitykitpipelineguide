@@ -117,6 +117,7 @@ cd realitykitpipelineguide
 python3 Tools/rkp.py status
 python3 -m unittest discover -s Tests
 python3 Tools/rkp.py release-check
+python3 Tools/rkp.py release-check --assets
 make status
 make test
 ```
@@ -314,7 +315,7 @@ Manual integration path:
 4. Run `rkp doctor`, then adapt any missing path findings intentionally.
 5. Use `status --json` and `doctor --json` if you want to wrap this toolkit from another agent, script, or future MCP server.
 
-The manifest format is intentionally simple JSON and can travel to another repo. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate with a warning-style message.
+The manifest format is intentionally simple JSON and can travel to another repo. `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate with a warning-style message. Use `release-check --assets` when imported manifest assets should be inspected before release.
 
 ## Known Limits In v0.1
 

@@ -125,6 +125,40 @@ class RkpPackageTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertEqual(commands, [[sys.executable, "-m", "rkp.inspect_usdz", "portable_module"]])
 
+    def test_release_check_assets_inspects_imported_assets_before_xcode(self) -> None:
+        from rkp import cli
+
+        commands: list[list[str]] = []
+        fake_project = SimpleNamespace(
+            root=ROOT,
+            tests_dir=ROOT / "MissingTestsForPackageUnit",
+            rel=lambda path: str(Path(path).relative_to(ROOT)),
+            xcode_project=ROOT / "RealityKitPipelineDemo.xcodeproj",
+            xcode_scheme="RealityKitPipelineDemo",
+            xcode_destination="generic/platform=iOS Simulator",
+            derived_data_path=ROOT / "Build" / "DerivedData",
+        )
+        manifest = {
+            "assets": [
+                {"id": "ready_target", "status": "imported"},
+                {"id": "draft_target", "status": "planned"},
+            ]
+        }
+
+        def capture(command: list[str], active_project=None) -> int:
+            commands.append(command)
+            return 1 if command[:3] == [sys.executable, "-m", "rkp.inspect_usdz"] else 0
+
+        with patch.object(cli, "project", return_value=fake_project), patch.object(
+            cli.Doctor, "run", return_value=0
+        ), patch.object(cli, "load_manifest", return_value=manifest), patch.object(
+            cli, "run", side_effect=capture
+        ):
+            result = cli.run_release_check(include_assets=True)
+
+        self.assertEqual(result, 1)
+        self.assertEqual(commands, [[sys.executable, "-m", "rkp.inspect_usdz", "ready_target"]])
+
     def test_claude_generation_wraps_geometry_with_export_boilerplate(self) -> None:
         from rkp import prompt_asset
 

@@ -227,6 +227,37 @@ def Mesh "Mesh"
             self.assertTrue((root / "GameAssets").is_dir())
             self.assertFalse((root / "Tools" / "asset_manifest.json").exists())
 
+    def test_new_asset_blender_stub_matches_basecolor_export_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "new-asset",
+                    "portable_texture",
+                    "--type",
+                    "gameplay_target",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            script = (root / "Pipeline" / "blender" / "create_portable_texture.py").read_text(encoding="utf-8")
+            self.assertIn('TEXTURE_PATH = TEXTURE_DIR / f"{ASSET_ID}_basecolor.png"', script)
+            self.assertIn('image = bpy.data.images.new(f"{ASSET_ID}_basecolor", width=512, height=512)', script)
+            self.assertIn("material.use_nodes = True", script)
+            self.assertIn('nodes.new(type="ShaderNodeTexImage")', script)
+            self.assertIn('uv_map.uv_map = "st"', script)
+            self.assertIn('mesh.uv_layers.new(name="st")', script)
+            self.assertIn('export_textures_mode="NEW"', script)
+            self.assertIn("export_materials=True", script)
+            self.assertIn("export_uvmaps=True", script)
+
     def test_prompt_asset_uses_external_project_config_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

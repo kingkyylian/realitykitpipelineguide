@@ -31,6 +31,8 @@ The main risks are maintainability and quality-gate coverage rather than broken 
 
 ### P1 - Release Check Does Not Verify Imported Assets
 
+Status: implemented in Sprint 51 as `rkp release-check --assets`.
+
 `release-check` validates doctor/tests/manifest/Xcode, but it does not run `inspect-usdz` or `verify-asset` across imported manifest assets. A broken imported USDZ could pass release-check if the manifest and build still pass.
 
 Route:
@@ -49,6 +51,8 @@ python3 -m unittest discover -s Tests
 ```
 
 ### P1 - Bootstrap Blender Stub Is Older Than Prompt Template
+
+Status: implemented in Sprint 51. `new-asset` now writes a baseColor texture stub with `st` UVs and modern USD texture export flags.
 
 `src/rkp/new_asset.py` generates a basic Blender stub with `export_textures=True`, while the newer prompt template and worklog moved to `export_textures_mode="NEW"`. Also, `new-asset` adds `textureMaps: ["baseColor"]`, but the basic stub does not create a base color texture. This can make a plain `new-asset -> build-asset -> inspect-usdz` path fail the texture gate unless the user manually fills the stub.
 

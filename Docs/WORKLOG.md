@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 51: Release Asset Gate and Starter Stub Contract
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 20:30 +03
+**Amaç:** Audit rotasının ilk P1 maddelerini uygulamak: release gate'e imported asset inspection eklemek ve plain `new-asset` stub'unu baseColor texture contract ile hizalamak.
+
+**Yapılanlar:**
+
+- `rkp release-check --assets` eklendi.
+- `release-check --assets`, manifestte `status: imported` olan asset'ler için Xcode build öncesinde `inspect-usdz <id>` çalıştırıyor ve ilk hatada duruyor.
+- Makefile `make release-check assets=1` destekliyor.
+- `target_basic` manifest kaydı texture'sız imported asset niyetini açıkça `textureMaps: []` ile belirtiyor.
+- `new-asset` Blender starter script'i artık 512x512 baseColor texture üretir, `st` UV layer yazar, node material zinciri kurar ve `export_textures_mode="NEW"` ile export eder.
+- README, `Docs/cli-tool.md`, `Docs/ai-handoff.md` ve `Docs/codebase-audit.md` yeni P1 durumuyla güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_release_check_assets_inspects_imported_assets_before_xcode: first run failed as expected; run_release_check did not accept include_assets
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_release_check_assets_inspects_imported_assets_before_xcode: ok
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_new_asset_blender_stub_matches_basecolor_export_contract: first worker run failed as expected on old stub contract
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_new_asset_blender_stub_matches_basecolor_export_contract: ok
+python3 Tools/rkp.py release-check --assets: first full run failed at target_basic because textureMaps intent was implicit
+python3 Tools/rkp.py release-check --assets: ok; 43 tests, all imported assets inspected, xcodebuild ok with CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Yeni gate hemen gerçek drift yakaladı: texture'sız legacy asset bile manifestte açık contract istemeli. Release kapısını sıkılaştırmak refactor'dan önce geldiği için doğru sıraydı.
+
 ### Sprint 50: Whole Repo Audit and Cleanup Route
 
 **Durum:** Tamamlandı

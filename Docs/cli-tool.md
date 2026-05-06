@@ -248,8 +248,11 @@ Run the full release gate:
 
 ```bash
 rkp release-check
+rkp release-check --assets
 python3 Tools/rkp.py release-check
 ```
+
+Use `--assets` before release or handoff when imported USDZ files should be re-inspected as part of the release gate. It runs `inspect-usdz` for each manifest asset with `status: imported` before the optional Xcode build.
 
 ## Makefile Compatibility
 
@@ -269,6 +272,7 @@ make verify-asset id=enemy_drone
 make verify-asset id=enemy_drone build=1 screenshot=Docs/screenshots/enemy_drone_imported.jpg release=1
 make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
 make release-check
+make release-check assets=1
 ```
 
 Prefer direct CLI commands when building automation, agents, or future MCP-style integrations. Prefer `make` for short local terminal usage.
@@ -298,7 +302,7 @@ They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-co
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands. `--blender` adds an explicit Blender executable diagnostic.
 - `status --json` and `doctor --json` are the stable machine-readable surface for automation.
-- `release-check` runs doctor, CLI tests when configured, manifest validation, and the optional Xcode build expected before push or release.
+- `release-check` runs doctor, CLI tests when configured, manifest validation, optional imported-asset inspection with `--assets`, and the optional Xcode build expected before push or release.
 
 Run the CLI smoke tests:
 

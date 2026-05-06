@@ -30,7 +30,7 @@ It is not a game-first repository. Treat the fixture app as a test harness for t
 | Arena floor fallback | Complete | `Docs/screenshots/arena_floor_fallback_ready.jpg` |
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
-| Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz` package gate, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
+| Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz`, `release-check --assets`, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
@@ -48,20 +48,18 @@ Recommended order:
 
 MCP status: no standalone MCP server ships yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for current automation and future MCP-style wrapping.
 
-Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"`, implementation modules live under `src/rkp`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `doctor --blender`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `verify-asset`, `accept-asset`, direct USDZ fallback, Meshy USDZ draft generation, and `release-check` are config-aware. `inspect-usdz` checks package existence, expected base color texture, PNG/JPEG dimensions against `maxTextureSize`, text USDA `primvars:st`, and known triangle budget status before screenshot acceptance. `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release-check, stopping at the first failed gate. `prompt-asset` remains deterministic by default; Claude script generation requires explicit `--generator claude` and the optional AI dependency. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
+Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"`, implementation modules live under `src/rkp`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `doctor --blender`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `verify-asset`, `accept-asset`, direct USDZ fallback, Meshy USDZ draft generation, and `release-check` are config-aware. `inspect-usdz` checks package existence, expected base color texture, PNG/JPEG dimensions against `maxTextureSize`, text USDA `primvars:st`, and known triangle budget status before screenshot acceptance. `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release-check, stopping at the first failed gate. `release-check --assets` inspects all imported manifest assets before the optional Xcode build. `prompt-asset` remains deterministic by default; Claude script generation requires explicit `--generator claude` and the optional AI dependency. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
 
 ## Current Recommended Next Task
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Execute the first item in `Docs/codebase-audit.md`: add `release-check --assets` or `verify-all-assets` so imported USDZ inspection is part of the release gate.
-2. Fix the plain `new-asset` Blender stub contract so its generated asset can satisfy the baseColor/texture export expectations.
-3. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
-4. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
-5. Add README badges if they are not already present.
-6. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-7. Add a first-good-issue list for learners.
-8. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
+1. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
+2. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
+3. Add README badges if they are not already present.
+4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+5. Add a first-good-issue list for learners.
+6. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
 
 If the user asks to continue education content, do this next:
 

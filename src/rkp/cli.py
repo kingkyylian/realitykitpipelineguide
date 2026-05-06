@@ -163,7 +163,7 @@ def run_init(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_release_check() -> int:
+def run_release_check(include_assets: bool = False) -> int:
     active_project = project()
     print("==> doctor", flush=True)
     status = Doctor(active_project).run()
@@ -185,11 +185,26 @@ def run_release_check() -> int:
 
     print("==> validate", flush=True)
     try:
-        load_manifest(active_project)
+        manifest = load_manifest(active_project)
     except (OSError, json.JSONDecodeError) as exc:
         print(f"release-check failed at step: validate ({exc})", file=sys.stderr)
         return 1
     print("manifest ok")
+
+    if include_assets:
+        print("==> assets", flush=True)
+        imported_assets = [
+            asset.get("id", "")
+            for asset in manifest.get("assets", [])
+            if asset.get("status") == "imported" and asset.get("id")
+        ]
+        if not imported_assets:
+            print("skip assets: no imported assets")
+        for asset_id in imported_assets:
+            status = run(module_command("rkp.inspect_usdz", asset_id), active_project)
+            if status != 0:
+                print(f"release-check failed at step: assets ({asset_id})", file=sys.stderr)
+                return status
 
     xcode_project = active_project.xcode_project
     if xcode_project is None:
@@ -383,7 +398,8 @@ def main() -> int:
     doctor.add_argument("--json", action="store_true", help="Print machine-readable doctor summary")
     doctor.add_argument("--blender", action="store_true", help="Also verify Blender executable discovery")
 
-    subparsers.add_parser("release-check", help="Run doctor, XcodeGen, manifest validation, and iOS build")
+    release_check = subparsers.add_parser("release-check", help="Run doctor, XcodeGen, manifest validation, and iOS build")
+    release_check.add_argument("--assets", action="store_true", help="Inspect all imported USDZ assets before Xcode build")
 
     new_asset = subparsers.add_parser("new-asset", help="Scaffold a manifest entry, asset brief, and Blender stub")
     new_asset.add_argument("id", help="Asset id in snake_case")
@@ -443,7 +459,7 @@ def main() -> int:
             return run_doctor_json(include_blender=args.blender)
         return Doctor(project()).run(include_blender=args.blender)
     if args.command == "release-check":
-        return run_release_check()
+        return run_release_check(include_assets=args.assets)
     if args.command == "new-asset":
         command = module_command("rkp.new_asset", "--id", args.id, "--type", args.type)
         if args.triangles is not None:

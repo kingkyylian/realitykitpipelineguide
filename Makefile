@@ -63,7 +63,7 @@ guide:
 	cp Build/realitykit-pipeline-guide.pdf Docs/pdf/realitykit-pipeline-guide.pdf
 
 release-check:
-	python3 Tools/rkp.py release-check
+	python3 Tools/rkp.py release-check $(if $(assets),--assets,)
 
 install-skill:
 	mkdir -p "$(CODEX_HOME)/skills/$(SKILL_NAME)"

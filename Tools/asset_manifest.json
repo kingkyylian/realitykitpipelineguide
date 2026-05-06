@@ -9,6 +9,7 @@
       "status": "imported",
       "maxTriangles": 1500,
       "maxTextureSize": 1024,
+      "textureMaps": [],
       "notes": "First Blender export test. 284 triangles, 3 materials, origin at center, exported from Blender as USDZ."
     },
     {

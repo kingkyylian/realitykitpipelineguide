@@ -102,6 +102,7 @@ SOURCE_DIR = ROOT / CONFIG.get("source_dir", "Assets/Source")
 TEXTURE_DIR = ROOT / CONFIG.get("textures_dir", "Assets/Textures")
 
 ASSET_ID = "{asset_id}"
+TEXTURE_PATH = TEXTURE_DIR / f"{{ASSET_ID}}_basecolor.png"
 BLEND_PATH = SOURCE_DIR / f"{{ASSET_ID}}.blend"
 USDZ_PATH = IMPORTED_DIR / f"{{ASSET_ID}}.usdz"
 
@@ -111,14 +112,59 @@ def reset_scene():
     bpy.ops.object.delete()
 
 
-def make_placeholder():
-    bpy.ops.mesh.primitive_cube_add(size=0.4, location=(0, 0, 0.2))
-    obj = bpy.context.object
-    obj.name = ASSET_ID
+def make_texture():
+    TEXTURE_DIR.mkdir(parents=True, exist_ok=True)
+    image = bpy.data.images.new(f"{{ASSET_ID}}_basecolor", width=512, height=512)
+    pixels = []
+    primary = (0.82, 0.10, 0.08, 1.0)
+    secondary = (0.98, 0.78, 0.70, 1.0)
+    dark = (0.04, 0.04, 0.04, 1.0)
 
+    for y in range(512):
+        for x in range(512):
+            stripe = (x // 64 + y // 64) % 2 == 0
+            border = x < 12 or x >= 500 or y < 12 or y >= 500
+            color = dark if border else (primary if stripe else secondary)
+            pixels.extend(color)
+
+    image.pixels = pixels
+    image.filepath_raw = str(TEXTURE_PATH)
+    image.file_format = "PNG"
+    image.save()
+    return image
+
+
+def make_material(image):
     material = bpy.data.materials.new(f"mat_{{ASSET_ID}}")
-    material.diffuse_color = (0.8, 0.1, 0.1, 1.0)
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    principled = nodes.get("Principled BSDF")
+    texture = nodes.new(type="ShaderNodeTexImage")
+    texture.image = image
+    uv_map = nodes.new(type="ShaderNodeUVMap")
+    uv_map.uv_map = "st"
+    links = material.node_tree.links
+    links.new(uv_map.outputs["UV"], texture.inputs["Vector"])
+    links.new(texture.outputs["Color"], principled.inputs["Base Color"])
+    principled.inputs["Roughness"].default_value = 0.74
+    principled.inputs["Metallic"].default_value = 0.0
+    return material
+
+
+def make_placeholder(material):
+    vertices = [(-0.26, 0, -0.26), (0.26, 0, -0.26), (0.26, 0, 0.26), (-0.26, 0, 0.26)]
+    mesh = bpy.data.meshes.new(f"{{ASSET_ID}}_mesh")
+    mesh.from_pydata(vertices, [], [(0, 1, 2, 3)])
+    mesh.update()
+    uv_layer = mesh.uv_layers.new(name="st")
+    for loop_index, uv in enumerate(((0, 0), (1, 0), (1, 1), (0, 1))):
+        uv_layer.data[loop_index].uv = uv
+
+    obj = bpy.data.objects.new(ASSET_ID, mesh)
+    bpy.context.collection.objects.link(obj)
     obj.data.materials.append(material)
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
     return obj
 
 
@@ -135,14 +181,22 @@ def export_usdz(obj):
     bpy.ops.wm.usd_export(
         filepath=str(USDZ_PATH),
         selected_objects_only=True,
-        export_textures=True,
-        evaluation_mode="RENDER",
+        export_textures_mode="NEW",
+        overwrite_textures=True,
+        export_materials=True,
+        export_uvmaps=True,
+        export_normals=True,
+        triangulate_meshes=True,
+        generate_preview_surface=True,
+        root_prim_path="/root",
     )
 
 
 def main():
     reset_scene()
-    obj = make_placeholder()
+    image = make_texture()
+    material = make_material(image)
+    obj = make_placeholder(material)
     export_usdz(obj)
     print(f"exported {{USDZ_PATH}}")
 

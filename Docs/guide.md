@@ -2,7 +2,7 @@
 title: "RealityKit Asset and Texture Pipeline Guide"
 subtitle: "Blender / USDZ / Xcode / RealityKit öğrenme rehberi"
 author: "RealityKitPipelineDemo"
-date: "2026-05-02"
+date: "2026-05-06"
 lang: "tr-TR"
 ---
 
@@ -105,10 +105,70 @@ Not: Worklog ve agent dosyalarında `rtk` prefix'i görebilirsiniz. `rtk` bu ça
 Bir asset işi, ancak şu kanıtlarla kapanır:
 
 - `Tools/asset_manifest.json` içinde doğru status ve not var.
-- `make release-check` veya eşdeğer `xcodebuild ... -derivedDataPath Build/DerivedData build` geçiyor.
+- `rkp verify-asset <asset_id>` veya eşdeğer kalite kapıları geçiyor.
+- `rkp inspect-usdz <asset_id>` texture varlığı, texture boyutu, bilinen triangle bütçesi ve text USD `st` UV sinyalini raporluyor.
 - Simulator screenshot alındı.
 - HUD veya sahne asset'in gerçekten yüklendiğini gösteriyor.
 - Öğrenme notu `Docs/WORKLOG.md` veya checklist'e işlendi.
+
+## CLI Quality Gate
+
+RKP'nin güncel ürün yüzeyi sadece dosya scaffold etmek değildir; asset draft üretir ve acceptance öncesi kalite kapıları çalıştırır.
+
+En kısa yeni asset akışı:
+
+```bash
+rkp init --project-name MyGame
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp build-asset enemy_drone
+rkp verify-asset enemy_drone
+```
+
+Tek komutta acceptance'a kadar gitmek için:
+
+```bash
+rkp verify-asset enemy_drone \
+  --build \
+  --screenshot Docs/screenshots/enemy_drone_imported.jpg \
+  --release-check
+```
+
+Bu komut sırasıyla şunları yapar:
+
+1. `--build` verilirse USDZ üretir.
+2. `inspect-usdz` ile paketi kontrol eder.
+3. Screenshot verilirse `accept-asset` ile asset'i kabul eder.
+4. `--release-check` verilirse repo kalite kapısını çalıştırır.
+
+`inspect-usdz` kabulden önceki otomatik paket denetimidir:
+
+```bash
+rkp inspect-usdz enemy_drone
+rkp inspect-usdz enemy_drone --json
+```
+
+Kontrol ettiği şeyler:
+
+- USDZ dosyası var mı ve boş değil mi?
+- Beklenen base color texture paket içinde mi?
+- PNG/JPEG texture boyutu manifest `maxTextureSize` değerini aşıyor mu?
+- Text `.usda/.usd` içinde `primvars:st` UV sinyali var mı?
+- Text USD'den okunabilen face count manifest `maxTriangles` bütçesini aşıyor mu?
+
+Binary `.usdc` paketlerde geometry ve UV sayıları uydurulmaz; bilinmeyen alanlar `unknown` raporlanır. Bu durumda screenshot acceptance hâlâ son kanıttır.
+
+### Asset Draft Üretim Yolları
+
+RKP birden fazla draft üretim yolu destekler:
+
+| Yol | Komut | Ne üretir? |
+| --- | --- | --- |
+| Deterministic template | `rkp prompt-asset <id> --prompt "..."` | Manifest, brief ve procedural Blender generator |
+| Blender build | `rkp build-asset <id>` | Blender script'ten USDZ |
+| Meshy backend | `rkp make-asset <id> --backend meshy --prompt "..."` | Meshy text-to-3D USDZ draft |
+| Claude generator | `rkp prompt-asset <id> --generator claude --prompt "..."` | Claude-authored Blender script |
+
+Default generator deterministiktir. API key ortamda olsa bile Claude otomatik çağrılmaz; `--generator claude` açıkça verilmelidir. Meshy ve Claude çıktıları da final değil, draft kabul edilir. Production acceptance için yine `inspect-usdz`, screenshot ve worklog gerekir.
 
 ## 1. Mental Model: Asset Journey
 
@@ -331,7 +391,8 @@ Bu görüntüde texture'lı target RealityKit'te yüklenmiş durumda. Halkalar m
 3. UV primvar adını doğrula.
 4. USDZ export al.
 5. Manifest kaydı ekle.
-6. Build ve simulator screenshot ile doğrula.
+6. `rkp verify-asset target_basic_blue_textured --build` ile paket kapısını çalıştır.
+7. Simulator screenshot ile görsel kabulü tamamla.
 
 **Başarı kriteri:** Yeni texture varyasyonu manifest, build, screenshot ve worklog notuyla kapanıyor.
 
@@ -375,6 +436,9 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | Base color texture | Complete | `target_basic_textured.usdz` | 512x512 PNG embed doğrulandı. |
 | UV primvar debugging | Complete | Worklog + checklist | `st` primvar dersi işlendi. |
 | Manifest/worklog discipline | Complete | `Tools/asset_manifest.json`, `Docs/WORKLOG.md` | Handoff standardı oturdu. |
+| CLI asset draft generation | Complete | `rkp make-asset`, `prompt-asset`, Meshy/Claude flags | Draft üretim yolları ayrıldı. |
+| USDZ inspection gate | Complete | `rkp inspect-usdz`, tests | Texture presence, texture dimension, UV signal ve known triangle budget raporlanıyor. |
+| Asset verification gate | Complete | `rkp verify-asset`, tests | Build, inspect, acceptance ve release kapıları tek akışta birleşti. |
 | Roughness / metallic maps | Planned | yok | Material response dersi eklenecek. |
 | Normal map | Planned | yok | Tangent-space normal ve export davranışı test edilecek. |
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
@@ -741,6 +805,10 @@ make guide
 ### Core Commands
 
 ```bash
+rkp status
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp verify-asset enemy_drone --build
+rkp inspect-usdz enemy_drone --json
 make release-check
 ```
 

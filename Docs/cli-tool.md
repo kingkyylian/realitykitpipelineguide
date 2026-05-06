@@ -58,6 +58,7 @@ rkp init --project-name MyRealityKitGame
 rkp doctor
 rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 rkp build-asset enemy_drone
+rkp verify-asset enemy_drone
 rkp status --json
 rkp release-check
 ```
@@ -85,7 +86,7 @@ Assets/Imported/
 
 The fixture app is optional. The required contract is that accepted assets have manifest metadata, runtime USDZ files under `Assets/Imported`, Xcode resource bundle inclusion, RealityKit load verification, and screenshot evidence.
 
-Current status: `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `accept-asset`, and `release-check` are config-aware. The direct USDZ fallback also reads the configured manifest/assets paths. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate. Repo-local `Tools/*.py` files are wrappers around `src/rkp` package modules.
+Current status: `init`, `status`, `doctor`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `accept-asset`, and `release-check` are config-aware. The direct USDZ fallback also reads the configured manifest/assets paths. If `xcode_project` is omitted, `release-check` runs doctor/tests/manifest validation and skips the Xcode gate. Repo-local `Tools/*.py` files are wrappers around `src/rkp` package modules.
 
 ## Mental Model
 
@@ -150,11 +151,35 @@ rkp prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone
 
 `prompt-asset` is scaffold-first, not open-ended text-to-3D. The prompt is recorded in the manifest and brief, and it can select one of the built-in procedural archetypes: `drone`, `tower`, `crate`, `projectile`, or `target`. Unknown shapes use the asset type's default geometry template and require editing `Tools/blender/create_<asset_id>.py`.
 
+The default generator is deterministic and does not call external APIs just because an API key exists. To ask Claude for a custom Blender script, install the optional AI dependency and opt in:
+
+```bash
+pipx inject rkp anthropic
+export ANTHROPIC_API_KEY=...
+rkp prompt-asset enemy_tower \
+  --type gameplay_target \
+  --prompt "blue beacon tower target" \
+  --generator claude
+```
+
 Run the same loop through one command:
 
 ```bash
 rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
+
+Use Meshy when the desired output is an external text-to-3D USDZ draft instead of a Blender script:
+
+```bash
+export MESHY_API_KEY=...
+rkp make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red drone target with four rotors" \
+  --backend meshy \
+  --quality preview
+```
+
+`--quality refine` runs Meshy's refine/PBR pass. Meshy output still needs simulator screenshot acceptance before the asset is considered imported, and the same `--screenshot` and `--release-check` flags can be added to this command after visual verification.
 
 Add build, screenshot acceptance, and release gate as the asset moves forward:
 
@@ -174,6 +199,28 @@ rkp build-asset enemy_drone
 ```
 
 If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate.
+
+Inspect the built USDZ before visual acceptance:
+
+```bash
+rkp inspect-usdz enemy_drone
+rkp inspect-usdz enemy_drone --json
+```
+
+`inspect-usdz` checks whether the package exists, whether the expected base color texture is inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether a text USDA member exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. Binary-only USD content reports unknown geometry instead of inventing a count.
+
+Use `verify-asset` as the one-command asset quality gate:
+
+```bash
+rkp verify-asset enemy_drone
+rkp verify-asset enemy_drone --build
+rkp verify-asset enemy_drone \
+  --build \
+  --screenshot Docs/screenshots/enemy_drone_imported.jpg \
+  --release-check
+```
+
+`verify-asset` runs optional build, `inspect-usdz`, optional screenshot acceptance, and optional release-check in that order. It stops at the first failed gate.
 
 Accept the asset after simulator verification:
 
@@ -206,6 +253,10 @@ make doctor
 make test
 make new-asset id=enemy_drone type=gameplay_target
 make build-asset id=enemy_drone
+make inspect-usdz id=enemy_drone
+make inspect-usdz id=enemy_drone json=1
+make verify-asset id=enemy_drone
+make verify-asset id=enemy_drone build=1 screenshot=Docs/screenshots/enemy_drone_imported.jpg release=1
 make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone_imported.jpg
 make release-check
 ```
@@ -232,6 +283,8 @@ They are agent-facing wrappers around `python3 Tools/rkp.py`. See `Docs/slash-co
 - `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
 - `make-asset` orchestrates prompt scaffolding, optional USDZ build, optional screenshot acceptance, and optional release check.
 - `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
+- `inspect-usdz` reads a built USDZ package and reports texture presence, texture dimensions, UV, and known triangle budget gates without mutating files.
+- `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release check, stopping at the first failed gate.
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands.
 - `status --json` and `doctor --json` are the stable machine-readable surface for automation.

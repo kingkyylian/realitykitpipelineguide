@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -374,20 +375,153 @@ def update_manifest_prompt_metadata(
     project.manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+_BLENDER_BOILERPLATE = '''\
+import json
+from pathlib import Path
+import math
+import bpy
+
+
+def find_project_root():
+    for start in (Path.cwd(), Path(__file__).resolve().parent):
+        current = start.resolve()
+        for candidate in (current, *current.parents):
+            if (candidate / "rkp.json").exists():
+                return candidate
+    raise FileNotFoundError("could not find rkp.json")
+
+
+ROOT = find_project_root()
+CONFIG = json.loads((ROOT / "rkp.json").read_text(encoding="utf-8"))
+IMPORTED_DIR = ROOT / CONFIG.get("assets_dir", "Assets/Imported")
+SOURCE_DIR = ROOT / CONFIG.get("source_dir", "Assets/Source")
+TEXTURE_DIR = ROOT / CONFIG.get("textures_dir", "Assets/Textures")
+
+ASSET_ID = "{asset_id}"
+USDZ_PATH = IMPORTED_DIR / f"{{ASSET_ID}}.usdz"
+BLEND_PATH = SOURCE_DIR / f"{{ASSET_ID}}.blend"
+'''
+
+_BLENDER_EXPORT_SNIPPET = '''\
+
+def export_usdz(obj):
+    IMPORTED_DIR.mkdir(parents=True, exist_ok=True)
+    SOURCE_DIR.mkdir(parents=True, exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_PATH))
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.wm.usd_export(
+        filepath=str(USDZ_PATH),
+        selected_objects_only=True,
+        export_textures_mode="NEW",
+        overwrite_textures=True,
+        export_materials=True,
+        export_uvmaps=True,
+        export_normals=True,
+        triangulate_meshes=True,
+        generate_preview_surface=True,
+        root_prim_path="/root",
+    )
+    print(f"exported {USDZ_PATH}")
+'''
+
+
+def _load_anthropic_module():
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY not set; export it before using --generator claude")
+
+    try:
+        import anthropic
+    except ImportError:
+        raise RuntimeError(
+            "anthropic package is not installed; install rkp[ai] or run pipx inject rkp anthropic "
+            "before using --generator claude"
+        )
+    return anthropic, api_key
+
+
+def validate_generator(generator: str) -> None:
+    if generator == "template":
+        return
+    if generator == "claude":
+        _load_anthropic_module()
+        return
+    raise ValueError(f"unknown generator: {generator}")
+
+
+def _generate_with_claude(asset_id: str, asset_type: str, prompt: str) -> str:
+    anthropic, api_key = _load_anthropic_module()
+
+    boilerplate = _BLENDER_BOILERPLATE.format(asset_id=asset_id)
+    export_snippet = _BLENDER_EXPORT_SNIPPET
+
+    system = (
+        "You are a Blender Python script generator for mobile game asset production. "
+        "Write geometry creation code for Blender's bpy API. "
+        "Rules:\n"
+        "- Keep poly count under 5000 triangles (iOS mobile budget)\n"
+        "- Always name the UV layer exactly 'st' (required for RealityKit/USDZ)\n"
+        "- Use Smart UV Project via bpy.ops.uv.smart_project and rename layer to 'st'\n"
+        "- Add a simple PrincipledBSDF material with a base color matching the asset description\n"
+        "- Assign material to object\n"
+        "- End with a main() function that: resets scene, builds geometry, exports via export_usdz(obj)\n"
+        "- Add if __name__ == '__main__': main() at the end\n"
+        "- Return ONLY the Python code that goes AFTER the boilerplate and export function — "
+        "do not repeat imports, do not include the boilerplate or export_usdz definition\n"
+        "- No markdown fences, no explanation, just Python code"
+    )
+
+    user = (
+        f"Asset: {asset_id}\n"
+        f"Type: {asset_type}\n"
+        f"Description: {prompt}\n\n"
+        f"The script already has this boilerplate at the top:\n```\n{boilerplate}{export_snippet}```\n\n"
+        "Write the geometry + material + main() code that follows it."
+    )
+
+    client = anthropic.Anthropic(api_key=api_key)
+    message = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": user}],
+        system=system,
+    )
+
+    geometry_code = message.content[0].text.strip()
+    if geometry_code.startswith("```"):
+        geometry_code = re.sub(r"^```[a-z]*\n?", "", geometry_code)
+        geometry_code = re.sub(r"\n?```$", "", geometry_code).strip()
+
+    return boilerplate + export_snippet + "\n" + geometry_code
+
+
 def write_blender_script(
     asset_id: str,
     asset_type: str,
     prompt: str,
     archetype: str | None,
     force: bool,
+    generator: str = "template",
     project: ProjectPaths = PROJECT,
-) -> Path:
+) -> tuple[Path, bool]:
     project.blender_dir.mkdir(parents=True, exist_ok=True)
     script_path = project.blender_dir / f"create_{asset_id}.py"
     if script_path.exists() and not force:
         raise FileExistsError(f"Blender script already exists: {project.rel(script_path)}")
-    script_path.write_text(blender_template(asset_id, asset_type, prompt, archetype), encoding="utf-8")
-    return script_path
+
+    ai_generated = False
+    if generator == "claude":
+        claude_script = _generate_with_claude(asset_id, asset_type, prompt)
+        script_path.write_text(claude_script, encoding="utf-8")
+        ai_generated = True
+    elif generator == "template":
+        script_path.write_text(blender_template(asset_id, asset_type, prompt, archetype), encoding="utf-8")
+    else:
+        raise ValueError(f"unknown generator: {generator}")
+
+    return script_path, ai_generated
 
 
 def main() -> int:
@@ -397,6 +531,12 @@ def main() -> int:
     parser.add_argument("--type", default="prop", choices=sorted(DEFAULT_BUDGETS), help="Asset type")
     parser.add_argument("--build", action="store_true", help="Run Blender build after generating the script")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
+    parser.add_argument(
+        "--generator",
+        choices=["template", "claude"],
+        default="template",
+        help="Blender script generator (default: deterministic template)",
+    )
     args = parser.parse_args()
 
     asset_id = snake_case(args.id)
@@ -405,6 +545,12 @@ def main() -> int:
         return 2
 
     archetype = infer_archetype(args.prompt)
+
+    try:
+        validate_generator(args.generator)
+    except (RuntimeError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     new_asset_result = subprocess.run(
         module_command("rkp.new_asset", "--id", asset_id, "--type", args.type),
@@ -417,23 +563,32 @@ def main() -> int:
         print(f"asset already exists, updating prompt script: {asset_id}")
 
     try:
-        script_path = write_blender_script(
+        script_path, ai_generated = write_blender_script(
             asset_id,
             args.type,
             args.prompt,
             archetype,
             force=args.force or new_asset_result.returncode == 0,
+            generator=args.generator,
         )
     except FileExistsError as exc:
         print(f"error: {exc}. Use --force to replace it.", file=sys.stderr)
+        return 1
+    except (RuntimeError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
 
     append_prompt_to_brief(asset_id, args.prompt, args.type, archetype)
     update_manifest_prompt_metadata(asset_id, args.prompt, archetype)
 
+    if ai_generated:
+        geometry_desc = "AI-generated Blender script (Claude)"
+    else:
+        geometry_desc = geometry_label(archetype, args.type)
+
     print(f"prompt asset ready: {asset_id} (archetype: {archetype_label(archetype, args.type)})")
     print(f"- prompt: {args.prompt}")
-    print(f"- geometry: {geometry_label(archetype, args.type)}")
+    print(f"- geometry: {geometry_desc}")
     print(f"- blender script: {PROJECT.rel(script_path)}")
     print(f"- next: rkp build-asset {asset_id}")
 

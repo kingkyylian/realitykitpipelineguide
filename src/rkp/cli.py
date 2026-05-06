@@ -236,6 +236,55 @@ def run_release_check() -> int:
     return 0
 
 
+def run_make_asset_meshy(args: argparse.Namespace) -> int:
+    import os
+    from rkp.meshy_asset import generate_usdz
+
+    api_key = os.environ.get("MESHY_API_KEY")
+    if not api_key:
+        print("error: MESHY_API_KEY not set. Get a key at meshy.ai and run:", file=sys.stderr)
+        print("  export MESHY_API_KEY=your_key_here", file=sys.stderr)
+        print("  (test key: msy_dummy_api_key_for_test_mode_12345678)", file=sys.stderr)
+        return 1
+
+    print("==> new-asset", flush=True)
+    rc = run(module_command("rkp.new_asset", "--id", args.id, "--type", args.type))
+    if rc not in (0, 1):
+        return rc
+
+    proj = project()
+    output_path = proj.assets_dir / f"{args.id}.usdz"
+    refine = args.quality == "refine"
+
+    print("==> meshy", flush=True)
+    try:
+        generate_usdz(args.prompt, args.id, output_path, api_key=api_key, refine=refine)
+    except Exception as exc:
+        print(f"error: Meshy generation failed: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"asset ready: {proj.rel(output_path)} ({output_path.stat().st_size} bytes)")
+    if getattr(args, "screenshot", None):
+        print("==> accept-asset", flush=True)
+        rc = run(module_command("rkp.accept_asset", "--id", args.id, "--screenshot", args.screenshot))
+        if rc != 0:
+            print("make-asset stopped at step: accept-asset", file=sys.stderr)
+            return rc
+
+    if getattr(args, "release_check", False):
+        print("==> release-check", flush=True)
+        rc = run(module_command("rkp.cli", "release-check"))
+        if rc != 0:
+            print("make-asset stopped at step: release-check", file=sys.stderr)
+            return rc
+
+    print(f"make-asset done: {args.id}")
+    if not getattr(args, "screenshot", None):
+        print(f"next: rkp inspect-usdz {args.id}")
+        print(f"next: rkp accept-asset {args.id} --screenshot Docs/screenshots/{args.id}_imported.jpg")
+    return 0
+
+
 def run_make_asset(args: argparse.Namespace) -> int:
     steps = [
         (
@@ -255,6 +304,8 @@ def run_make_asset(args: argparse.Namespace) -> int:
 
     if args.force:
         steps[0][1].append("--force")
+    if getattr(args, "generator", "template") != "template":
+        steps[0][1].extend(["--generator", args.generator])
     if args.build:
         steps.append(("build-asset", module_command("rkp.build_asset", "--id", args.id)))
     if args.screenshot:
@@ -281,6 +332,35 @@ def run_make_asset(args: argparse.Namespace) -> int:
     if not args.build:
         print(f"next: rkp build-asset {args.id}")
     elif not args.screenshot:
+        print(f"next: rkp inspect-usdz {args.id}")
+        print(f"next: rkp accept-asset {args.id} --screenshot Docs/screenshots/{args.id}_imported.jpg")
+    return 0
+
+
+def run_verify_asset(args: argparse.Namespace) -> int:
+    steps: list[tuple[str, list[str]]] = []
+    if args.build:
+        steps.append(("build-asset", module_command("rkp.build_asset", "--id", args.id)))
+    steps.append(("inspect-usdz", module_command("rkp.inspect_usdz", args.id)))
+    if args.screenshot:
+        steps.append(
+            (
+                "accept-asset",
+                module_command("rkp.accept_asset", "--id", args.id, "--screenshot", args.screenshot),
+            )
+        )
+    if args.release_check:
+        steps.append(("release-check", module_command("rkp.cli", "release-check")))
+
+    for label, command in steps:
+        print(f"==> {label}", flush=True)
+        status = run(command)
+        if status != 0:
+            print(f"verify-asset stopped at step: {label}", file=sys.stderr)
+            return status
+
+    print(f"verify-asset ok: {args.id}")
+    if not args.screenshot:
         print(f"next: rkp accept-asset {args.id} --screenshot Docs/screenshots/{args.id}_imported.jpg")
     return 0
 
@@ -317,6 +397,7 @@ def main() -> int:
     prompt_asset.add_argument("--type", default="prop", help="Asset type, for example gameplay_target or environment")
     prompt_asset.add_argument("--build", action="store_true", help="Run Blender build after generating the script")
     prompt_asset.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
+    prompt_asset.add_argument("--generator", choices=["template", "claude"], default="template", help="Blender script generator (default: deterministic template)")
 
     make_asset = subparsers.add_parser("make-asset", help="Run prompt, optional build, optional accept, and optional release gate")
     make_asset.add_argument("id", help="Asset id in snake_case")
@@ -326,9 +407,22 @@ def main() -> int:
     make_asset.add_argument("--screenshot", help="Accept the asset with required simulator screenshot evidence")
     make_asset.add_argument("--release-check", action="store_true", help="Run the full release gate after prior steps")
     make_asset.add_argument("--force", action="store_true", help="Overwrite an existing Blender script")
+    make_asset.add_argument("--backend", choices=["blender", "meshy"], default="blender", help="3D generation backend (default: blender)")
+    make_asset.add_argument("--quality", choices=["preview", "refine"], default="preview", help="Meshy quality: preview (geometry only) or refine (+ PBR texture)")
+    make_asset.add_argument("--generator", choices=["template", "claude"], default="template", help="Blender script generator when --backend blender")
 
     build_asset = subparsers.add_parser("build-asset", help="Run the Blender build script for one asset")
     build_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
+
+    inspect_usdz = subparsers.add_parser("inspect-usdz", help="Inspect a built USDZ against manifest expectations")
+    inspect_usdz.add_argument("id", help="Asset id from Tools/asset_manifest.json")
+    inspect_usdz.add_argument("--json", action="store_true", help="Print machine-readable inspection result")
+
+    verify_asset = subparsers.add_parser("verify-asset", help="Run the asset quality gate: optional build, inspect, optional accept, optional release")
+    verify_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
+    verify_asset.add_argument("--build", action="store_true", help="Build the USDZ before inspection")
+    verify_asset.add_argument("--screenshot", help="Accept the asset after inspection with screenshot evidence")
+    verify_asset.add_argument("--release-check", action="store_true", help="Run release-check after prior verification steps")
 
     accept_asset = subparsers.add_parser("accept-asset", help="Accept a built asset with required screenshot evidence")
     accept_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
@@ -372,11 +466,25 @@ def main() -> int:
             command.append("--build")
         if args.force:
             command.append("--force")
+        if args.generator != "template":
+            command.extend(["--generator", args.generator])
         return run(command)
     if args.command == "make-asset":
+        if getattr(args, "backend", "blender") == "meshy" and getattr(args, "generator", "template") != "template":
+            print("error: --generator is only supported with --backend blender", file=sys.stderr)
+            return 2
+        if getattr(args, "backend", "blender") == "meshy":
+            return run_make_asset_meshy(args)
         return run_make_asset(args)
     if args.command == "build-asset":
         return run(module_command("rkp.build_asset", "--id", args.id))
+    if args.command == "inspect-usdz":
+        command = module_command("rkp.inspect_usdz", args.id)
+        if args.json:
+            command.append("--json")
+        return run(command)
+    if args.command == "verify-asset":
+        return run_verify_asset(args)
     if args.command == "accept-asset":
         return run(module_command("rkp.accept_asset", "--id", args.id, "--screenshot", args.screenshot))
 

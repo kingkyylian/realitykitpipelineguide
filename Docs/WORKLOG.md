@@ -12,6 +12,178 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 48: Guide and PDF Refresh
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-06 14:10 +03
+**Amaç:** Public learning guide ve PDF çıktısını yeni CLI kalite kapılarıyla hizalamak.
+
+**Yapılanlar:**
+
+- `Docs/guide.md` tarihi 2026-05-06 olarak güncellendi.
+- Completion standard `rkp verify-asset` ve `rkp inspect-usdz` kalite kapılarıyla hizalandı.
+- Yeni `CLI Quality Gate` bölümü eklendi: `make-asset`, `build-asset`, `verify-asset`, `inspect-usdz`, screenshot acceptance ve release-check ilişkisi anlatıldı.
+- Asset draft üretim yolları guide'a eklendi: deterministic template, Blender build, Meshy backend ve explicit Claude generator.
+- Coverage matrix `inspect-usdz`, `verify-asset` ve CLI draft generation satırlarıyla güncellendi.
+- `Docs/pdf/realitykit-pipeline-guide.pdf` yeniden üretildi.
+
+**Verification:**
+
+```text
+make guide: ok; PDF regenerated, WeasyPrint/fontconfig warnings only
+pdfinfo Docs/pdf/realitykit-pipeline-guide.pdf: ok, 31 pages, A4, 714898 bytes
+pdftotext Docs/pdf/realitykit-pipeline-guide.pdf - | rg "CLI Quality Gate|verify-asset|inspect-usdz": ok
+pdftoppm -f 1 -l 6 -png Docs/pdf/realitykit-pipeline-guide.pdf Build/pdf-preview/guide: ok
+Visual check: rendered pages 1, 4, 5 and 6 are legible; CLI Quality Gate section and split asset-draft table render without clipped text.
+python3 -m unittest discover -s Tests: ok, 40 tests
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+git diff --check: ok
+python3 Tools/rkp.py verify-asset target_basic_textured: ok, baseColor size 512x512 / 1024
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+```
+
+**Öğrenme notu:**
+
+CLI kalite kapıları README'de kalmamalı; öğretici PDF'te de aynı acceptance standardı anlatılmalı. Aksi halde public guide eski manuel akışı öğretmeye devam eder.
+
+### Sprint 47: Texture Dimension Budget Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-05 19:30 +03
+**Amaç:** `inspect-usdz` içindeki texture kontrolünü sadece "dosya var mı" seviyesinden manifest texture budget denetimine yükseltmek.
+
+**Yapılanlar:**
+
+- `inspect-usdz` PNG ve JPEG header'larından baseColor texture width/height okuyabiliyor.
+- JSON payload `baseColorTexture.width`, `height`, `maxSize` ve `sizeStatus` alanlarını raporluyor.
+- Texture boyutu manifest `maxTextureSize` değerini aşarsa `inspect-usdz` non-zero dönüyor.
+- Okunamayan/unsupported texture dimension durumunda değer uydurulmuyor; `sizeStatus=unknown` kalıyor.
+- README, `Docs/cli-tool.md` ve `Docs/ai-handoff.md` inspect kapsamını texture dimension budget ile güncelledi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_basecolor_texture_exceeds_budget: first run failed as expected because texture dimensions were not reported and over-budget textures passed
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_basecolor_texture_exceeds_budget: ok
+python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, baseColor 512x512 / 1024
+python3 Tools/rkp.py inspect-usdz enemy_drone --json: ok, baseColor 512x512 / 1024
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_budget_or_texture_gate_fails Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_text_usd_lacks_st_uv Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_basecolor_texture_exceeds_budget: ok
+python3 -m unittest discover -s Tests: ok, 40 tests
+python3 Tools/rkp.py verify-asset target_basic_textured: ok, baseColor size 512x512 / 1024
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+git diff --check: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+```
+
+**Öğrenme notu:**
+
+Texture budget manifestte sayı olarak durmamalı; üretilen USDZ paketinin içindeki gerçek image header'ı ile ölçülmeli. Böylece 512/1024 kararları screenshot öncesi otomatik kalite kapısına dönüşür.
+
+### Sprint 46: Asset Verification Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-05 19:20 +03
+**Amaç:** Build, USDZ inspection, screenshot acceptance ve release-check parçalarını tek kalite kapısı komutunda birleştirmek.
+
+**Yapılanlar:**
+
+- `rkp verify-asset <asset_id>` komutu eklendi.
+- Varsayılan davranış built USDZ için `inspect-usdz` kapısını çalıştırıyor.
+- `--build` verilirse inspect öncesi `build-asset`, `--screenshot` verilirse inspect sonrası `accept-asset`, `--release-check` verilirse en sonda release-check çalışıyor.
+- Komut ilk başarısız gate'te duruyor ve hangi adımda durduğunu stderr'e yazıyor.
+- Makefile'a `make verify-asset id=<asset_id> [build=1] [screenshot=...] [release=1]` wrapper'ı eklendi.
+- README ve `Docs/cli-tool.md` ilk asset akışını `verify-asset` üstünden anlatacak şekilde güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_verify_asset_runs_build_inspect_accept_and_release_check Tests.test_rkp_package.RkpPackageTests.test_verify_asset_stops_when_inspection_fails: first run failed as expected because run_verify_asset did not exist
+python3 -m unittest Tests.test_rkp_package.RkpPackageTests.test_verify_asset_runs_build_inspect_accept_and_release_check Tests.test_rkp_package.RkpPackageTests.test_verify_asset_stops_when_inspection_fails: ok
+python3 -m unittest Tests.test_rkp_cli.RkpCliTests.test_verify_asset_runs_inspection_gate_for_ready_asset Tests.test_rkp_cli.RkpCliTests.test_verify_asset_rejects_unknown_asset: ok
+python3 -m unittest discover -s Tests: ok, 39 tests
+python3 Tools/rkp.py verify-asset target_basic_textured: ok, inspect-usdz passed with baseColor present and binary .usdc geometry/uv unknown
+git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+```
+
+**Öğrenme notu:**
+
+Tek komut, tek doğruluk kaynağı değildir; arkasındaki kapıların sıralı ve durdurucu olması gerekir. `verify-asset` acceptance'ı otomatikleştirmiyor, screenshot kanıtı verilirse acceptance kapısını kontrollü şekilde çalıştırıyor.
+
+### Sprint 45: USDZ Inspection Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-05 19:10 +03
+**Amaç:** Built USDZ dosyasını acceptance öncesi hızlıca denetleyen gerçek kalite kapısı eklemek.
+
+**Yapılanlar:**
+
+- `rkp inspect-usdz <asset_id>` komutu eklendi.
+- Komut manifest asset kaydını ve config-aware asset path'ini kullanıyor; external `rkp.json` projelerinde de çalışıyor.
+- USDZ zip paketi okunup entry listesi, dosya boyutu, beklenen `<asset_id>_basecolor.png` texture varlığı, text USDA içinde `primvars:st` sinyali ve `faceVertexCounts` üzerinden bilinen triangle count raporlanıyor.
+- Triangle count manifest `maxTriangles` değerini aşarsa, beklenen baseColor texture paket içinde yoksa veya text USD'de `st` UV primvar eksikse komut non-zero dönüyor.
+- Binary-only USD içerikte geometry count uydurulmuyor; bilinmiyorsa `unknown` raporlanıyor.
+- `build-asset` ve `make-asset --build` çıktıları acceptance öncesi `rkp inspect-usdz <id>` öneriyor.
+- Makefile'a `make inspect-usdz id=<asset_id> [json=1]` wrapper'ı eklendi.
+- README ve `Docs/cli-tool.md` ilk asset akışına inspect adımını ekledi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_budget_or_texture_gate_fails: first run failed as expected because inspect-usdz command did not exist
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_budget_or_texture_gate_fails: ok
+python3 -m unittest Tests.test_rkp_cli.RkpCliTests.test_inspect_usdz_rejects_unknown_asset Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_missing_texture_as_info_after_successful_build: ok
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_text_usd_lacks_st_uv: first run failed as expected because missing text USD st was reported ok
+python3 -m unittest Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_json_reports_texture_and_budget_status Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_budget_or_texture_gate_fails Tests.test_rkp_project.RkpProjectTests.test_inspect_usdz_fails_when_text_usd_lacks_st_uv: ok
+python3 Tools/rkp.py inspect-usdz target_basic_textured --json: ok, texture present, geometry/uv unknown because package contains binary .usdc
+python3 -m unittest discover -s Tests: ok, 35 tests
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+git diff --check: ok
+python3 Tools/rkp.py inspect-usdz target_basic_textured: ok, baseColor texture present, geometry/uv unknown for binary .usdc package
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+```
+
+**Öğrenme notu:**
+
+Acceptance screenshot hâlâ son kapı, ama screenshot'tan önce otomatik paket denetimi yapılmalı. Tool'un değeri “dosya var” demekten çok, USDZ'nin içindeki öğretici kontrat sinyallerini ölçmesinde.
+
+### Sprint 44: Explicit AI Asset Backends
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-05 18:40 +03
+**Amaç:** Yarım kalan Claude/Meshy asset üretim denemesini deterministik default davranışı bozmadan kapatmak.
+
+**Yapılanlar:**
+
+- `prompt-asset` için `--generator template|claude` eklendi; `template` default kaldı ve ortamda `ANTHROPIC_API_KEY` olsa bile otomatik ağ çağrısı yapmıyor.
+- Claude generator, repo config-aware Blender boilerplate + `export_usdz(obj)` snippet'i etrafına model çıktısını sarıyor; format string bug'ı regression testiyle kapatıldı.
+- `make-asset --backend meshy --quality preview|refine` eklendi; Meshy text-to-3D USDZ çıktısı `Assets/Imported/<id>.usdz` path'ine indiriliyor, preview task mobil başlangıç bütçesi olarak 1500 poly hedefliyor, ardından opsiyonel `--screenshot`/`--release-check` kapılarını çalıştırabiliyor.
+- `--generator claude` için API key/paket yoksa manifest mutasyonu yapmadan erken hata dönmesi sağlandı.
+- `anthropic` paket bağımlılığı optional `rkp[ai]` kapsamına alındı.
+- README ve `Docs/cli-tool.md` deterministic template, explicit Claude generator ve Meshy backend kullanımını ayıracak şekilde güncellendi.
+
+**Verification:**
+
+```text
+python3 -m unittest Tests.test_rkp_package: first run failed as expected on Claude export snippet format bug
+python3 -m unittest Tests.test_rkp_package: ok, 5 tests
+python3 -m unittest discover -s Tests: ok, 29 tests
+python3 -m unittest discover -s Tests: ok, 30 tests after Meshy acceptance orchestration test
+python3 -m unittest discover -s Tests: ok, 31 tests after Claude missing-key no-mutation test
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+python3 Tools/rkp.py doctor --json: ok, errors=0, warnings=1 (.github/workflows/ci.yml Node 20 deprecation)
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+```
+
+**Öğrenme notu:**
+
+Asset CLI'da API key varlığı davranışı değiştirmemeli. Öğretici ve test edilebilir default template kalır; ağ kullanan üreticiler açık flag ile seçilir ve kabul kapısı yine RealityKit screenshot evidence ister.
+
 ### Sprint 43: Prompt Geometry Boundary
 
 **Durum:** Tamamlandı

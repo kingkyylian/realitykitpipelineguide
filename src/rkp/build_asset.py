@@ -140,6 +140,7 @@ def main() -> int:
             "info: no texture file found - USDZ built without texture "
             f"(expected packaged texture {texture_path.name})"
         )
+    print(f"next: rkp inspect-usdz {args.id}")
     print("manifest status is unchanged; run accept-asset later after visual verification")
     return 0
 

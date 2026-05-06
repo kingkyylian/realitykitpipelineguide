@@ -1,7 +1,9 @@
 import sys
+import tempfile
 import unittest
 from argparse import Namespace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -62,6 +64,234 @@ class RkpPackageTests(unittest.TestCase):
                 [sys.executable, "-m", "rkp.cli", "release-check"],
             ],
         )
+
+    def test_verify_asset_runs_build_inspect_accept_and_release_check(self) -> None:
+        from rkp import cli
+
+        commands: list[list[str]] = []
+
+        def capture(command: list[str], active_project=None) -> int:
+            commands.append(command)
+            return 0
+
+        args = Namespace(
+            id="portable_module",
+            build=True,
+            screenshot="Docs/screenshots/portable_module.jpg",
+            release_check=True,
+        )
+
+        with patch.object(cli, "run", side_effect=capture):
+            result = cli.run_verify_asset(args)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            commands,
+            [
+                [sys.executable, "-m", "rkp.build_asset", "--id", "portable_module"],
+                [sys.executable, "-m", "rkp.inspect_usdz", "portable_module"],
+                [
+                    sys.executable,
+                    "-m",
+                    "rkp.accept_asset",
+                    "--id",
+                    "portable_module",
+                    "--screenshot",
+                    "Docs/screenshots/portable_module.jpg",
+                ],
+                [sys.executable, "-m", "rkp.cli", "release-check"],
+            ],
+        )
+
+    def test_verify_asset_stops_when_inspection_fails(self) -> None:
+        from rkp import cli
+
+        commands: list[list[str]] = []
+
+        def fail_inspect(command: list[str], active_project=None) -> int:
+            commands.append(command)
+            return 1 if command[:3] == [sys.executable, "-m", "rkp.inspect_usdz"] else 0
+
+        args = Namespace(
+            id="portable_module",
+            build=False,
+            screenshot="Docs/screenshots/portable_module.jpg",
+            release_check=True,
+        )
+
+        with patch.object(cli, "run", side_effect=fail_inspect):
+            result = cli.run_verify_asset(args)
+
+        self.assertEqual(result, 1)
+        self.assertEqual(commands, [[sys.executable, "-m", "rkp.inspect_usdz", "portable_module"]])
+
+    def test_claude_generation_wraps_geometry_with_export_boilerplate(self) -> None:
+        from rkp import prompt_asset
+
+        class FakeMessages:
+            def create(self, **kwargs):
+                return SimpleNamespace(
+                    content=[
+                        SimpleNamespace(
+                            text="```python\n"
+                            "def main():\n"
+                            "    obj = object()\n"
+                            "    export_usdz(obj)\n"
+                            "\n"
+                            "if __name__ == '__main__':\n"
+                            "    main()\n"
+                            "```"
+                        )
+                    ]
+                )
+
+        class FakeAnthropic:
+            def __init__(self, api_key: str) -> None:
+                self.api_key = api_key
+                self.messages = FakeMessages()
+
+        fake_module = SimpleNamespace(Anthropic=FakeAnthropic)
+
+        with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), patch.dict(
+            sys.modules, {"anthropic": fake_module}
+        ):
+            script = prompt_asset._generate_with_claude(
+                "ai_tower",
+                "gameplay_target",
+                "blue beacon tower target",
+            )
+
+        self.assertIsNotNone(script)
+        self.assertIn('ASSET_ID = "ai_tower"', script)
+        self.assertIn('USDZ_PATH = IMPORTED_DIR / f"{ASSET_ID}.usdz"', script)
+        self.assertIn("def export_usdz(obj):", script)
+        self.assertIn("export_usdz(obj)", script)
+        self.assertNotIn("```", script)
+
+    def test_template_generator_does_not_call_claude_when_api_key_exists(self) -> None:
+        from rkp import prompt_asset
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake_project = SimpleNamespace(
+                blender_dir=root / "blender",
+                rel=lambda path: str(Path(path).relative_to(root)),
+            )
+
+            with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "test-key"}), patch.object(
+                prompt_asset,
+                "_generate_with_claude",
+                side_effect=AssertionError("Claude should be opt-in"),
+            ):
+                script_path, ai_generated = prompt_asset.write_blender_script(
+                    "template_target",
+                    "gameplay_target",
+                    "red bullseye target",
+                    "target",
+                    force=True,
+                    generator="template",
+                    project=fake_project,
+                )
+            script = script_path.read_text(encoding="utf-8")
+
+        self.assertFalse(ai_generated)
+        self.assertIn('ASSET_ID = "template_target"', script)
+        self.assertIn("ARCHETYPE = 'target'", script)
+
+    def test_make_asset_meshy_uses_configured_asset_path_and_refine_quality(self) -> None:
+        from rkp import cli
+        from rkp import meshy_asset
+
+        commands: list[list[str]] = []
+        calls: list[tuple[str, str, Path, str, bool]] = []
+
+        def capture(command: list[str], active_project=None) -> int:
+            commands.append(command)
+            return 0
+
+        def fake_generate_usdz(
+            prompt: str,
+            asset_id: str,
+            output_path: Path,
+            api_key: str | None = None,
+            refine: bool = False,
+        ) -> Path:
+            assert api_key is not None
+            calls.append((prompt, asset_id, output_path, api_key, refine))
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_bytes(b"fake-usdz")
+            return output_path
+
+        args = Namespace(
+            id="meshy_drone",
+            prompt="red drone target",
+            type="gameplay_target",
+            quality="refine",
+            screenshot="Docs/screenshots/meshy_drone.jpg",
+            release_check=True,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake_project = SimpleNamespace(
+                root=root,
+                assets_dir=root / "Imported",
+                rel=lambda path: str(Path(path).relative_to(root)),
+            )
+
+            with patch.dict("os.environ", {"MESHY_API_KEY": "test-meshy-key"}), patch.object(
+                cli, "project", return_value=fake_project
+            ), patch.object(cli, "run", side_effect=capture), patch.object(
+                meshy_asset, "generate_usdz", side_effect=fake_generate_usdz
+            ):
+                result = cli.run_make_asset_meshy(args)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(
+            commands,
+            [
+                [sys.executable, "-m", "rkp.new_asset", "--id", "meshy_drone", "--type", "gameplay_target"],
+                [
+                    sys.executable,
+                    "-m",
+                    "rkp.accept_asset",
+                    "--id",
+                    "meshy_drone",
+                    "--screenshot",
+                    "Docs/screenshots/meshy_drone.jpg",
+                ],
+                [sys.executable, "-m", "rkp.cli", "release-check"],
+            ],
+        )
+        self.assertEqual(
+            calls,
+            [
+                (
+                    "red drone target",
+                    "meshy_drone",
+                    root / "Imported" / "meshy_drone.usdz",
+                    "test-meshy-key",
+                    True,
+                )
+            ],
+        )
+
+    def test_meshy_preview_task_uses_mobile_budget_payload(self) -> None:
+        from rkp import meshy_asset
+
+        captured: list[tuple[str, str, dict | None]] = []
+
+        def fake_request(url: str, api_key: str, body: dict | None = None) -> dict:
+            captured.append((url, api_key, body))
+            return {"result": "task_123"}
+
+        with patch.object(meshy_asset, "_request", side_effect=fake_request):
+            task_id = meshy_asset._create_task("red drone target", "test-key")
+
+        self.assertEqual(task_id, "task_123")
+        self.assertEqual(captured[0][1], "test-key")
+        self.assertEqual(captured[0][2]["target_formats"], ["usdz"])
+        self.assertEqual(captured[0][2]["target_polycount"], 1500)
 
 
 if __name__ == "__main__":

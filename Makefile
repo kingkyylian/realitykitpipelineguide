@@ -4,7 +4,7 @@ DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
 
-.PHONY: generate build validate test doctor status new-asset prompt-asset make-asset build-asset accept-asset guide release-check install-skill clean
+.PHONY: generate build validate test doctor status new-asset prompt-asset make-asset build-asset inspect-usdz verify-asset accept-asset guide release-check install-skill clean
 
 generate:
 	xcodegen generate
@@ -42,6 +42,14 @@ make-asset:
 build-asset:
 	@test -n "$(id)" || (echo "usage: make build-asset id=enemy_drone" && exit 2)
 	python3 Tools/rkp.py build-asset "$(id)"
+
+inspect-usdz:
+	@test -n "$(id)" || (echo "usage: make inspect-usdz id=enemy_drone" && exit 2)
+	python3 Tools/rkp.py inspect-usdz "$(id)" $(if $(json),--json,)
+
+verify-asset:
+	@test -n "$(id)" || (echo "usage: make verify-asset id=enemy_drone build=1 screenshot=Docs/screenshots/enemy_drone.jpg release=1" && exit 2)
+	python3 Tools/rkp.py verify-asset "$(id)" $(if $(build),--build,) $(if $(screenshot),--screenshot "$(screenshot)",) $(if $(release),--release-check,)
 
 accept-asset:
 	@test -n "$(id)" || (echo "usage: make accept-asset id=enemy_drone screenshot=Docs/screenshots/enemy_drone.jpg" && exit 2)

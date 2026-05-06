@@ -58,6 +58,25 @@ class RkpCliTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unknown asset id", result.stderr)
 
+    def test_inspect_usdz_rejects_unknown_asset(self) -> None:
+        result = self.run_rkp("inspect-usdz", "does_not_exist")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unknown asset id", result.stdout)
+
+    def test_verify_asset_runs_inspection_gate_for_ready_asset(self) -> None:
+        result = self.run_rkp("verify-asset", "target_basic_textured")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("==> inspect-usdz", result.stdout)
+        self.assertIn("verify-asset ok: target_basic_textured", result.stdout)
+
+    def test_verify_asset_rejects_unknown_asset(self) -> None:
+        result = self.run_rkp("verify-asset", "does_not_exist")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("verify-asset stopped at step: inspect-usdz", result.stderr)
+
     def test_version_flag_prints_package_version(self) -> None:
         result = self.run_rkp("--version")
 

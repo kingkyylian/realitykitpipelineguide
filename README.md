@@ -79,13 +79,28 @@ rkp init --project-name MyRealityKitGame
 rkp doctor
 rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 rkp build-asset enemy_drone
+rkp verify-asset enemy_drone
 rkp status
 rkp release-check
 ```
 
 Expected first doctor result in a new project is `0 error(s)` with only recommended project hygiene warnings such as `README.md`, `LICENSE`, or `Makefile`.
 
-`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. A fallback-built USDZ is still only a draft; keep the asset `planned` until you load it in your app or the fixture and accept it with a real screenshot:
+`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. Run `inspect-usdz` before acceptance to check the package, expected base color texture, texture size budget, `st` UV signal, and known triangle budget status:
+
+```bash
+rkp inspect-usdz enemy_drone
+rkp inspect-usdz enemy_drone --json
+```
+
+A single verification gate is also available:
+
+```bash
+rkp verify-asset enemy_drone
+rkp verify-asset enemy_drone --build
+```
+
+A fallback-built USDZ is still only a draft; keep the asset `planned` until you load it in your app or the fixture and accept it with a real screenshot:
 
 ```bash
 rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
@@ -110,6 +125,31 @@ make test
 `make-asset` is the one-command asset loop. It turns a short prompt into an asset contract and Blender generator script, then can optionally build, accept, and run the release gate.
 
 This is not full text-to-3D generation. The prompt is used for the brief, palette, and a small keyword-based archetype set: `drone`, `tower`, `crate`, `projectile`, and `target`. If no archetype is recognized, RKP writes the default procedural template for the asset type and tells you to edit the generated Blender script for prompt-specific geometry.
+
+The deterministic template generator is the default even when API keys are present. If you want an AI-authored Blender script, install the optional AI dependency and opt in explicitly:
+
+```bash
+pipx inject rkp anthropic
+export ANTHROPIC_API_KEY=...
+rkp prompt-asset enemy_tower \
+  --type gameplay_target \
+  --prompt "blue beacon tower target" \
+  --generator claude
+```
+
+For external text-to-3D generation, `make-asset` can call Meshy directly and download a USDZ draft:
+
+```bash
+export MESHY_API_KEY=...
+rkp make-asset enemy_drone \
+  --type gameplay_target \
+  --prompt "red drone target with four rotors" \
+  --backend meshy \
+  --quality preview
+```
+
+Use `--quality refine` when you want Meshy's refine/PBR pass. Meshy output is still only a built draft until `accept-asset` records RealityKit screenshot evidence.
+The same `--screenshot` and `--release-check` flags can be added after visual verification.
 
 If you are using a slash-command agent CLI, use:
 

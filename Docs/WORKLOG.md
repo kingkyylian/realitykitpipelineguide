@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 75: RKG Stack Puzzle State Rules
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 18:21 +03
+**Amaç:** `stack_puzzle` generated Swift modules için piece/stability/collapse pure rules sözleşmesini eklemek.
+
+**Yapılanlar:**
+
+- `stack_puzzle` scaffold'u `GameState.swift` içine `piecesPlaced`, `stablePieces` ve `collapsed` alanlarını ekliyor.
+- `GameRules.swift` stack puzzle için `maxPieces`, `nextPieceIndex`, `isStable` ve `scoreForStack` üyelerini üretiyor.
+- Physics/collision veya UI interaction eklenmedi; bu sprint sadece compile-safe state/rules contract'ı ekliyor.
+- Gerçek generated `stack_puzzle` proje `rkg verify-game` ile build kapısından geçirildi.
+- `Docs/rkg-architecture.md` tüm non-target seed archetype'ların first-pass state-rules durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_stack_puzzle_state_and_rules: first run failed as expected; stack_puzzle state/rules were generic
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_stack_puzzle_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_toss_physics_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_lane_dodger_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules: ok, 4 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py: ok, 21 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, rkg verify-game>": stack-puzzle-rules-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 98 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Seed registry'deki target dışı archetype'lar artık en az bir compile-safe state/rules contract üretiyor. Bu, sonraki fazda gerçek input, physics ve loop davranışlarını eklerken her oyun türünün kavramlarını karıştırmadan büyütmeyi sağlar.
+
 ### Sprint 74: RKG Toss Physics State Rules
 
 **Durum:** Tamamlandı

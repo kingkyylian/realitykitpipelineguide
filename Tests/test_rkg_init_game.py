@@ -147,6 +147,38 @@ def toss_physics_spec() -> dict:
     return spec
 
 
+def stack_puzzle_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "stack_tower"
+    spec["game"]["display_name"] = "Stack Tower"
+    spec["game"]["archetype"] = "stack_puzzle"
+    spec["game"]["input"] = "drag"
+    spec["loop"]["player_action"] = "place pieces into a stable tower"
+    spec["loop"]["fail_condition"] = "stack collapses"
+    spec["assets"] = {
+        "block": {
+            "type": "gameplay_piece",
+            "role": "player",
+            "budget": "1000 tris / 512 texture",
+            "fallback": "procedural_box",
+        },
+        "bumper": {
+            "type": "hazard",
+            "role": "obstacle",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_box",
+        },
+        "board": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["first_piece", "mid_stack", "collapse_or_clear", "results"]
+    return spec
+
+
 class RkgInitGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -332,6 +364,25 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func clampedThrowPower(_ power: Double) -> Double", rules)
             self.assertIn("static func consumeAttempt(_ attemptsRemaining: Int) -> Int", rules)
             self.assertIn("static func scoreForLanding(inZone: Bool, power: Double) -> Int", rules)
+
+    def test_init_game_generates_stack_puzzle_state_and_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, stack_puzzle_spec())
+            output = root / "StackTower"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = (output / "Sources" / "StackTower" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "StackTower" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var piecesPlaced: Int = 0", state)
+            self.assertIn("var stablePieces: Int = 0", state)
+            self.assertIn("var collapsed: Bool = false", state)
+            self.assertIn("static let maxPieces = 8", rules)
+            self.assertIn("static func nextPieceIndex(after piecesPlaced: Int) -> Int", rules)
+            self.assertIn("static func isStable(stablePieces: Int, piecesPlaced: Int) -> Bool", rules)
+            self.assertIn("static func scoreForStack(piecesPlaced: Int, stablePieces: Int) -> Int", rules)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

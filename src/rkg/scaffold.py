@@ -310,6 +310,12 @@ def _archetype_state_fields(archetype_id: str) -> list[str]:
             "var lastThrowPower: Double = 0",
             "var landedInZone: Bool = false",
         ]
+    if archetype_id == "stack_puzzle":
+        return [
+            "var piecesPlaced: Int = 0",
+            "var stablePieces: Int = 0",
+            "var collapsed: Bool = false",
+        ]
     if archetype_id == "wave_defense_lite":
         return [
             "var health: Int = GameRules.startingHealth",
@@ -345,6 +351,19 @@ def _archetype_rule_members(archetype_id: str) -> list[str]:
 }""",
             """static func scoreForLanding(inZone: Bool, power: Double) -> Int {
     inZone ? Int(clampedThrowPower(power) * 100) : 0
+}""",
+        ]
+    if archetype_id == "stack_puzzle":
+        return [
+            "static let maxPieces = 8",
+            """static func nextPieceIndex(after piecesPlaced: Int) -> Int {
+    min(piecesPlaced + 1, maxPieces)
+}""",
+            """static func isStable(stablePieces: Int, piecesPlaced: Int) -> Bool {
+    stablePieces >= piecesPlaced
+}""",
+            """static func scoreForStack(piecesPlaced: Int, stablePieces: Int) -> Int {
+    piecesPlaced * 10 + stablePieces * 5
 }""",
         ]
     if archetype_id == "wave_defense_lite":

@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `lane_dodger`, `toss_physics`, `stack_puzzle`, and `wave_defense_lite` also receive first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `toss_physics`, `stack_puzzle`, and `wave_defense_lite` receive first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`. `lane_dodger` now has the first minimal playable generated loop in SwiftUI: start, drag lane change, dodge frame advance, collision/result, reset, score, and near-miss state.
 
 ## CLI Roadmap
 
@@ -218,7 +218,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, every declared asset role gets a generated load attempt with fallback. |
-| Generated modules | Pure rule tests for state transitions, scoring, and archetype-specific state/rules such as wave health. |
+| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, and the first playable overlay loop for `lane_dodger`. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
 
 ## Store Pack Contract

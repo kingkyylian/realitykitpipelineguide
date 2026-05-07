@@ -346,6 +346,40 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func isCollision(playerLane: Int, obstacleLane: Int) -> Bool", rules)
             self.assertIn("static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int", rules)
 
+    def test_init_game_generates_playable_lane_dodger_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, lane_dodger_spec())
+            output = root / "LaneDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "LaneDash" / "ContentView.swift").read_text(encoding="utf-8")
+            state = (output / "Sources" / "LaneDash" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "LaneDash" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameSessionState()", content)
+            self.assertIn('Text("Score \\(state.score)")', content)
+            self.assertIn('Text("Lane \\(state.currentLane + 1)/\\(GameRules.laneCount)")', content)
+            self.assertIn('Text("Obstacle \\(state.obstacleLane + 1)")', content)
+            self.assertIn("Text(state.lastEvent.capitalized)", content)
+            self.assertIn('Button(isPlaying ? "Dodge" : "Start")', content)
+            self.assertIn("state = GameRules.startLaneDodgerSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.advanceLaneDodgerFrame(state)", content)
+            self.assertIn('Button("Reset")', content)
+            self.assertIn("DragGesture(minimumDistance: 20).onEnded", content)
+            self.assertIn("moveLane(value.translation.width > 0 ? 1 : -1)", content)
+            self.assertIn("var obstacleLane: Int = 0", state)
+            self.assertIn("var isDefeated: Bool = false", state)
+            self.assertIn("static func laneAfterMove(currentLane: Int, direction: Int) -> Int", rules)
+            self.assertIn("static func nextObstacleLane(after distance: Int) -> Int", rules)
+            self.assertIn("static func startLaneDodgerSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func advanceLaneDodgerFrame(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func isNearMiss(playerLane: Int, obstacleLane: Int) -> Bool", rules)
+            self.assertIn("next.phase = .result", rules)
+            self.assertIn("next.isDefeated = true", rules)
+            self.assertIn('next.lastEvent = "hit obstacle"', rules)
+
     def test_init_game_generates_toss_physics_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

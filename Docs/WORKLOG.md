@@ -12,6 +12,44 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 76: RKG Lane Dodger Playable Overlay
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 18:44 +03
+**Amaç:** `lane_dodger` generated app'i statik HUD'dan çıkarıp minimal oynanabilir SwiftUI overlay loop'una taşımak.
+
+**Yapılanlar:**
+
+- `lane_dodger` generated `ContentView.swift` artık `@State private var state = GameSessionState()` kullanıyor.
+- HUD score, lane count, obstacle lane, distance, near-miss ve `lastEvent.capitalized` gösteriyor.
+- `Button(isPlaying ? "Dodge" : "Start")` ile session başlatma veya frame ilerletme eklendi.
+- `Reset` button'u session state'i sıfırlıyor.
+- `DragGesture(minimumDistance: 20).onEnded` ile lane değiştirme eklendi.
+- `GameSessionState` lane dodger için `obstacleLane` ve `isDefeated` alanlarını da üretiyor.
+- `GameRules` lane dodger için `laneAfterMove`, `nextObstacleLane(after:)`, `startLaneDodgerSession` ve `advanceLaneDodgerFrame` üretiyor.
+- Collision durumunda result phase, defeat flag, event ve score update sözleşmesi eklendi.
+- Gerçek generated `lane_dodger` proje `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop: first run failed as expected; generated ContentView still used local score/isPlaying
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop: second run failed as expected; stronger playable contract required Dodge/Start, drag gesture, isDefeated, and named lane session rules
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_lane_dodger_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_escapes_swift_string_literals_from_spec_text: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py Tests/test_rkg_validate_spec.py: ok, 22 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, rkg verify-game>": lane-dodger-playable-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 99 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+RKG'nin oyun geliştirme tool'u olduğunu kanıtlayan ilk nokta, generated app'in sadece scene göstermesi değil state değiştiren bir loop üretmesi. Bu sprint RealityKit entity movement'a girmeden, lane dodger için start/drag/dodge/result/reset akışını SwiftUI overlay ve pure rules üstünden başlattı.
+
 ### Sprint 75: RKG Stack Puzzle State Rules
 
 **Durum:** Tamamlandı

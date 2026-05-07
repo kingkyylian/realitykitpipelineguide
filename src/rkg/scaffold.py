@@ -196,6 +196,8 @@ def _content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
     title = _swift_string_literal(display_name)
     subtitle = _swift_string_literal(f"{game['archetype']} / {game['session_seconds']}s")
     player_action = _swift_string_literal(loop["player_action"])
+    if str(game["archetype"]) == "lane_dodger":
+        return _lane_dodger_content_view_swift(title, subtitle, player_action)
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -238,6 +240,93 @@ struct ContentView: View {{
             .padding()
             .background(.thinMaterial)
         }}
+    }}
+}}
+"""
+
+
+def _lane_dodger_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameSessionState()
+
+    private var isPlaying: Bool {{
+        state.phase == .playing
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView()
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Distance \\(state.distance)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Lane \\(state.currentLane + 1)/\\(GameRules.laneCount)")
+                        .font(.caption.monospacedDigit())
+                    Text("Obstacle \\(state.obstacleLane + 1)")
+                        .font(.caption.monospacedDigit())
+                    Text("Near \\(state.nearMisses)")
+                        .font(.caption.monospacedDigit())
+                    Spacer()
+                    Text(state.lastEvent.capitalized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(isPlaying ? "Dodge" : "Start") {{
+                        advanceLaneDodger()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button("Reset") {{
+                        state = GameSessionState()
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+            .gesture(
+                DragGesture(minimumDistance: 20).onEnded {{ value in
+                    moveLane(value.translation.width > 0 ? 1 : -1)
+                }}
+            )
+        }}
+    }}
+
+    private func moveLane(_ direction: Int) {{
+        state.currentLane = GameRules.laneAfterMove(currentLane: state.currentLane, direction: direction)
+        state.lastEvent = "lane changed"
+    }}
+
+    private func advanceLaneDodger() {{
+        if !isPlaying {{
+            state = GameRules.startLaneDodgerSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.advanceLaneDodgerFrame(state)
     }}
 }}
 """
@@ -301,6 +390,8 @@ def _archetype_state_fields(archetype_id: str) -> list[str]:
     if archetype_id == "lane_dodger":
         return [
             "var currentLane: Int = 1",
+            "var obstacleLane: Int = 0",
+            "var isDefeated: Bool = false",
             "var nearMisses: Int = 0",
             "var distance: Int = 0",
         ]
@@ -330,14 +421,48 @@ def _archetype_rule_members(archetype_id: str) -> list[str]:
         return [
             "static let laneCount = 3",
             "static let nearMissBonus = 5",
+            """static func laneAfterMove(currentLane: Int, direction: Int) -> Int {
+    clampedLane(currentLane + direction)
+}""",
             """static func clampedLane(_ lane: Int) -> Int {
     min(max(lane, 0), laneCount - 1)
 }""",
             """static func isCollision(playerLane: Int, obstacleLane: Int) -> Bool {
     playerLane == obstacleLane
 }""",
+            """static func isNearMiss(playerLane: Int, obstacleLane: Int) -> Bool {
+    abs(playerLane - obstacleLane) == 1
+}""",
+            """static func nextObstacleLane(after distance: Int) -> Int {
+    (distance + 1) % laneCount
+}""",
             """static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int {
     distance + nearMisses * nearMissBonus
+}""",
+            """static func startLaneDodgerSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.obstacleLane = nextObstacleLane(after: 0)
+    state.lastEvent = "started"
+    return state
+}""",
+            """static func advanceLaneDodgerFrame(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    next.distance += 1
+    next.obstacleLane = nextObstacleLane(after: next.distance)
+    if isCollision(playerLane: next.currentLane, obstacleLane: next.obstacleLane) {
+        next.phase = .result
+        next.isDefeated = true
+        next.lastEvent = "hit obstacle"
+    } else if isNearMiss(playerLane: next.currentLane, obstacleLane: next.obstacleLane) {
+        next.nearMisses += 1
+        next.lastEvent = "near miss"
+    } else {
+        next.lastEvent = "clear"
+    }
+    next.score = scoreForDistance(next.distance, nearMisses: next.nearMisses)
+    return next
 }""",
         ]
     if archetype_id == "toss_physics":

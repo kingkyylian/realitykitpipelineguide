@@ -78,6 +78,37 @@ def lane_dodger_spec() -> dict:
     return spec
 
 
+def wave_defense_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "wave_gate"
+    spec["game"]["display_name"] = "Wave Gate"
+    spec["game"]["archetype"] = "wave_defense_lite"
+    spec["loop"]["player_action"] = "tap threats before health runs out"
+    spec["loop"]["fail_condition"] = "health reaches zero"
+    spec["assets"] = {
+        "guardian": {
+            "type": "character",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "threat": {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_sphere",
+        },
+        "arena_floor": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["wave_start", "mid_wave", "low_health", "results"]
+    return spec
+
+
 class RkgInitGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -205,6 +236,25 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('loadPrimaryEntity(assetId: "crate", role: "obstacle")', scene_controller)
             self.assertIn('loadPrimaryEntity(assetId: "lane_floor", role: "arena")', scene_controller)
             self.assertNotIn('FallbackFactory.makeFallback(role: "arena")', scene_controller)
+
+    def test_init_game_generates_wave_defense_state_and_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, wave_defense_spec())
+            output = root / "WaveGate"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = (output / "Sources" / "WaveGate" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "WaveGate" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var health: Int = GameRules.startingHealth", state)
+            self.assertIn("var wave: Int = 1", state)
+            self.assertIn("var threatsRemaining: Int = 0", state)
+            self.assertIn("static let startingHealth = 3", rules)
+            self.assertIn("static func healthAfterDamage(_ health: Int, damage: Int = 1) -> Int", rules)
+            self.assertIn("static func isDefeated(health: Int) -> Bool", rules)
+            self.assertIn("static func nextWave(after wave: Int) -> Int", rules)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 72: RKG Wave Defense State Rules
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 18:14 +03
+**Amaç:** Generated Swift modules içinde ilk archetype-specific pure state/rules sözleşmesini `wave_defense_lite` için eklemek.
+
+**Yapılanlar:**
+
+- `wave_defense_lite` scaffold'u `GameState.swift` içine `health`, `wave` ve `threatsRemaining` alanlarını ekliyor.
+- `GameRules.swift` wave defense için `startingHealth`, `healthAfterDamage`, `isDefeated` ve `nextWave` pure rule üyelerini üretiyor.
+- Default archetype'lar mevcut score/timer contract'ında bırakıldı; UI ve scene loop karmaşıklığı eklenmedi.
+- Gerçek generated `wave_defense_lite` proje `rkg verify-game` ile build kapısından geçirildi.
+- `Docs/rkg-architecture.md` generated module sözleşmesiyle güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules: first run failed as expected; wave defense state/rules were generic
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules: ok, 1 test
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py: ok, 18 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate wave_defense_lite temp project, rkg verify-game>": wave-defense-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 95 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Archetype-specific büyüme önce pure state/rules seviyesinde başlamalı. Böylece farklı oyun türleri için gerçek davranış sözleşmesi oluşur ama `GameView` ve RealityKit scene glue erken karmaşıklaşmaz.
+
 ### Sprint 71: RKG Archetype Input and Camera Gate
 
 **Durum:** Tamamlandı

@@ -245,6 +245,10 @@ struct ContentView: View {{
 
 def _game_state_swift(spec: Mapping[str, Any]) -> str:
     session_seconds = int(spec["game"]["session_seconds"])
+    archetype_fields = _archetype_state_fields(str(spec["game"]["archetype"]))
+    extra_fields = ""
+    if archetype_fields:
+        extra_fields = "\n" + "\n".join(f"    {field}" for field in archetype_fields)
     return f"""import Foundation
 
 enum GamePhase: String {{
@@ -262,6 +266,7 @@ struct GameSessionState {{
     var sessionSeconds: Int = {session_seconds}
     var attempt: Int = 1
     var lastEvent: String = "none"
+{extra_fields}
 }}
 """
 
@@ -270,6 +275,10 @@ def _game_rules_swift(spec: Mapping[str, Any]) -> str:
     scoring = spec["loop"]["scoring"]
     hit = int(scoring.get("hit", 10))
     perfect = int(scoring.get("perfect", hit))
+    archetype_rules = _archetype_rule_members(str(spec["game"]["archetype"]))
+    extra_rules = ""
+    if archetype_rules:
+        extra_rules = "\n\n" + "\n\n".join(_indent_swift_block(rule, spaces=4) for rule in archetype_rules)
     return f"""import Foundation
 
 enum GameRules {{
@@ -283,8 +292,41 @@ enum GameRules {{
     static func hasSessionEnded(elapsedSeconds: Int, sessionSeconds: Int) -> Bool {{
         elapsedSeconds >= sessionSeconds
     }}
+{extra_rules}
 }}
 """
+
+
+def _archetype_state_fields(archetype_id: str) -> list[str]:
+    if archetype_id == "wave_defense_lite":
+        return [
+            "var health: Int = GameRules.startingHealth",
+            "var wave: Int = 1",
+            "var threatsRemaining: Int = 0",
+        ]
+    return []
+
+
+def _archetype_rule_members(archetype_id: str) -> list[str]:
+    if archetype_id == "wave_defense_lite":
+        return [
+            "static let startingHealth = 3",
+            """static func healthAfterDamage(_ health: Int, damage: Int = 1) -> Int {
+    max(0, health - damage)
+}""",
+            """static func isDefeated(health: Int) -> Bool {
+    health <= 0
+}""",
+            """static func nextWave(after wave: Int) -> Int {
+    wave + 1
+}""",
+        ]
+    return []
+
+
+def _indent_swift_block(text: str, *, spaces: int) -> str:
+    prefix = " " * spaces
+    return "\n".join(prefix + line if line else line for line in text.splitlines())
 
 
 def _asset_loader_swift() -> str:

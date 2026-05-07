@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `wave_defense_lite` also receives first-pass health and wave state/rules so archetype-specific rules can grow without leaking into `GameView`.
 
 ## CLI Roadmap
 
@@ -218,7 +218,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, every declared asset role gets a generated load attempt with fallback. |
-| Generated modules | Pure rule tests for state transitions and scoring. |
+| Generated modules | Pure rule tests for state transitions, scoring, and archetype-specific state/rules such as wave health. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
 
 ## Store Pack Contract

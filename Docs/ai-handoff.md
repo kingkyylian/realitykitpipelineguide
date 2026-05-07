@@ -71,10 +71,11 @@ If the user asks to continue education content, do this next:
 
 If the user asks to continue the game factory route, do this next:
 
-1. Commit the first RKG batch after reviewing the final diff.
-2. Extend `rkg init-game` with richer `target_shooter` mechanics: start timer, hit scoring, result state, and deterministic reset.
-3. Add generated-project build verification with XcodeGen when environment permits.
-4. Add store-pack screenshot checklist generation from `release.screenshots`.
+1. Keep RKG framed as a multi-archetype RealityKit game factory, not a target-shooter generator.
+2. Add an archetype template registry and shared template contract before deepening any single archetype.
+3. Define reusable generated Swift modules for start, core action, feedback, fail/miss, reset, result, and screenshot states.
+4. Add generated-project build verification with XcodeGen when environment permits.
+5. Add store-pack screenshot checklist generation from `release.screenshots`.
 
 ## Key Files to Read First
 

@@ -27,6 +27,25 @@ RKG owns:
 
 RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot evidence.
 
+## Product Scope
+
+RKG is not a target-shooter generator. It is a general RealityKit game factory for small, shippable mobile games.
+
+The target-shooter fixture is only the first reference archetype because it is easy to verify: one input, clear scoring, simple assets, and screenshot-friendly states. Do not let that fixture shape the product boundary. Any RKG feature should either support multiple archetypes directly or improve the shared factory layer that every archetype needs.
+
+Shared factory layer:
+
+- Game idea scoring.
+- GameSpec validation.
+- Project scaffolding.
+- Asset role mapping.
+- Procedural fallback contracts.
+- Reusable Swift gameplay modules.
+- Generated-project verification.
+- Screenshot and store-pack orchestration.
+
+Archetype-specific templates sit under that layer. They are plugins, not the product.
+
 ## Anti-Spam Rule
 
 Each shipped game must be meaningfully distinct. A new app must change at least one of these:
@@ -136,9 +155,9 @@ Docs/store/screenshots.md
 
 Metadata must describe the real game. Screenshots must show actual gameplay, not only title art.
 
-## First Archetypes
+## Seed Archetypes
 
-Start with small, replayable game shapes:
+Start with small, replayable game shapes. The order below is not product priority; it is a set of early templates that exercise different mechanics.
 
 | Archetype | Why it is first-wave friendly |
 | --- | --- |
@@ -149,6 +168,16 @@ Start with small, replayable game shapes:
 | Wave defense lite | Reuses target/spawn/scoring systems, but has higher scope. |
 
 Avoid first-wave games that require multiplayer, large maps, complex animation, or moderation.
+
+Before deepening one archetype, define the shared template contract:
+
+| Contract | Required output |
+| --- | --- |
+| Runtime loop | Start, core action, feedback, fail/miss, reset, result. |
+| Asset roles | Gameplay target, obstacle, player piece, arena, pickup, projectile, UI prop, or environment. |
+| Fallbacks | Every role has a procedural fallback until RKP accepts imported art. |
+| Verification | Generated project can run tests, build, and capture the required screenshot states. |
+| Store pack | Metadata and screenshots describe actual generated gameplay. |
 
 ## GameSpec Contract
 

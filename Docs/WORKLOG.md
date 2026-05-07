@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 61: RKG Multi-Archetype Scope Correction
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 15:16 +03
+**Amaç:** RKG yönünü tek bir target-shooter template'ine daraltmadan, her çeşit küçük RealityKit oyunu için kullanılacak genel game factory olarak netleştirmek.
+
+**Yapılanlar:**
+
+- `Docs/game-factory.md` içine RKG product scope bölümü eklendi.
+- Target shooter fixture'ı ana ürün değil, sadece ilk reference archetype olarak tanımlandı.
+- RKG shared factory layer netleştirildi: idea scoring, GameSpec validation, project scaffolding, asset role mapping, fallback contracts, reusable Swift modules, generated-project verification, screenshot/store-pack orchestration.
+- "First Archetypes" bölümü "Seed Archetypes" olarak değiştirildi; order'ın product priority olmadığı yazıldı.
+- `Docs/ai-handoff.md` next task listesi target-shooter derinleştirme yerine archetype registry ve shared template contract yönüne çekildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Target shooter hızlı doğrulama için iyi fixture, ama RKG'nin ana değeri archetype-agnostic factory layer'da. Tek archetype'a yatırım yapmadan önce template registry ve ortak runtime contract kurulmalı.
+
 ### Sprint 60: Local Checkpoint Hygiene
 
 **Durum:** Tamamlandı

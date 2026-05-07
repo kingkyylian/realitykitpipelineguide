@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
-from rkg.plan import swift_name_for
+from rkg.plan import runtime_entities_for, swift_name_for
 from rkg.spec import assert_valid_game_spec
 from rkg.store_pack import build_store_pack
 
@@ -341,7 +341,7 @@ enum FallbackFactory {
 
 
 def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
-    entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in _runtime_entities(spec))
+    entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
 final class GameSceneController {{
@@ -364,54 +364,6 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
     return f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
         {variable}.position = {position}
         anchor.addChild({variable})"""
-
-
-def _runtime_entities(spec: Mapping[str, Any]) -> list[JsonDict]:
-    entities = []
-    for index, (asset_id, asset) in enumerate(spec["assets"].items()):
-        if not isinstance(asset, Mapping):
-            continue
-        role = _asset_role(asset)
-        entities.append(
-            {
-                "asset_id": str(asset_id),
-                "role": role,
-                "variable": _swift_identifier(str(asset_id)),
-                "position": _entity_position_for(role, index),
-            }
-        )
-    return entities
-
-
-def _asset_role(asset: Mapping[str, Any]) -> str:
-    return str(asset.get("role") or asset.get("type") or "prop")
-
-
-def _swift_identifier(asset_id: str) -> str:
-    parts = [part for part in asset_id.split("_") if part]
-    if not parts:
-        return "entity"
-    return parts[0] + "".join(part.capitalize() for part in parts[1:])
-
-
-def _entity_position_for(role: str, index: int) -> str:
-    if role in {"arena", "environment"}:
-        return "[0, -0.45, 0]"
-    if role == "player":
-        return "[0, 0, -0.85]"
-    if role in {"target", "obstacle", "hazard"}:
-        x = -0.45 + (index % 3) * 0.45
-        z = -1.25 - (index // 3) * 0.25
-        return _vector_literal(x, 0, z)
-    if role == "pickup":
-        return "[0.45, 0.12, -1.0]"
-    if role == "projectile":
-        return "[0, 0.2, -0.65]"
-    return _vector_literal(-0.3 + (index % 3) * 0.3, 0, -1.0)
-
-
-def _vector_literal(x: float, y: float, z: float) -> str:
-    return f"[{x:.2f}, {y:.2f}, {z:.2f}]"
 
 
 def _game_view_swift() -> str:

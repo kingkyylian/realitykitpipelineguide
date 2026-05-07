@@ -51,6 +51,36 @@ def valid_spec() -> dict:
     }
 
 
+def lane_dodger_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "lane_dash"
+    spec["game"]["display_name"] = "Lane Dash"
+    spec["game"]["archetype"] = "lane_dodger"
+    spec["game"]["input"] = "drag"
+    spec["assets"] = {
+        "runner": {
+            "type": "character",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "crate": {
+            "type": "hazard",
+            "role": "obstacle",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_box",
+        },
+        "lane_floor": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_session", "near_miss", "results"]
+    return spec
+
+
 class RkgPlanGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -78,6 +108,23 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(payload["asset_roles"]["target_basic"], "target")
         self.assertEqual(payload["asset_roles"]["arena_floor"], "arena")
         self.assertEqual(payload["screenshot_states"], ["gameplay_start", "mid_session", "results"])
+
+    def test_build_game_plan_exposes_runtime_entities_for_declared_roles(self) -> None:
+        payload = build_game_plan(lane_dodger_spec())
+
+        self.assertEqual(
+            payload["runtime_entities"],
+            [
+                {"asset_id": "runner", "role": "player", "variable": "runner", "position": "[0, 0, -0.85]"},
+                {"asset_id": "crate", "role": "obstacle", "variable": "crate", "position": "[0.00, 0.00, -1.25]"},
+                {
+                    "asset_id": "lane_floor",
+                    "role": "arena",
+                    "variable": "laneFloor",
+                    "position": "[0, -0.45, 0]",
+                },
+            ],
+        )
 
     def test_plan_game_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

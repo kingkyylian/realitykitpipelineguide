@@ -12,6 +12,38 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 70: RKG Runtime Entity Plan Payload
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 17:47 +03
+**Amaç:** `plan-game` dry-run çıktısının generated scene'deki runtime entity coverage'ı açıkça göstermesini sağlamak.
+
+**Yapılanlar:**
+
+- `build_game_plan(spec)` payload'una `runtime_entities` eklendi.
+- Runtime entity kayıtları `asset_id`, `role`, Swift variable adı ve deterministic position içeriyor.
+- Entity plan helper'ı `src/rkg/plan.py` içinde tek source of truth oldu.
+- `init-game` scaffold'u `GameSceneController.swift` üretirken aynı `runtime_entities_for(spec)` helper'ını kullanıyor.
+- `Docs/rkg-architecture.md` plan payload örneği yeni alanla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_runtime_entities_for_declared_roles: first run failed as expected; runtime_entities payload was missing
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_runtime_entities_for_declared_roles Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generated_scene_loads_all_declared_required_roles: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py Tests/test_rkg_init_game.py Tests/test_rkg_spec.py Tests/test_rkg_validate_spec.py Tests/test_rkg_store_pack.py Tests/test_rkg_verify_game.py: ok, 33 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/plan.py src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 92 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Dry-run sadece dosya listesi değil, runtime coverage contract'ı da göstermeli. Aksi halde kullanıcı `init-game` çalışmadan hangi asset rollerinin sahneye bağlanacağını göremez.
+
 ### Sprint 69: RKG Role-Aware Generated Scene
 
 **Durum:** Tamamlandı

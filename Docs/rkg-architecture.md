@@ -189,6 +189,20 @@ Current `plan-game --json` shape:
     "target_basic": "target",
     "arena_floor": "arena"
   },
+  "runtime_entities": [
+    {
+      "asset_id": "target_basic",
+      "role": "target",
+      "variable": "targetBasic",
+      "position": "[-0.45, 0.00, -1.25]"
+    },
+    {
+      "asset_id": "arena_floor",
+      "role": "arena",
+      "variable": "arenaFloor",
+      "position": "[0, -0.45, 0]"
+    }
+  ],
   "screenshot_states": ["gameplay_start", "mid_session", "results"]
 }
 ```

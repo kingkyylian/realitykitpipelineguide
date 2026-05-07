@@ -68,6 +68,12 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertTrue((output / "Sources" / "RingDash" / "RingDashApp.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "ContentView.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "GameView.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "GameState.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "GameRules.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "GameSceneController.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "AssetLoader.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "FallbackFactory.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "ResultView.swift").exists())
             self.assertTrue((output / "Docs" / "store" / "metadata.md").exists())
             self.assertTrue((output / "Docs" / "store" / "review-notes.md").exists())
             self.assertTrue((output / "Docs" / "store" / "privacy.md").exists())
@@ -104,7 +110,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('Text("Ring \\"Dash\\"")', content)
             self.assertIn('Text("tap targets\\nbefore they expire")', content)
 
-    def test_init_game_generated_view_references_planned_asset_ids(self) -> None:
+    def test_init_game_generated_modules_reference_planned_asset_ids(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec_path = self.write_spec(root, valid_spec())
@@ -113,9 +119,16 @@ class RkgInitGameTests(unittest.TestCase):
             result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            content = (output / "Sources" / "RingDash" / "GameView.swift").read_text(encoding="utf-8")
-            self.assertIn('try? Entity.load(named: "target_basic")', content)
-            self.assertIn("proceduralTarget()", content)
+            game_view = (output / "Sources" / "RingDash" / "GameView.swift").read_text(encoding="utf-8")
+            asset_loader = (output / "Sources" / "RingDash" / "AssetLoader.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "RingDash" / "GameSceneController.swift").read_text(encoding="utf-8")
+            fallback_factory = (output / "Sources" / "RingDash" / "FallbackFactory.swift").read_text(encoding="utf-8")
+            self.assertIn("GameSceneController()", game_view)
+            self.assertNotIn("Entity.load(named:", game_view)
+            self.assertIn("try? Entity.load(named: assetId)", asset_loader)
+            self.assertIn('loadPrimaryEntity(assetId: "target_basic", role: "gameplay_target")', scene_controller)
+            self.assertNotIn("cameraTransform =", scene_controller)
+            self.assertIn("makeFallback(role: String)", fallback_factory)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

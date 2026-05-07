@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
+from rkg.plan import swift_name_for
 from rkg.spec import assert_valid_game_spec
 
 
@@ -31,7 +32,13 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "project.yml", _project_yml(swift_name, display_name, bundle_suffix))
     _write_text(output / "Sources" / swift_name / f"{swift_name}App.swift", _app_swift(swift_name))
     _write_text(output / "Sources" / swift_name / "ContentView.swift", _content_view_swift(display_name, spec))
-    _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift(spec))
+    _write_text(output / "Sources" / swift_name / "GameState.swift", _game_state_swift(spec))
+    _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
+    _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
+    _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
+    _write_text(output / "Sources" / swift_name / "GameSceneController.swift", _game_scene_controller_swift(spec))
+    _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift())
+    _write_text(output / "Sources" / swift_name / "ResultView.swift", _result_view_swift())
     _write_text(output / "Docs" / "WORKLOG.md", _worklog(display_name))
     _write_text(output / "Docs" / "ai-handoff.md", _handoff(display_name, game_id))
     _write_text(output / "Docs" / "store" / "metadata.md", _metadata(display_name, spec))
@@ -65,7 +72,7 @@ def _write_text(path: Path, text: str) -> None:
 
 
 def _swift_name(game_id: str) -> str:
-    return "".join(part.capitalize() for part in game_id.split("_"))
+    return swift_name_for(game_id)
 
 
 def _bundle_suffix(game_id: str) -> str:
@@ -223,60 +230,179 @@ struct ContentView: View {{
 """
 
 
-def _game_view_swift(spec: Mapping[str, Any]) -> str:
+def _game_state_swift(spec: Mapping[str, Any]) -> str:
+    session_seconds = int(spec["game"]["session_seconds"])
+    return f"""import Foundation
+
+enum GamePhase: String {{
+    case idle
+    case countdown
+    case playing
+    case paused
+    case result
+}}
+
+struct GameSessionState {{
+    var phase: GamePhase = .idle
+    var score: Int = 0
+    var elapsedSeconds: Int = 0
+    var sessionSeconds: Int = {session_seconds}
+    var attempt: Int = 1
+    var lastEvent: String = "none"
+}}
+"""
+
+
+def _game_rules_swift(spec: Mapping[str, Any]) -> str:
+    scoring = spec["loop"]["scoring"]
+    hit = int(scoring.get("hit", 10))
+    perfect = int(scoring.get("perfect", hit))
+    return f"""import Foundation
+
+enum GameRules {{
+    static let hitScore = {hit}
+    static let perfectScore = {perfect}
+
+    static func scoreForHit(isPerfect: Bool) -> Int {{
+        isPerfect ? perfectScore : hitScore
+    }}
+
+    static func hasSessionEnded(elapsedSeconds: Int, sessionSeconds: Int) -> Bool {{
+        elapsedSeconds >= sessionSeconds
+    }}
+}}
+"""
+
+
+def _asset_loader_swift() -> str:
+    return """import RealityKit
+
+enum AssetLoader {
+    static func loadPrimaryEntity(assetId: String, role: String) -> Entity {
+        if let imported = try? Entity.load(named: assetId) {
+            imported.scale = [1, 1, 1]
+            return imported
+        }
+        return FallbackFactory.makeFallback(role: role)
+    }
+}
+"""
+
+
+def _fallback_factory_swift() -> str:
+    return """import RealityKit
+import UIKit
+
+enum FallbackFactory {
+    static func makeFallback(role: String) -> ModelEntity {
+        switch role {
+        case "arena", "environment":
+            return ModelEntity(
+                mesh: .generatePlane(width: 2.4, depth: 2.4),
+                materials: [SimpleMaterial(color: .darkGray, roughness: 0.8, isMetallic: false)]
+            )
+        case "obstacle", "hazard":
+            return ModelEntity(
+                mesh: .generateBox(size: 0.28),
+                materials: [SimpleMaterial(color: .systemOrange, roughness: 0.5, isMetallic: false)]
+            )
+        case "pickup":
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.12),
+                materials: [SimpleMaterial(color: .systemGreen, roughness: 0.35, isMetallic: false)]
+            )
+        case "projectile":
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.08),
+                materials: [SimpleMaterial(color: .systemBlue, roughness: 0.3, isMetallic: false)]
+            )
+        default:
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.18),
+                materials: [SimpleMaterial(color: .systemRed, roughness: 0.35, isMetallic: false)]
+            )
+        }
+    }
+}
+"""
+
+
+def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
     asset_id = _swift_string_literal(_primary_runtime_asset_id(spec))
+    role = _swift_string_literal(_primary_runtime_asset_role(spec))
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+
+    func install(into view: ARView) {{
+        let floor = FallbackFactory.makeFallback(role: "arena")
+        floor.position = [0, -0.45, 0]
+        anchor.addChild(floor)
+
+        let primary = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+        primary.position = [0, 0, -1.2]
+        anchor.addChild(primary)
+
+        view.scene.addAnchor(anchor)
+    }}
+}}
+"""
+
+
+def _game_view_swift() -> str:
     return """import RealityKit
 import SwiftUI
 
 struct GameView: UIViewRepresentable {
+    private let controller = GameSceneController()
+
     func makeUIView(context: Context) -> ARView {
         let view = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
-        let anchor = AnchorEntity(world: .zero)
-
-        let floor = ModelEntity(
-            mesh: .generatePlane(width: 2.4, depth: 2.4),
-            materials: [SimpleMaterial(color: .darkGray, roughness: 0.8, isMetallic: false)]
-        )
-        floor.position = [0, -0.45, 0]
-        anchor.addChild(floor)
-
-        let target: Entity
-        if let imported = try? Entity.load(named: __RKG_ASSET_ID__) {
-            imported.scale = [1, 1, 1]
-            target = imported
-        } else {
-            target = proceduralTarget()
-        }
-        target.position = [0, 0, -1.2]
-        anchor.addChild(target)
-
-        view.scene.addAnchor(anchor)
-        view.cameraTransform = Transform(
-            scale: .one,
-            rotation: simd_quatf(angle: 0, axis: [0, 1, 0]),
-            translation: [0, 0.35, 1.2]
-        )
+        controller.install(into: view)
         return view
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {}
+}
+"""
 
-    private func proceduralTarget() -> ModelEntity {
-        ModelEntity(
-            mesh: .generateSphere(radius: 0.18),
-            materials: [SimpleMaterial(color: .systemRed, roughness: 0.35, isMetallic: false)]
-        )
+
+def _result_view_swift() -> str:
+    return """import SwiftUI
+
+struct ResultView: View {
+    let state: GameSessionState
+    let onReset: () -> Void
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Score \\(state.score)")
+                .font(.title2.monospacedDigit())
+            Button("Reset", action: onReset)
+                .buttonStyle(.borderedProminent)
+        }
     }
 }
-""".replace("__RKG_ASSET_ID__", asset_id)
+"""
 
 
 def _primary_runtime_asset_id(spec: Mapping[str, Any]) -> str:
     assets = spec["assets"]
     for asset_id, asset in assets.items():
+        if isinstance(asset, Mapping) and asset.get("role") in {"target", "player", "projectile"}:
+            return str(asset_id)
+    for asset_id, asset in assets.items():
         if isinstance(asset, Mapping) and asset.get("type") == "gameplay_target":
             return str(asset_id)
     return str(next(iter(assets)))
+
+
+def _primary_runtime_asset_role(spec: Mapping[str, Any]) -> str:
+    asset = spec["assets"][_primary_runtime_asset_id(spec)]
+    if isinstance(asset, Mapping):
+        return str(asset.get("role") or asset.get("type") or "target")
+    return "target"
 
 
 def _worklog(display_name: str) -> str:

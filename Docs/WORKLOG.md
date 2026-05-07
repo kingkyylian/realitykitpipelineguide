@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 65: RKG Module-Based Swift Scaffold
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 16:45 +03
+**Amaç:** Generated game scaffold'u tek `GameView.swift` ağırlığından çıkarıp reusable Swift module layout'a taşımak.
+
+**Yapılanlar:**
+
+- `init-game` artık şu Swift dosyalarını üretiyor: `GameState.swift`, `GameRules.swift`, `GameSceneController.swift`, `GameView.swift`, `AssetLoader.swift`, `FallbackFactory.swift`, `ResultView.swift`.
+- `GameView.swift` artık asset loading yapmıyor; sadece `ARView` oluşturup `GameSceneController` çağırıyor.
+- `AssetLoader.swift` `Entity.load(named:)` ve fallback kararını sahipleniyor.
+- `FallbackFactory.swift` role-based procedural primitive üretiyor.
+- `GameSceneController.swift` primary asset id/role ile scene kuruyor.
+- `Docs/rkg-architecture.md` module ownership durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py: first run failed as expected; generated shared Swift module files were missing
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py: ok, 6 tests
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, xcodegen, xcodebuild>": first run failed; generated code tried to assign get-only ARView.cameraTransform
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, xcodegen, xcodebuild>": generated-build ok
+```
+
+**Öğrenme notu:**
+
+RKG'nin multi-archetype hale gelmesi için ilk zorunlu sınır Swift dosya ownership'i. `GameView` asset/policy bilmemeli; archetype farkları ileride `GameSceneController`, `GameRules`, `AssetLoader` ve `FallbackFactory` üzerinden büyümeli.
+
 ### Sprint 64: RKG Dry-Run Game Planning
 
 **Durum:** Tamamlandı

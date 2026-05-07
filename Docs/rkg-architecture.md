@@ -147,6 +147,8 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives.
+
 ## CLI Roadmap
 
 | Command | Purpose | First behavior |

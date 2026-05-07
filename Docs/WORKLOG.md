@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 81: RKG Scaffold Cleanup
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 21:55 +03
+**Amaç:** Güncel projeyi kod temizliği açısından tarayıp düşük riskli bakım düzeltmelerini yapmak.
+
+**Yapılanlar:**
+
+- `scaffold.py` içindeki büyük `ContentView.swift` generator blokları `src/rkg/content_views.py` modülüne taşındı.
+- `scaffold.py` ContentView üretimini artık `content_view_swift(display_name, spec)` üzerinden çağırıyor.
+- `Tests/test_rkg_content_views.py` yeni modül sözleşmesini generic target shooter ve `toss_physics` overlay üzerinden kapsıyor.
+- `scaffold.py` 775 satırdan 473 satıra indi; RKG scaffold tekrar dosya yazma ve proje orkestrasyonuna daha yakın kaldı.
+- `rkp clean --apply` ile yerel scratch dosyaları temizlendi: `Build`, `__pycache__`, `src/rkp.egg-info`, `.DS_Store` ve boş usdzip geçici klasörleri.
+- `ruff` taraması denendi ama dev dependency bu ortamda kurulu olmadığı için çalıştırılamadı.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py: first run failed as expected; rkg.content_views module missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py: ok, 18 tests
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --dry-run: 10 candidates
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed 10 candidates
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 108 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -B Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Son playable archetype sprintlerinden sonra en hızlı büyüyen yüzey Swift string emitter'lardı. ContentView üretimini ayırmak, sıradaki `stack_puzzle` playable loop veya scene binding işlerinde scaffold merge riskini düşürür.
+
 ### Sprint 80: RKG Toss Physics Playable Overlay
 
 **Durum:** Tamamlandı

@@ -28,8 +28,15 @@ def valid_spec() -> dict:
         "assets": {
             "target_basic": {
                 "type": "gameplay_target",
+                "role": "target",
                 "budget": "1500 tris / 512 texture",
                 "fallback": "procedural_rings",
+            },
+            "arena_floor": {
+                "type": "environment",
+                "role": "arena",
+                "budget": "800 tris / 512 texture",
+                "fallback": "procedural_grid",
             }
         },
         "release": {
@@ -98,6 +105,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertEqual(manifest["assets"][0]["fallback"], "procedural_rings")
             self.assertEqual(manifest["assets"][0]["maxTriangles"], 1500)
             self.assertEqual(manifest["assets"][0]["maxTextureSize"], 512)
+            self.assertEqual(manifest["assets"][1]["id"], "arena_floor")
+            self.assertEqual(manifest["assets"][1]["role"], "arena")
 
     def test_init_game_writes_store_pack_screenshot_checklist(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -146,7 +155,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("GameSceneController()", game_view)
             self.assertNotIn("Entity.load(named:", game_view)
             self.assertIn("try? Entity.load(named: assetId)", asset_loader)
-            self.assertIn('loadPrimaryEntity(assetId: "target_basic", role: "gameplay_target")', scene_controller)
+            self.assertIn('loadPrimaryEntity(assetId: "target_basic", role: "target")', scene_controller)
             self.assertNotIn("cameraTransform =", scene_controller)
             self.assertIn("makeFallback(role: String)", fallback_factory)
 

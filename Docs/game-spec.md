@@ -56,7 +56,8 @@ release:
 - `loop.scoring` must be an object.
 - `assets` must contain at least one asset.
 - Every asset requires `type`, `budget`, and `fallback`.
-- `assets.<id>.role` is optional for now, but when present it must be one of the selected archetype's required or optional asset roles.
+- Every role listed in the selected archetype's `required_asset_roles` must be present in `assets`.
+- `assets.<id>.role` must be one of the selected archetype's required or optional asset roles when present.
 - `release.devices` must contain at least one device.
 - `release.screenshots` must contain at least one screenshot.
 - Every screenshot state must be supported by the selected archetype.

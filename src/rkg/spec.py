@@ -141,14 +141,31 @@ def _validate_assets(assets: Mapping[str, Any], issues: list[str], archetype: Ma
         issues.append("assets must contain at least one asset")
         return
 
+    declared_roles: set[str] = set()
     for asset_id, asset in assets.items():
         if not isinstance(asset_id, str) or not SNAKE_CASE.match(asset_id):
             issues.append(f"assets.{asset_id} id must be snake_case")
         if not isinstance(asset, Mapping):
             issues.append(f"assets.{asset_id} must be an object")
             continue
+        role = asset.get("role")
+        if isinstance(role, str) and role:
+            declared_roles.add(role)
         _require_fields(asset, f"assets.{asset_id}", REQUIRED_ASSET_FIELDS, issues)
         _validate_asset_role(asset_id, asset, archetype, issues)
+    _validate_required_asset_roles(declared_roles, archetype, issues)
+
+
+def _validate_required_asset_roles(
+    declared_roles: set[str],
+    archetype: Mapping[str, Any] | None,
+    issues: list[str],
+) -> None:
+    if archetype is None:
+        return
+    for role in archetype["required_asset_roles"]:
+        if role not in declared_roles:
+            issues.append(f"assets missing required role {role} for {archetype['id']}")
 
 
 def _validate_asset_role(

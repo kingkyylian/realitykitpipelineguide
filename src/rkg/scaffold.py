@@ -114,6 +114,7 @@ def _asset_manifest(spec: Mapping[str, Any]) -> JsonDict:
                 "id": asset_id,
                 "status": "planned",
                 "type": asset["type"],
+                "role": asset.get("role") or asset["type"],
                 "file": f"{asset_id}.usdz",
                 "budget": budget,
                 "maxTriangles": _parse_budget_int(budget, "tris", default=1500),

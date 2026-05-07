@@ -86,6 +86,36 @@ class RkgValidateSpecCliTests(unittest.TestCase):
             self.assertFalse(payload["ok"])
             self.assertIn("game.archetype is not supported: city_builder", payload["issues"])
 
+    def test_validate_spec_cli_rejects_missing_required_archetype_roles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec = valid_spec()
+            spec["game"]["archetype"] = "lane_dodger"
+            spec["game"]["input"] = "drag"
+            spec["assets"] = {
+                "runner": {
+                    "type": "character",
+                    "role": "player",
+                    "budget": "1500 tris / 512 texture",
+                    "fallback": "procedural_capsule",
+                },
+                "lane_floor": {
+                    "type": "environment",
+                    "role": "arena",
+                    "budget": "800 tris / 512 texture",
+                    "fallback": "procedural_grid",
+                },
+            }
+            spec["release"]["screenshots"] = ["gameplay_start", "mid_session", "near_miss", "results"]
+            spec_path = self.write_spec(root, spec)
+
+            result = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+
+            self.assertEqual(result.returncode, 1)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertIn("assets missing required role obstacle for lane_dodger", payload["issues"])
+
 
 if __name__ == "__main__":
     unittest.main()

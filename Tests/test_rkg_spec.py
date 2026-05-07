@@ -34,11 +34,13 @@ def valid_spec() -> dict:
         "assets": {
             "target_basic": {
                 "type": "gameplay_target",
+                "role": "target",
                 "budget": "1500 tris / 512 texture",
                 "fallback": "procedural_rings",
             },
             "arena_floor": {
                 "type": "environment",
+                "role": "arena",
                 "budget": "800 tris / 512 texture",
                 "fallback": "procedural_grid",
             },

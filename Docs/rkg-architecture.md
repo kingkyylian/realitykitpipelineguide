@@ -201,6 +201,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | --- | --- |
 | Registry | Known archetypes list, unknown archetype error, JSON output shape. |
 | GameSpec | Required fields, supported archetype, valid roles, screenshot states. |
+| Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, asset ids load with fallback. |
 | Generated modules | Pure rule tests for state transitions and scoring. |

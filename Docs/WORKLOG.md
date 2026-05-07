@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 68: RKG Required Archetype Roles
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 17:30 +03
+**Amaç:** RKG GameSpec validasyonunu target-shooter varsayımından çıkarıp seçilen archetype'ın required asset role sözleşmesini zorunlu hale getirmek.
+
+**Yapılanlar:**
+
+- `validate-spec` artık seçilen archetype'ın tüm `required_asset_roles` değerlerinin `assets.<id>.role` içinde bulunmasını şart koşuyor.
+- Generated manifest asset kayıtları artık `role` alanını da yazıyor.
+- Target shooter test fixture'ları role-aware hale getirildi: `target_basic` -> `target`, `arena_floor` -> `arena`.
+- `Docs/game-spec.md`, `Docs/game-factory.md` ve `Docs/rkg-architecture.md` required role sözleşmesiyle güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_validate_spec.py: first run failed as expected; lane_dodger missing obstacle was accepted
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_validate_spec.py: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_spec.py Tests/test_rkg_validate_spec.py Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py: ok, 26 tests
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 90 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Archetype registry sadece listeleme verisi olmamalı. RKG'nin her oyun türü için kullanışlı olabilmesi için scaffold öncesi spec, runtime'ın ihtiyaç duyacağı asset role setini eksiksiz kanıtlamalı.
+
 ### Sprint 67: RKG Generated Game Verification
 
 **Durum:** Tamamlandı

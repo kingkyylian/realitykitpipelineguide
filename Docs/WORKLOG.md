@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 78: RKG Wave Defense Playable Overlay
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 20:42 +03
+**Amaç:** `wave_defense_lite` generated app'i statik HUD'dan çıkarıp minimal oynanabilir SwiftUI overlay loop'una taşımak.
+
+**Yapılanlar:**
+
+- `wave_defense_lite` generated `ContentView.swift` artık `@State private var state = GameSessionState()` kullanıyor.
+- HUD score, health, wave, threats, cleared count ve event gösteriyor.
+- `Button(isPlaying ? "Fire" : "Start")` ile session başlatma veya threat clear frame'i ekleniyor.
+- `Damage` button'u health azaltma ve result state'e düşme sözleşmesini tetikliyor.
+- `Reset` button'u session state'i sıfırlıyor.
+- `GameSessionState` wave defense için `clearedThreats` ve `isDefeated` alanlarını da üretiyor.
+- `GameRules` wave defense için `threatsForWave`, `startWaveDefenseSession`, `clearThreat` ve `applyThreatDamage` üretiyor.
+- Gerçek generated `wave_defense_lite` proje `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop: first run failed as expected; generated ContentView still used local score/isPlaying
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_escapes_swift_string_literals_from_spec_text: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py Tests/test_rkg_validate_spec.py: ok, 24 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate wave_defense_lite temp project, rkg verify-game>": wave-defense-playable-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 101 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+İkinci playable archetype, RKG'nin sadece lane-dodger'a özel bir demo olmadığını gösteriyor. Wave defense hâlâ RealityKit target movement'a bağlı değil, ama health/wave/threat loop'u generated Swift içinde oynanabilir hale geldi.
+
 ### Sprint 77: RKG Lane Dodger Scene Binding
 
 **Durum:** Tamamlandı

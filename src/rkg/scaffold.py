@@ -198,6 +198,8 @@ def _content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
     player_action = _swift_string_literal(loop["player_action"])
     if str(game["archetype"]) == "lane_dodger":
         return _lane_dodger_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "wave_defense_lite":
+        return _wave_defense_content_view_swift(title, subtitle, player_action)
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -240,6 +242,87 @@ struct ContentView: View {{
             .padding()
             .background(.thinMaterial)
         }}
+    }}
+}}
+"""
+
+
+def _wave_defense_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameSessionState()
+
+    private var isPlaying: Bool {{
+        state.phase == .playing
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView()
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Health \\(state.health)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Wave \\(state.wave)")
+                        .font(.caption.monospacedDigit())
+                    Text("Threats \\(state.threatsRemaining)")
+                        .font(.caption.monospacedDigit())
+                    Text("Cleared \\(state.clearedThreats)")
+                        .font(.caption.monospacedDigit())
+                    Spacer()
+                    Text(state.lastEvent.capitalized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(isPlaying ? "Fire" : "Start") {{
+                        fireWaveDefense()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button("Damage") {{
+                        state = GameRules.applyThreatDamage(state)
+                    }}
+                    .buttonStyle(.bordered)
+                    Button("Reset") {{
+                        state = GameSessionState()
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+        }}
+    }}
+
+    private func fireWaveDefense() {{
+        if !isPlaying {{
+            state = GameRules.startWaveDefenseSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.clearThreat(state)
     }}
 }}
 """
@@ -412,6 +495,8 @@ def _archetype_state_fields(archetype_id: str) -> list[str]:
             "var health: Int = GameRules.startingHealth",
             "var wave: Int = 1",
             "var threatsRemaining: Int = 0",
+            "var clearedThreats: Int = 0",
+            "var isDefeated: Bool = false",
         ]
     return []
 
@@ -494,6 +579,9 @@ def _archetype_rule_members(archetype_id: str) -> list[str]:
     if archetype_id == "wave_defense_lite":
         return [
             "static let startingHealth = 3",
+            """static func threatsForWave(_ wave: Int) -> Int {
+    max(1, wave + 1)
+}""",
             """static func healthAfterDamage(_ health: Int, damage: Int = 1) -> Int {
     max(0, health - damage)
 }""",
@@ -502,6 +590,48 @@ def _archetype_rule_members(archetype_id: str) -> list[str]:
 }""",
             """static func nextWave(after wave: Int) -> Int {
     wave + 1
+}""",
+            """static func startWaveDefenseSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.health = startingHealth
+    state.wave = 1
+    state.threatsRemaining = threatsForWave(state.wave)
+    state.lastEvent = "wave started"
+    return state
+}""",
+            """static func clearThreat(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startWaveDefenseSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.threatsRemaining = max(0, next.threatsRemaining - 1)
+    next.clearedThreats += 1
+    if next.threatsRemaining == 0 {
+        next.wave = nextWave(after: next.wave)
+        next.threatsRemaining = threatsForWave(next.wave)
+        next.lastEvent = "wave cleared"
+    } else {
+        next.lastEvent = "threat cleared"
+    }
+    next.score = next.clearedThreats * hitScore + (next.wave - 1) * perfectScore
+    return next
+}""",
+            """static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return next
+    }
+    next.health = healthAfterDamage(next.health)
+    if isDefeated(health: next.health) {
+        next.phase = .result
+        next.isDefeated = true
+        next.lastEvent = "base breached"
+    } else {
+        next.lastEvent = "took damage"
+    }
+    return next
 }""",
         ]
     return []

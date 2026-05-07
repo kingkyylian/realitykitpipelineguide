@@ -326,6 +326,37 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func isDefeated(health: Int) -> Bool", rules)
             self.assertIn("static func nextWave(after wave: Int) -> Int", rules)
 
+    def test_init_game_generates_playable_wave_defense_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, wave_defense_spec())
+            output = root / "WaveGate"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "WaveGate" / "ContentView.swift").read_text(encoding="utf-8")
+            state = (output / "Sources" / "WaveGate" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "WaveGate" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameSessionState()", content)
+            self.assertIn('Text("Health \\(state.health)")', content)
+            self.assertIn('Text("Wave \\(state.wave)")', content)
+            self.assertIn('Text("Threats \\(state.threatsRemaining)")', content)
+            self.assertIn('Button(isPlaying ? "Fire" : "Start")', content)
+            self.assertIn('Button("Damage")', content)
+            self.assertIn('Button("Reset")', content)
+            self.assertIn("state = GameRules.startWaveDefenseSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.clearThreat(state)", content)
+            self.assertIn("state = GameRules.applyThreatDamage(state)", content)
+            self.assertIn("var isDefeated: Bool = false", state)
+            self.assertIn("var clearedThreats: Int = 0", state)
+            self.assertIn("static func threatsForWave(_ wave: Int) -> Int", rules)
+            self.assertIn("static func startWaveDefenseSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func clearThreat(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("next.phase = .result", rules)
+            self.assertIn("next.isDefeated = true", rules)
+
     def test_init_game_generates_lane_dodger_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

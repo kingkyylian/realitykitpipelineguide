@@ -380,6 +380,31 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("next.isDefeated = true", rules)
             self.assertIn('next.lastEvent = "hit obstacle"', rules)
 
+    def test_init_game_binds_lane_dodger_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, lane_dodger_spec())
+            output = root / "LaneDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "LaneDash" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "LaneDash" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "LaneDash" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("func makeCoordinator() -> Coordinator", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var playerEntity: Entity?", scene_controller)
+            self.assertIn("private var obstacleEntity: Entity?", scene_controller)
+            self.assertIn("playerEntity = runner", scene_controller)
+            self.assertIn("obstacleEntity = crate", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("playerEntity?.position.x = xPosition(forLane: state.currentLane)", scene_controller)
+            self.assertIn("obstacleEntity?.position.x = xPosition(forLane: state.obstacleLane)", scene_controller)
+            self.assertIn("private func xPosition(forLane lane: Int) -> Float", scene_controller)
+
     def test_init_game_generates_toss_physics_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 77: RKG Lane Dodger Scene Binding
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 20:28 +03
+**Amaç:** `lane_dodger` generated SwiftUI overlay state'ini RealityKit scene entity pozisyonlarına bağlamak.
+
+**Yapılanlar:**
+
+- `lane_dodger` generated `ContentView.swift` artık `GameView(state: state)` çağırıyor.
+- `lane_dodger` generated `GameView.swift` `let state: GameSessionState` alıyor.
+- `GameView` artık `UIViewRepresentable` coordinator ile tek `GameSceneController` instance'ını koruyor.
+- `makeUIView` ve `updateUIView` controller `update(state:)` çağırıyor.
+- `GameSceneController.swift` player ve obstacle entity referanslarını saklıyor.
+- Player entity `state.currentLane`, obstacle entity `state.obstacleLane` ve `state.distance` ile pozisyon güncelliyor.
+- Generic archetype'lar eski static scene yolunda bırakıldı.
+- Gerçek generated `lane_dodger` proje `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_lane_dodger_state_to_realitykit_scene: first run failed as expected; ContentView still called GameView() and scene had no update(state:)
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_lane_dodger_state_to_realitykit_scene Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generated_modules_reference_planned_asset_ids: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py Tests/test_rkg_validate_spec.py: ok, 23 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, rkg verify-game>": lane-dodger-scene-bound-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 100 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Bu sprint lane dodger'ı overlay-only prototipten generated 3D gameplay loop'a yaklaştırdı. RKG artık en az bir archetype için SwiftUI state'i RealityKit entity transformlarına taşıyan proje üretiyor.
+
 ### Sprint 76: RKG Lane Dodger Playable Overlay
 
 **Durum:** Tamamlandı

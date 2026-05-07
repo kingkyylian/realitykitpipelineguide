@@ -38,7 +38,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
     _write_text(output / "Sources" / swift_name / "GameSceneController.swift", _game_scene_controller_swift(spec))
-    _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift())
+    _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift(spec))
     _write_text(output / "Sources" / swift_name / "ResultView.swift", _result_view_swift())
     _write_text(output / "Tests" / "test_smoke.py", _smoke_test_py(display_name))
     _write_text(output / "Docs" / "WORKLOG.md", _worklog(display_name))
@@ -257,7 +257,7 @@ struct ContentView: View {{
 
     var body: some View {{
         ZStack(alignment: .top) {{
-            GameView()
+            GameView(state: state)
                 .ignoresSafeArea()
 
             VStack(spacing: 8) {{
@@ -566,6 +566,8 @@ enum FallbackFactory {
 
 
 def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    if str(spec["game"]["archetype"]) == "lane_dodger":
+        return _lane_dodger_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -591,7 +593,52 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
         anchor.addChild({variable})"""
 
 
-def _game_view_swift() -> str:
+def _lane_dodger_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    lines: list[str] = []
+    for entity in runtime_entities_for(spec):
+        variable = entity["variable"]
+        asset_id = _swift_string_literal(entity["asset_id"])
+        role = _swift_string_literal(entity["role"])
+        position = entity["position"]
+        lines.append(
+            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+        {variable}.position = {position}
+        anchor.addChild({variable})"""
+        )
+        if entity["role"] == "player":
+            lines.append(f"        playerEntity = {variable}")
+        elif entity["role"] == "obstacle":
+            lines.append(f"        obstacleEntity = {variable}")
+    entity_lines = "\n\n".join(lines)
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var playerEntity: Entity?
+    private var obstacleEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        playerEntity?.position.x = xPosition(forLane: state.currentLane)
+        obstacleEntity?.position.x = xPosition(forLane: state.obstacleLane)
+        obstacleEntity?.position.z = -1.35 - Float(state.distance % 4) * 0.15
+    }}
+
+    private func xPosition(forLane lane: Int) -> Float {{
+        Float(GameRules.clampedLane(lane) - 1) * 0.45
+    }}
+}}
+"""
+
+
+def _game_view_swift(spec: Mapping[str, Any]) -> str:
+    if str(spec["game"]["archetype"]) == "lane_dodger":
+        return _lane_dodger_game_view_swift()
     return """import RealityKit
 import SwiftUI
 
@@ -605,6 +652,35 @@ struct GameView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {}
+}
+"""
+
+
+def _lane_dodger_game_view_swift() -> str:
+    return """import RealityKit
+import SwiftUI
+
+struct GameView: UIViewRepresentable {
+    let state: GameSessionState
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> ARView {
+        let view = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
+        context.coordinator.controller.install(into: view)
+        context.coordinator.controller.update(state: state)
+        return view
+    }
+
+    func updateUIView(_ uiView: ARView, context: Context) {
+        context.coordinator.controller.update(state: state)
+    }
+
+    final class Coordinator {
+        let controller = GameSceneController()
+    }
 }
 """
 

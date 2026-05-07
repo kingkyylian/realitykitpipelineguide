@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `toss_physics`, `stack_puzzle`, and `wave_defense_lite` receive first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`. `lane_dodger` now has the first minimal playable generated loop in SwiftUI: start, drag lane change, dodge frame advance, collision/result, reset, score, and near-miss state.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `toss_physics`, `stack_puzzle`, and `wave_defense_lite` receive first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`. `lane_dodger` now has the first minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, and near-miss state.
 
 ## CLI Roadmap
 

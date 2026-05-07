@@ -12,6 +12,38 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 79: RKG Archetype Runtime Extraction
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 21:06 +03
+**Amaç:** RKG generated runtime state/rules contract'larını büyüyen scaffold dosyasından çıkarıp archetype odaklı ayrı bir Python modülüne taşımak.
+
+**Yapılanlar:**
+
+- `src/rkg/archetype_runtime.py` eklendi.
+- `archetype_state_fields`, `archetype_rule_members` ve `indent_swift_block` public helper olarak dışarı alındı.
+- `src/rkg/scaffold.py` artık `GameState.swift` alanlarını ve `GameRules.swift` üyelerini bu modülden alıyor.
+- `Tests/test_rkg_archetype_runtime.py` yeni modül sözleşmesini lane dodger, wave defense, unknown archetype ve indentation üzerinden kapsıyor.
+- Swift generation davranışı değiştirilmedi; bu sprint bakım yüzeyini küçültmeye odaklandı.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetype_runtime.py: first run failed as expected; rkg.archetype_runtime module missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetype_runtime.py: ok, 4 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_archetype_runtime.py: ok, 19 tests
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 105 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Playable archetype sayısı arttıkça en kritik risk scaffold'un tek dosyada oyun mantığı, Swift emitter ve asset wiring sorumluluklarını biriktirmesi. Runtime contract'ı ayrı modüle almak, sıradaki toss/stack playable loop işlerini daha kontrollü hale getiriyor.
+
 ### Sprint 78: RKG Wave Defense Playable Overlay
 
 **Durum:** Tamamlandı

@@ -256,6 +256,26 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func isDefeated(health: Int) -> Bool", rules)
             self.assertIn("static func nextWave(after wave: Int) -> Int", rules)
 
+    def test_init_game_generates_lane_dodger_state_and_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, lane_dodger_spec())
+            output = root / "LaneDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = (output / "Sources" / "LaneDash" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "LaneDash" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var currentLane: Int = 1", state)
+            self.assertIn("var nearMisses: Int = 0", state)
+            self.assertIn("var distance: Int = 0", state)
+            self.assertIn("static let laneCount = 3", rules)
+            self.assertIn("static let nearMissBonus = 5", rules)
+            self.assertIn("static func clampedLane(_ lane: Int) -> Int", rules)
+            self.assertIn("static func isCollision(playerLane: Int, obstacleLane: Int) -> Bool", rules)
+            self.assertIn("static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int", rules)
+
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

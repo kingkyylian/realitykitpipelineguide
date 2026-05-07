@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `wave_defense_lite` also receives first-pass health and wave state/rules so archetype-specific rules can grow without leaking into `GameView`.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `lane_dodger` and `wave_defense_lite` also receive first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`.
 
 ## CLI Roadmap
 

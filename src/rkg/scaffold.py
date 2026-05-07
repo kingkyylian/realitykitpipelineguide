@@ -298,6 +298,12 @@ enum GameRules {{
 
 
 def _archetype_state_fields(archetype_id: str) -> list[str]:
+    if archetype_id == "lane_dodger":
+        return [
+            "var currentLane: Int = 1",
+            "var nearMisses: Int = 0",
+            "var distance: Int = 0",
+        ]
     if archetype_id == "wave_defense_lite":
         return [
             "var health: Int = GameRules.startingHealth",
@@ -308,6 +314,20 @@ def _archetype_state_fields(archetype_id: str) -> list[str]:
 
 
 def _archetype_rule_members(archetype_id: str) -> list[str]:
+    if archetype_id == "lane_dodger":
+        return [
+            "static let laneCount = 3",
+            "static let nearMissBonus = 5",
+            """static func clampedLane(_ lane: Int) -> Int {
+    min(max(lane, 0), laneCount - 1)
+}""",
+            """static func isCollision(playerLane: Int, obstacleLane: Int) -> Bool {
+    playerLane == obstacleLane
+}""",
+            """static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int {
+    distance + nearMisses * nearMissBonus
+}""",
+        ]
     if archetype_id == "wave_defense_lite":
         return [
             "static let startingHealth = 3",

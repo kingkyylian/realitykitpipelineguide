@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 73: RKG Lane Dodger State Rules
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 18:17 +03
+**Amaç:** `lane_dodger` generated Swift modules için ilk pure state/rules sözleşmesini eklemek.
+
+**Yapılanlar:**
+
+- `lane_dodger` scaffold'u `GameState.swift` içine `currentLane`, `nearMisses` ve `distance` alanlarını ekliyor.
+- `GameRules.swift` lane dodger için `laneCount`, `nearMissBonus`, `clampedLane`, `isCollision` ve `scoreForDistance` üyelerini üretiyor.
+- UI ve scene loop hâlâ basit tutuldu; bu sprint sadece compile-safe state/rules contract'ı ekliyor.
+- Gerçek generated `lane_dodger` proje `rkg verify-game` ile build kapısından geçirildi.
+- `Docs/rkg-architecture.md` lane/wave archetype state-rules durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_lane_dodger_state_and_rules: first run failed as expected; lane_dodger state/rules were generic
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_lane_dodger_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py: ok, 19 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, rkg verify-game>": lane-dodger-rules-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 96 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Lane dodger için gerçek oyun davranışına geçmeden önce lane index, collision ve near-miss scoring gibi kavramlar generated pure rules içinde isimlenmeli. Bu, ileride input/gesture veya RealityKit collision eklenirken ortak contract sağlar.
+
 ### Sprint 72: RKG Wave Defense State Rules
 
 **Durum:** Tamamlandı

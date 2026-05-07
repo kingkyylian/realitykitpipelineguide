@@ -12,6 +12,33 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 62: RKG Architecture Plan and Archetype Registry
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 15:37 +03
+**Amaç:** Multi-archetype RKG planını yürütülebilir mimari dokümana çevirmek ve ilk ortak registry yüzeyini CLI'a eklemek.
+
+**Yapılanlar:**
+
+- `Docs/rkg-architecture.md` eklendi: boundaries, data flow, archetype registry, asset role taxonomy, runtime state machine, generated Swift module layout, CLI roadmap, verification matrix, store-pack contract ve decision rules.
+- `Docs/superpowers/plans/2026-05-07-rkg-multi-archetype-factory.md` eklendi: Task 1-6 için TDD adımları, dosyalar, komutlar ve commit sırası.
+- `src/rkg/archetypes.py` eklendi.
+- Seed archetype registry eklendi: `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, `wave_defense_lite`.
+- `rkg list-archetypes` ve `rkg describe-archetype <id>` CLI komutları eklendi; ikisi de `--json` destekliyor.
+- `Docs/game-factory.md` architecture doc'a bağlandı.
+- `Docs/ai-handoff.md` yeni RKG yüzeyleriyle güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetypes.py: first run failed as expected; rkg.archetypes module was missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetypes.py: ok, 5 tests
+```
+
+**Öğrenme notu:**
+
+Registry ilk gerçek multi-archetype yüzey. Bundan sonra `GameSpec` validation ve `plan-game` registry'ye bakarak ilerlemeli; `init-game` tek başına policy kaynağı olmamalı.
+
 ### Sprint 61: RKG Multi-Archetype Scope Correction
 
 **Durum:** Tamamlandı

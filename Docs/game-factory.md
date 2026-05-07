@@ -2,6 +2,8 @@
 
 This document defines how to turn the asset pipeline into a repeatable commercial game workflow.
 
+For executable architecture details, use `Docs/rkg-architecture.md`. This page stays high-level; the architecture doc owns registry, role, runtime module, CLI, verification, and store-pack contracts.
+
 ## Principle
 
 RKP remains the RealityKit asset pipeline. RKG is the game factory layer above it.

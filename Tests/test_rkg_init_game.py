@@ -109,6 +109,44 @@ def wave_defense_spec() -> dict:
     return spec
 
 
+def toss_physics_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "toss_arc"
+    spec["game"]["display_name"] = "Toss Arc"
+    spec["game"]["archetype"] = "toss_physics"
+    spec["game"]["input"] = "drag"
+    spec["loop"]["player_action"] = "drag and release toward the scoring zone"
+    spec["loop"]["fail_condition"] = "attempts run out"
+    spec["assets"] = {
+        "thrower": {
+            "type": "character",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "ball": {
+            "type": "projectile",
+            "role": "projectile",
+            "budget": "600 tris / 512 texture",
+            "fallback": "procedural_sphere",
+        },
+        "hoop": {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_rings",
+        },
+        "arena_floor": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["aiming", "mid_flight", "landing", "results"]
+    return spec
+
+
 class RkgInitGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -275,6 +313,25 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func clampedLane(_ lane: Int) -> Int", rules)
             self.assertIn("static func isCollision(playerLane: Int, obstacleLane: Int) -> Bool", rules)
             self.assertIn("static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int", rules)
+
+    def test_init_game_generates_toss_physics_state_and_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, toss_physics_spec())
+            output = root / "TossArc"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = (output / "Sources" / "TossArc" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "TossArc" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var attemptsRemaining: Int = GameRules.maxAttempts", state)
+            self.assertIn("var lastThrowPower: Double = 0", state)
+            self.assertIn("var landedInZone: Bool = false", state)
+            self.assertIn("static let maxAttempts = 3", rules)
+            self.assertIn("static func clampedThrowPower(_ power: Double) -> Double", rules)
+            self.assertIn("static func consumeAttempt(_ attemptsRemaining: Int) -> Int", rules)
+            self.assertIn("static func scoreForLanding(inZone: Bool, power: Double) -> Int", rules)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

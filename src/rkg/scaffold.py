@@ -304,6 +304,12 @@ def _archetype_state_fields(archetype_id: str) -> list[str]:
             "var nearMisses: Int = 0",
             "var distance: Int = 0",
         ]
+    if archetype_id == "toss_physics":
+        return [
+            "var attemptsRemaining: Int = GameRules.maxAttempts",
+            "var lastThrowPower: Double = 0",
+            "var landedInZone: Bool = false",
+        ]
     if archetype_id == "wave_defense_lite":
         return [
             "var health: Int = GameRules.startingHealth",
@@ -326,6 +332,19 @@ def _archetype_rule_members(archetype_id: str) -> list[str]:
 }""",
             """static func scoreForDistance(_ distance: Int, nearMisses: Int) -> Int {
     distance + nearMisses * nearMissBonus
+}""",
+        ]
+    if archetype_id == "toss_physics":
+        return [
+            "static let maxAttempts = 3",
+            """static func clampedThrowPower(_ power: Double) -> Double {
+    min(max(power, 0), 1)
+}""",
+            """static func consumeAttempt(_ attemptsRemaining: Int) -> Int {
+    max(0, attemptsRemaining - 1)
+}""",
+            """static func scoreForLanding(inZone: Bool, power: Double) -> Int {
+    inZone ? Int(clampedThrowPower(power) * 100) : 0
 }""",
         ]
     if archetype_id == "wave_defense_lite":

@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 74: RKG Toss Physics State Rules
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 18:19 +03
+**Amaç:** `toss_physics` generated Swift modules için attempts, throw power ve landing pure rules sözleşmesini eklemek.
+
+**Yapılanlar:**
+
+- `toss_physics` scaffold'u `GameState.swift` içine `attemptsRemaining`, `lastThrowPower` ve `landedInZone` alanlarını ekliyor.
+- `GameRules.swift` toss physics için `maxAttempts`, `clampedThrowPower`, `consumeAttempt` ve `scoreForLanding` üyelerini üretiyor.
+- Physics simulation veya gesture handling eklenmedi; bu sprint sadece compile-safe rule contract'ı ekliyor.
+- Gerçek generated `toss_physics` proje `rkg verify-game` ile build kapısından geçirildi.
+- `Docs/rkg-architecture.md` toss physics state-rules durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_toss_physics_state_and_rules: first run failed as expected; toss_physics state/rules were generic
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_toss_physics_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_lane_dodger_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_wave_defense_state_and_rules: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py: ok, 20 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate toss_physics temp project, rkg verify-game>": toss-physics-rules-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 97 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Toss physics için ilk değer gesture değil, attempts/throw/landing contract'ı. Bu contract generated rules içinde durunca ileride RealityKit physics veya gesture input eklemek daha kontrollü olur.
+
 ### Sprint 73: RKG Lane Dodger State Rules
 
 **Durum:** Tamamlandı

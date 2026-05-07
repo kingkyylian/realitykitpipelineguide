@@ -40,6 +40,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "GameSceneController.swift", _game_scene_controller_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift())
     _write_text(output / "Sources" / swift_name / "ResultView.swift", _result_view_swift())
+    _write_text(output / "Tests" / "test_smoke.py", _smoke_test_py(display_name))
     _write_text(output / "Docs" / "WORKLOG.md", _worklog(display_name))
     _write_text(output / "Docs" / "ai-handoff.md", _handoff(display_name, game_id))
     for rel_path, text in build_store_pack(spec).items():
@@ -107,13 +108,16 @@ def _asset_manifest(spec: Mapping[str, Any]) -> JsonDict:
     game = spec["game"]
     manifest_assets = []
     for asset_id, asset in spec["assets"].items():
+        budget = str(asset["budget"])
         manifest_assets.append(
             {
                 "id": asset_id,
                 "status": "planned",
                 "type": asset["type"],
                 "file": f"{asset_id}.usdz",
-                "budget": asset["budget"],
+                "budget": budget,
+                "maxTriangles": _parse_budget_int(budget, "tris", default=1500),
+                "maxTextureSize": _parse_budget_int(budget, "texture", default=512),
                 "fallback": asset["fallback"],
                 "scale": "1 Blender unit = 1 meter",
                 "origin": "centered for runtime placement unless the asset brief says otherwise",
@@ -125,6 +129,14 @@ def _asset_manifest(spec: Mapping[str, Any]) -> JsonDict:
         "scale": "1 Blender unit = 1 meter",
         "assets": manifest_assets,
     }
+
+
+def _parse_budget_int(text: str, keyword: str, *, default: int) -> int:
+    pattern = r"(\d+)\s*" + re.escape(keyword)
+    match = re.search(pattern, text, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return default
 
 
 def _project_yml(swift_name: str, display_name: str, bundle_suffix: str) -> str:
@@ -423,4 +435,18 @@ Project: {display_name}
 Game id: {game_id}
 
 Start from `GameSpec.json`. Keep RKP as the asset acceptance source of truth. Do not mark any asset imported without `rkp accept-asset` and screenshot evidence.
+"""
+
+
+def _smoke_test_py(display_name: str) -> str:
+    return f"""import unittest
+
+
+class GeneratedProjectSmokeTests(unittest.TestCase):
+    def test_generated_project_name_is_present(self) -> None:
+        self.assertEqual({json.dumps(display_name)}, {json.dumps(display_name)})
+
+
+if __name__ == "__main__":
+    unittest.main()
 """

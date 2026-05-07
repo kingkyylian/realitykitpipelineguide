@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 67: RKG Generated Game Verification
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 17:12 +03
+**Amaç:** Generated RKG projeleri için command-based verification gate eklemek.
+
+**Yapılanlar:**
+
+- `src/rkg/verify.py` eklendi.
+- `rkg verify-game <project>` CLI komutu eklendi.
+- Verify gate required generated files'ı kontrol ediyor: `GameSpec.json`, `rkp.json`, `project.yml`, `Tools/asset_manifest.json`.
+- Generated proje içinde `Tests/test*.py` varsa unittest discovery çalışıyor; boş `Tests/` klasörü test komutu eklemiyor.
+- Verify gate `rkp doctor` ve `rkp release-check` çalıştırıyor.
+- `init-game` generated projeye `Tests/test_smoke.py` ekliyor; böylece RKP `release-check` test adımı boş suite nedeniyle düşmüyor.
+- Generated manifest artık RKP doctor uyumlu `maxTriangles` ve `maxTextureSize` alanlarını budget string'inden yazıyor.
+- `Docs/rkg-architecture.md` verify-game behavior ile güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_verify_game.py: first run failed as expected; rkg.verify module was missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_verify_game.py: first implementation exposed empty Tests/ directory and missing Tools/rkp.py wrapper issues
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, rkg verify-game>": first run failed; generated manifest missed maxTriangles/maxTextureSize
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, rkg verify-game>": second run failed; generated Tests directory had no test files
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_writes_planned_manifest_assets Tests/test_rkg_verify_game.py: ok, 7 tests
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, rkg verify-game>": verify-generated ok
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 89 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+`verify-game` gerçek generated proje üzerinde çalıştırılmadan güvenilir sayılmıyor. RKG scaffold, RKP doctor/release-check kapılarının beklediği manifest budget alanlarını ve en az bir smoke test'i üretmeli.
+
 ### Sprint 66: RKG Store Pack Contract
 
 **Durum:** Tamamlandı

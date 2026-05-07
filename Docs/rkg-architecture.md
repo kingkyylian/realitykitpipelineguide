@@ -158,7 +158,15 @@ Current `init-game` writes this module layout. The first implementation keeps ga
 | `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
-| `rkg verify-game <dir>` | Run generated project tests, RKP doctor/release gate, and optional screenshot checks. | Starts with command-only verification. |
+| `rkg verify-game <dir>` | Run generated project tests, RKP doctor/release gate, and optional screenshot checks. | Implemented with command-only verification. |
+
+Current `verify-game` behavior:
+
+- Confirms `GameSpec.json`, `rkp.json`, `project.yml`, and `Tools/asset_manifest.json` exist.
+- Runs generated Python tests only when `Tests/test*.py` exists.
+- Runs `rkp doctor`.
+- Runs `rkp release-check`.
+- Stops at the first failing command.
 
 Current `plan-game --json` shape:
 

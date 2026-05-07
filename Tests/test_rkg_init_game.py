@@ -74,6 +74,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertTrue((output / "Sources" / "RingDash" / "AssetLoader.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "FallbackFactory.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "ResultView.swift").exists())
+            self.assertTrue((output / "Tests" / "test_smoke.py").exists())
             self.assertTrue((output / "Docs" / "store" / "metadata.md").exists())
             self.assertTrue((output / "Docs" / "store" / "review-notes.md").exists())
             self.assertTrue((output / "Docs" / "store" / "privacy.md").exists())
@@ -95,6 +96,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertEqual(manifest["assets"][0]["status"], "planned")
             self.assertEqual(manifest["assets"][0]["file"], "target_basic.usdz")
             self.assertEqual(manifest["assets"][0]["fallback"], "procedural_rings")
+            self.assertEqual(manifest["assets"][0]["maxTriangles"], 1500)
+            self.assertEqual(manifest["assets"][0]["maxTextureSize"], 512)
 
     def test_init_game_writes_store_pack_screenshot_checklist(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

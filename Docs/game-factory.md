@@ -104,6 +104,15 @@ Minimum idea file:
 
 `score-idea` returns `pass`, `revise`, or `reject`. Rejected ideas should not reach `rkg init-game`.
 
+Before writing a generated project, preview it:
+
+```bash
+python3 Tools/rkg.py validate-spec GameSpec.yaml
+python3 Tools/rkg.py plan-game GameSpec.yaml
+```
+
+`plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory.
+
 ### 2. Vertical Slice
 
 The first playable uses procedural placeholders before custom art.

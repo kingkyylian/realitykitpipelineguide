@@ -7,6 +7,7 @@ from pathlib import Path
 
 from rkg.archetypes import describe_archetype, list_archetypes
 from rkg.idea_score import load_idea, score_game_idea
+from rkg.plan import build_game_plan
 from rkg.scaffold import init_game
 from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
 
@@ -37,6 +38,10 @@ def main() -> int:
     validate = subparsers.add_parser("validate-spec", help="Validate a GameSpec against RKG rules")
     validate.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
     validate.add_argument("--json", action="store_true", help="Print machine-readable validation result")
+
+    plan_game = subparsers.add_parser("plan-game", help="Preview generated game files without writing output")
+    plan_game.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
+    plan_game.add_argument("--json", action="store_true", help="Print machine-readable game plan")
 
     args = parser.parse_args()
 
@@ -110,6 +115,28 @@ def main() -> int:
         else:
             print("GameSpec ok")
         return 1 if issues else 0
+
+    if args.command == "plan-game":
+        try:
+            payload = build_game_plan(load_game_spec(Path(args.spec)))
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"game: {payload['display_name']} ({payload['game_id']})")
+            print(f"archetype: {payload['archetype']['id']}")
+            print("files:")
+            for file_path in payload["files"]:
+                print(f"- {file_path}")
+            print("asset roles:")
+            for asset_id, role in payload["asset_roles"].items():
+                print(f"- {asset_id}: {role}")
+            print("screenshots:")
+            for state in payload["screenshot_states"]:
+                print(f"- {state}")
+        return 0
 
     parser.print_help()
     return 2

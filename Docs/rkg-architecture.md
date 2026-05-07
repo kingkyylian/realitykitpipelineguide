@@ -154,9 +154,34 @@ Responsibilities:
 | `rkg list-archetypes` | Show registry ids and short descriptions. | Text and `--json`. |
 | `rkg describe-archetype <id>` | Explain required roles, modules, screenshots, risk. | Text and `--json`. |
 | `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
-| `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Does not write files. |
+| `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
 | `rkg verify-game <dir>` | Run generated project tests, RKP doctor/release gate, and optional screenshot checks. | Starts with command-only verification. |
+
+Current `plan-game --json` shape:
+
+```json
+{
+  "game_id": "ring_dash",
+  "display_name": "Ring Dash",
+  "swift_name": "RingDash",
+  "archetype": {
+    "id": "target_shooter"
+  },
+  "files": [
+    "GameSpec.json",
+    "rkp.json",
+    "Tools/asset_manifest.json",
+    "project.yml",
+    "Sources/RingDash/GameState.swift"
+  ],
+  "asset_roles": {
+    "target_basic": "target",
+    "arena_floor": "arena"
+  },
+  "screenshot_states": ["gameplay_start", "mid_session", "results"]
+}
+```
 
 ## Verification Matrix
 

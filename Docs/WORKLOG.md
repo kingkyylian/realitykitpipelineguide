@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 64: RKG Dry-Run Game Planning
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 15:47 +03
+**Amaç:** `init-game` öncesinde yazma yapmadan generated project planını görebileceğimiz dry-run komutunu eklemek.
+
+**Yapılanlar:**
+
+- `src/rkg/plan.py` eklendi.
+- `build_game_plan(spec)` generated dosyaları, Swift app adı, archetype kaydı, asset role map'i ve screenshot state listesini üretiyor.
+- `rkg plan-game <GameSpec> [--json]` CLI komutu eklendi.
+- `plan-game` invalid spec durumunda nonzero dönüyor ve output klasörü oluşturmuyor.
+- `Docs/rkg-architecture.md` ve `Docs/game-factory.md` dry-run plan yüzeyiyle güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py: first run failed as expected; rkg.plan module was missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py: ok, 3 tests
+```
+
+**Öğrenme notu:**
+
+`plan-game`, `init-game` için güvenli bir önizleme kapısı. Bundan sonra scaffold değişiklikleri önce planner payload'ında görünmeli; CLI doğrudan dosya yazmadan kullanıcıya ve ajanlara üretim kapsamını anlatabilmeli.
+
 ### Sprint 63: Registry-Aware GameSpec Validation
 
 **Durum:** Tamamlandı

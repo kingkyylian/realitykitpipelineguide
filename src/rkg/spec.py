@@ -69,6 +69,7 @@ def validate_game_spec(spec: Mapping[str, Any], *, app_store: bool = True) -> li
         _require_fields(game, "game", REQUIRED_GAME_FIELDS, issues)
         _validate_game(game, app_store, issues)
         archetype = _validate_archetype(game, issues)
+        _validate_archetype_runtime_contract(game, archetype, issues)
     if loop:
         _require_fields(loop, "loop", REQUIRED_LOOP_FIELDS, issues)
         if "scoring" in loop and not isinstance(loop["scoring"], Mapping):
@@ -134,6 +135,34 @@ def _validate_archetype(game: Mapping[str, Any], issues: list[str]) -> Mapping[s
     except ValueError:
         issues.append(f"game.archetype is not supported: {archetype_id}")
         return None
+
+
+def _validate_archetype_runtime_contract(
+    game: Mapping[str, Any],
+    archetype: Mapping[str, Any] | None,
+    issues: list[str],
+) -> None:
+    if archetype is None:
+        return
+    _validate_registry_value(game, "input", archetype, "input", issues)
+    _validate_registry_value(game, "camera", archetype, "camera", issues)
+
+
+def _validate_registry_value(
+    game: Mapping[str, Any],
+    game_key: str,
+    archetype: Mapping[str, Any],
+    registry_key: str,
+    issues: list[str],
+) -> None:
+    value = game.get(game_key)
+    if value is None or value == "":
+        return
+    if not isinstance(value, str):
+        issues.append(f"game.{game_key} must be a string")
+        return
+    if value not in archetype[registry_key]:
+        issues.append(f"game.{game_key} {value} is not supported by {archetype['id']}")
 
 
 def _validate_assets(assets: Mapping[str, Any], issues: list[str], archetype: Mapping[str, Any] | None) -> None:

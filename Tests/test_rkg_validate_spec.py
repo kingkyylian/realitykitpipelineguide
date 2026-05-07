@@ -116,6 +116,34 @@ class RkgValidateSpecCliTests(unittest.TestCase):
             self.assertFalse(payload["ok"])
             self.assertIn("assets missing required role obstacle for lane_dodger", payload["issues"])
 
+    def test_validate_spec_cli_rejects_input_not_supported_by_archetype(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec = valid_spec()
+            spec["game"]["input"] = "drag"
+            spec_path = self.write_spec(root, spec)
+
+            result = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+
+            self.assertEqual(result.returncode, 1)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertIn("game.input drag is not supported by target_shooter", payload["issues"])
+
+    def test_validate_spec_cli_rejects_camera_not_supported_by_archetype(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec = valid_spec()
+            spec["game"]["camera"] = "ar_world"
+            spec_path = self.write_spec(root, spec)
+
+            result = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+
+            self.assertEqual(result.returncode, 1)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["ok"])
+            self.assertIn("game.camera ar_world is not supported by target_shooter", payload["issues"])
+
 
 if __name__ == "__main__":
     unittest.main()

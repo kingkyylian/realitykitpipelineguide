@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 71: RKG Archetype Input and Camera Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 17:52 +03
+**Amaç:** `GameSpec` içindeki `game.input` ve `game.camera` değerlerini seçilen archetype registry sözleşmesine bağlamak.
+
+**Yapılanlar:**
+
+- `validate-spec` artık `game.input` değerinin archetype `input` listesinde bulunmasını zorunlu tutuyor.
+- `validate-spec` artık `game.camera` değerinin archetype `camera` listesinde bulunmasını zorunlu tutuyor.
+- Hatalar registry id'siyle açıklanıyor: ör. `game.input drag is not supported by target_shooter`.
+- `Docs/game-spec.md` ve `Docs/rkg-architecture.md` runtime contract validasyonuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_validate_spec.RkgValidateSpecCliTests.test_validate_spec_cli_rejects_input_not_supported_by_archetype Tests.test_rkg_validate_spec.RkgValidateSpecCliTests.test_validate_spec_cli_rejects_camera_not_supported_by_archetype: first run failed as expected; unsupported input/camera were accepted
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_validate_spec.py Tests/test_rkg_spec.py: ok, 17 tests
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 94 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Archetype registry sadece asset role seti değil, kontrol ve kamera sözleşmesini de yönetmeli. Böylece `init-game` başlamadan önce yanlış input/camera kombinasyonları durdurulur.
+
 ### Sprint 70: RKG Runtime Entity Plan Payload
 
 **Durum:** Tamamlandı

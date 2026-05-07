@@ -50,6 +50,8 @@ release:
 
 - `game.id` must be `snake_case`.
 - `game.archetype` must exist in the RKG archetype registry.
+- `game.input` must be supported by the selected archetype registry entry.
+- `game.camera` must be supported by the selected archetype registry entry.
 - `game.session_seconds` must be a positive integer.
 - First-wave arcade sessions must be 180 seconds or less.
 - `game.monetization: external_unlock` is rejected for App Store builds.

@@ -147,6 +147,24 @@ class RkpPackageTests(unittest.TestCase):
             ],
         )
 
+    def test_doctor_ignores_local_checkpoint_markdown(self) -> None:
+        from rkp.pipeline_doctor import Doctor
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            checkpoints = root / "Docs" / "checkpoints"
+            checkpoints.mkdir(parents=True)
+            local_path = "/Us" "ers/kyylian/Developer/RealityKitPipelineDemo"
+            (checkpoints / "LATEST.md").write_text(
+                f"Root: {local_path}\n",
+                encoding="utf-8",
+            )
+
+            doctor = Doctor(root)
+            doctor.check_public_text()
+
+        self.assertEqual(doctor.findings, [])
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

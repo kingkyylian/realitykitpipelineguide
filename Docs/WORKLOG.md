@@ -12,6 +12,36 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 60: Local Checkpoint Hygiene
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 14:39 +03
+**Amaç:** Local agent checkpoint dosyalarının public docs/doctor gate'ini kirletmesini engellemek.
+
+**Yapılanlar:**
+
+- `Docs/checkpoints/` `.gitignore` kapsamına alındı.
+- Pipeline doctor `Docs/checkpoints/` altındaki local resume notlarını public text taramasından hariç tutuyor.
+- Regression test eklendi: checkpoint markdown içindeki local absolute path public warning üretmiyor.
+- GitHub Actions checkout adımı resmi güncel major olan `actions/checkout@v6` sürümüne taşındı.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkp_package.RkpPackageTests.test_doctor_ignores_local_checkpoint_markdown: first run failed as expected; doctor still scanned Docs/checkpoints
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkp_package.RkpPackageTests.test_doctor_ignores_local_checkpoint_markdown: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 69 tests
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Resume/checkpoint dosyaları agent-local scratch kabul edilmeli. Public docs altında yaşasalar bile release doctor'ın öğretim dokümanı kalitesiyle karıştırılmamalı.
+
 ### Sprint 59: RKG Idea Score Gate
 
 **Durum:** Tamamlandı

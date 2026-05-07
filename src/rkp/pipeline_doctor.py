@@ -310,7 +310,9 @@ class Doctor:
 
     def _is_ignored(self, path: Path) -> bool:
         parts = path.relative_to(self.root).parts
-        return parts[0] in {".git", "Build", ".claude", "RealityKitPipelineDemo.xcodeproj"}
+        if parts[0] in {".git", "Build", ".claude", "RealityKitPipelineDemo.xcodeproj"}:
+            return True
+        return len(parts) >= 2 and parts[:2] == ("Docs", "checkpoints")
 
     def _rel(self, path: Path) -> str:
         return str(path.relative_to(self.root))

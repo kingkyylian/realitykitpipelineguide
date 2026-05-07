@@ -29,5 +29,8 @@ __pycache__/
 .idea/
 *.swp
 
+# Local agent resume checkpoints
+Docs/checkpoints/
+
 # Keep public teaching artifacts under Docs/.
 # Build/ is scratch output and should not be pushed.

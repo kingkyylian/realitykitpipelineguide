@@ -94,6 +94,39 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             """static func scoreForLanding(inZone: Bool, power: Double) -> Int {
     inZone ? Int(clampedThrowPower(power) * 100) : 0
 }""",
+            """static func landedInScoringZone(power: Double) -> Bool {
+    power >= 0.45 && power <= 0.75
+}""",
+            """static func startTossSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.attemptsRemaining = maxAttempts
+    state.lastEvent = "aiming"
+    return state
+}""",
+            """static func resolveToss(_ state: GameSessionState, power: Double) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startTossSession(sessionSeconds: next.sessionSeconds)
+    }
+    let clampedPower = clampedThrowPower(power)
+    let landed = landedInScoringZone(power: clampedPower)
+    next.lastThrowPower = clampedPower
+    next.landedInZone = landed
+    next.attemptsRemaining = consumeAttempt(next.attemptsRemaining)
+    next.score += scoreForLanding(inZone: landed, power: clampedPower)
+    if landed {
+        next.phase = .result
+        next.lastEvent = "landed"
+    } else if next.attemptsRemaining == 0 {
+        next.phase = .result
+        next.lastEvent = "attempts spent"
+    } else {
+        next.lastEvent = "missed"
+    }
+    return next
+}""",
         ]
     if archetype_id == "stack_puzzle":
         return [

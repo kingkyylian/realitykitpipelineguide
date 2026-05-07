@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 80: RKG Toss Physics Playable Overlay
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 21:25 +03
+**Amaç:** `toss_physics` generated app'i static HUD'dan çıkarıp power/attempt/landing temelli minimal oynanabilir SwiftUI overlay loop'una taşımak.
+
+**Yapılanlar:**
+
+- `toss_physics` generated `ContentView.swift` artık `@State private var state = GameSessionState()` kullanıyor.
+- HUD score, remaining attempts, throw power ve last event gösteriyor.
+- `Slider(value: $throwPower, in: 0...1)` ile throw power seçimi eklendi.
+- `Button(isPlaying ? "Throw" : "Start")` ile session başlatma veya toss resolve akışı eklendi.
+- `Reset` button'u state'i ve throw power'ı sıfırlıyor.
+- `GameRules` toss physics için `landedInScoringZone`, `startTossSession` ve `resolveToss` üretiyor.
+- Gerçek generated `toss_physics` proje `rkg verify-game` ile build kapısından geçirildi.
+- `Docs/rkg-architecture.md` playable archetype durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop: first run failed as expected; generated ContentView still used local score/isPlaying
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop: ok, 1 test
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_archetype_runtime.py: ok, 20 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py src/rkg/archetype_runtime.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate toss_physics temp project, rkg verify-game>": toss-physics-playable-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 106 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Bu sprint RKG'nin sadece tap/defense/dodge değil, attempt ve analog power seçimi isteyen oyun türleri için de ilk oynanabilir scaffold üretebildiğini gösteriyor. Fizik simülasyonu henüz gerçek projectile arc'a bağlı değil; sıradaki toss işi `GameSceneController` içinde projectile entity pozisyonunu `lastThrowPower` ve `landedInZone` ile görsel hale getirmek olmalı.
+
 ### Sprint 79: RKG Archetype Runtime Extraction
 
 **Durum:** Tamamlandı

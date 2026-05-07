@@ -455,6 +455,32 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func consumeAttempt(_ attemptsRemaining: Int) -> Int", rules)
             self.assertIn("static func scoreForLanding(inZone: Bool, power: Double) -> Int", rules)
 
+    def test_init_game_generates_playable_toss_physics_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, toss_physics_spec())
+            output = root / "TossArc"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "TossArc" / "ContentView.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "TossArc" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameSessionState()", content)
+            self.assertIn("@State private var throwPower = 0.5", content)
+            self.assertIn('Text("Attempts \\(state.attemptsRemaining)")', content)
+            self.assertIn('Text("Power \\(Int(throwPower * 100))%")', content)
+            self.assertIn("Slider(value: $throwPower, in: 0...1)", content)
+            self.assertIn('Button(isPlaying ? "Throw" : "Start")', content)
+            self.assertIn('Button("Reset")', content)
+            self.assertIn("state = GameRules.startTossSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.resolveToss(state, power: throwPower)", content)
+            self.assertIn("static func landedInScoringZone(power: Double) -> Bool", rules)
+            self.assertIn("static func startTossSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func resolveToss(_ state: GameSessionState, power: Double) -> GameSessionState", rules)
+            self.assertIn("next.attemptsRemaining = consumeAttempt(next.attemptsRemaining)", rules)
+            self.assertIn("next.phase = .result", rules)
+
     def test_init_game_generates_stack_puzzle_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

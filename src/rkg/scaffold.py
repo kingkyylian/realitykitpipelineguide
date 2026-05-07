@@ -201,6 +201,8 @@ def _content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
         return _lane_dodger_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "wave_defense_lite":
         return _wave_defense_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "toss_physics":
+        return _toss_physics_content_view_swift(title, subtitle, player_action)
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -243,6 +245,82 @@ struct ContentView: View {{
             .padding()
             .background(.thinMaterial)
         }}
+    }}
+}}
+"""
+
+
+def _toss_physics_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameSessionState()
+    @State private var throwPower = 0.5
+
+    private var isPlaying: Bool {{
+        state.phase == .playing
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView()
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Attempts \\(state.attemptsRemaining)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Power \\(Int(throwPower * 100))%")
+                        .font(.caption.monospacedDigit())
+                    Slider(value: $throwPower, in: 0...1)
+                        .frame(maxWidth: 180)
+                    Text(state.lastEvent.capitalized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(isPlaying ? "Throw" : "Start") {{
+                        throwToss()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button("Reset") {{
+                        state = GameSessionState()
+                        throwPower = 0.5
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+        }}
+    }}
+
+    private func throwToss() {{
+        if !isPlaying {{
+            state = GameRules.startTossSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.resolveToss(state, power: throwPower)
     }}
 }}
 """

@@ -77,6 +77,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertTrue((output / "Docs" / "store" / "metadata.md").exists())
             self.assertTrue((output / "Docs" / "store" / "review-notes.md").exists())
             self.assertTrue((output / "Docs" / "store" / "privacy.md").exists())
+            self.assertTrue((output / "Docs" / "store" / "screenshots.md").exists())
+            self.assertTrue((output / "Docs" / "store" / "monetization.md").exists())
 
     def test_init_game_writes_planned_manifest_assets(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -93,6 +95,21 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertEqual(manifest["assets"][0]["status"], "planned")
             self.assertEqual(manifest["assets"][0]["file"], "target_basic.usdz")
             self.assertEqual(manifest["assets"][0]["fallback"], "procedural_rings")
+
+    def test_init_game_writes_store_pack_screenshot_checklist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            screenshots = (output / "Docs" / "store" / "screenshots.md").read_text(encoding="utf-8")
+            self.assertIn("| gameplay_start |", screenshots)
+            self.assertIn("Docs/screenshots/gameplay_start.jpg", screenshots)
+            monetization = (output / "Docs" / "store" / "monetization.md").read_text(encoding="utf-8")
+            self.assertIn("Model: paid", monetization)
 
     def test_init_game_escapes_swift_string_literals_from_spec_text(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

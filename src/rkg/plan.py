@@ -23,6 +23,8 @@ GENERATED_STORE_FILES = [
     "Docs/store/metadata.md",
     "Docs/store/review-notes.md",
     "Docs/store/privacy.md",
+    "Docs/store/screenshots.md",
+    "Docs/store/monetization.md",
 ]
 
 

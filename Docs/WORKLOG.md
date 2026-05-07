@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 66: RKG Store Pack Contract
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 16:55 +03
+**Amaç:** Generated games için metadata/review/privacy yanında screenshot ve monetization checklist üreten store pack contract'ını uygulamak.
+
+**Yapılanlar:**
+
+- `src/rkg/store_pack.py` eklendi.
+- `build_store_pack(spec)` store dosyalarını tek yerden üretiyor.
+- `init-game` store docs üretimini `build_store_pack` üzerinden yapıyor.
+- Yeni generated dosyalar: `Docs/store/screenshots.md` ve `Docs/store/monetization.md`.
+- Screenshot checklist state, purpose, required asset roles ve evidence path içeriyor.
+- Monetization checklist external unlock ve gerçek gameplay/paid content notlarını içeriyor.
+- `plan-game` generated store files listesine `screenshots.md` ve `monetization.md` ekliyor.
+- `Docs/rkg-architecture.md` store pack contract uygulama durumuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_store_pack.py Tests/test_rkg_init_game.py: first run failed as expected; rkg.store_pack and generated screenshots/monetization files were missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py: first run failed as expected; plan-game did not include new store files
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py Tests/test_rkg_init_game.py: ok, 11 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/store_pack.py src/rkg/scaffold.py src/rkg/plan.py: ok
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 84 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -c "<generate temp RKG project, xcodegen, xcodebuild>": generated-build ok
+```
+
+**Öğrenme notu:**
+
+Store pack scaffold'un yan ürünü değil, factory contract'ın parçası. `plan-game` ve `init-game` aynı dosya kapsamını göstermeli; yoksa dry-run güvenilirliğini kaybeder.
+
 ### Sprint 65: RKG Module-Based Swift Scaffold
 
 **Durum:** Tamamlandı

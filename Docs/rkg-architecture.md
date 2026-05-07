@@ -221,6 +221,8 @@ Required screenshot rows:
 | `required_asset_roles` | Roles that must be visible or explained. |
 | `evidence_path` | `Docs/screenshots/<state>.jpg` once captured. |
 
+Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files in its dry-run output, so store scope is visible before the project is generated.
+
 ## Decision Rules
 
 Add a new archetype only when:

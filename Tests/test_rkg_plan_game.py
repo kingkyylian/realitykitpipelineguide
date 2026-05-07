@@ -73,6 +73,8 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(payload["archetype"]["id"], "target_shooter")
         self.assertIn("Sources/RingDash/GameState.swift", payload["files"])
         self.assertIn("Sources/RingDash/FallbackFactory.swift", payload["files"])
+        self.assertIn("Docs/store/screenshots.md", payload["files"])
+        self.assertIn("Docs/store/monetization.md", payload["files"])
         self.assertEqual(payload["asset_roles"]["target_basic"], "target")
         self.assertEqual(payload["asset_roles"]["arena_floor"], "arena")
         self.assertEqual(payload["screenshot_states"], ["gameplay_start", "mid_session", "results"])

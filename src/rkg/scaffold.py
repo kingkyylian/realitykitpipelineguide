@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from rkg.plan import swift_name_for
 from rkg.spec import assert_valid_game_spec
+from rkg.store_pack import build_store_pack
 
 
 JsonDict = dict[str, Any]
@@ -41,9 +42,8 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "ResultView.swift", _result_view_swift())
     _write_text(output / "Docs" / "WORKLOG.md", _worklog(display_name))
     _write_text(output / "Docs" / "ai-handoff.md", _handoff(display_name, game_id))
-    _write_text(output / "Docs" / "store" / "metadata.md", _metadata(display_name, spec))
-    _write_text(output / "Docs" / "store" / "review-notes.md", _review_notes(display_name, spec))
-    _write_text(output / "Docs" / "store" / "privacy.md", _privacy_notes(display_name, spec))
+    for rel_path, text in build_store_pack(spec).items():
+        _write_text(output / rel_path, text)
 
 
 def _make_dirs(output: Path, swift_name: str) -> None:
@@ -423,56 +423,4 @@ Project: {display_name}
 Game id: {game_id}
 
 Start from `GameSpec.json`. Keep RKP as the asset acceptance source of truth. Do not mark any asset imported without `rkp accept-asset` and screenshot evidence.
-"""
-
-
-def _metadata(display_name: str, spec: Mapping[str, Any]) -> str:
-    game = spec["game"]
-    loop = spec["loop"]
-    return f"""# Store Metadata Draft
-
-App Name: {display_name}
-Subtitle: Fast {game["archetype"].replace("_", " ")} sessions
-Monetization: {game["monetization"]}
-
-## Description Draft
-
-{display_name} is a short-session arcade game where players {loop["player_action"]}. Sessions last {game["session_seconds"]} seconds and focus on clean input, readable targets, and repeatable score improvement.
-
-## Screenshot Checklist
-
-- gameplay_start
-- mid_session
-- results
-"""
-
-
-def _review_notes(display_name: str, spec: Mapping[str, Any]) -> str:
-    game = spec["game"]
-    return f"""# App Review Notes
-
-{display_name} is a standalone RealityKit game.
-
-- Login required: no
-- Backend required: no
-- Session length: {game["session_seconds"]} seconds
-- Core input: {game["input"]}
-- Monetization: {game["monetization"]}
-
-All screenshots and metadata should describe actual gameplay before submission.
-"""
-
-
-def _privacy_notes(display_name: str, spec: Mapping[str, Any]) -> str:
-    return f"""# Privacy Notes
-
-{display_name} scaffold default:
-
-- No account system.
-- No analytics SDK.
-- No advertising SDK.
-- No network requirement.
-- No personal data collection.
-
-Update this file before submission if monetization, analytics, ads, Game Center, or backend services are added.
 """

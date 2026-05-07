@@ -12,6 +12,31 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 63: Registry-Aware GameSpec Validation
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 15:44 +03
+**Amaç:** `GameSpec` validasyonunu RKG archetype registry ile bağlamak ve scaffold öncesi spec gate'i eklemek.
+
+**Yapılanlar:**
+
+- `validate_game_spec` artık bilinmeyen `game.archetype` değerlerini reddediyor.
+- Asset `role` alanı present olduğunda seçili archetype'ın required/optional role setine göre doğrulanıyor.
+- `release.screenshots` değerleri seçili archetype'ın screenshot state listesine göre doğrulanıyor.
+- `rkg validate-spec <GameSpec>` komutu eklendi; `--json` machine-readable `ok/issues` çıktısı veriyor.
+- `Docs/game-spec.md` role-aware spec örneği, validation rules ve validate-spec komutuyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_spec.py Tests/test_rkg_validate_spec.py: first run failed as expected; registry-aware validation and validate-spec CLI were missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_spec.py Tests/test_rkg_validate_spec.py: ok, 14 tests
+```
+
+**Öğrenme notu:**
+
+Archetype registry sadece listeleme yüzeyi olmamalı; `GameSpec` gate'i onu policy kaynağı olarak kullanmalı. Role alanı şu an backward-compatible optional, ama present olduğunda template contract'a bağlanıyor.
+
 ### Sprint 62: RKG Architecture Plan and Archetype Registry
 
 **Durum:** Tamamlandı

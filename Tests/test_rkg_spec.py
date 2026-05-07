@@ -110,6 +110,35 @@ class GameSpecTests(unittest.TestCase):
 
         self.assertIn("game.id must be snake_case", issues)
 
+    def test_rejects_unknown_archetype(self) -> None:
+        spec = valid_spec()
+        spec["game"]["archetype"] = "city_builder"
+
+        issues = validate_game_spec(spec)
+
+        self.assertIn("game.archetype is not supported: city_builder", issues)
+
+    def test_rejects_asset_role_not_used_by_archetype(self) -> None:
+        spec = valid_spec()
+        spec["assets"]["hero"] = {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1000 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        }
+
+        issues = validate_game_spec(spec)
+
+        self.assertIn("assets.hero role player is not used by target_shooter", issues)
+
+    def test_rejects_screenshot_state_not_used_by_archetype(self) -> None:
+        spec = valid_spec()
+        spec["release"]["screenshots"].append("boss_intro")
+
+        issues = validate_game_spec(spec)
+
+        self.assertIn("release.screenshots state boss_intro is not used by target_shooter", issues)
+
     def test_assert_valid_game_spec_raises_with_all_issues(self) -> None:
         spec = valid_spec()
         spec["game"]["session_seconds"] = 240

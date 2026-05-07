@@ -8,7 +8,7 @@ from pathlib import Path
 from rkg.archetypes import describe_archetype, list_archetypes
 from rkg.idea_score import load_idea, score_game_idea
 from rkg.scaffold import init_game
-from rkg.spec import GameSpecError, load_game_spec
+from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
 
 
 def main() -> int:
@@ -33,6 +33,10 @@ def main() -> int:
     describe = subparsers.add_parser("describe-archetype", help="Describe one RKG archetype")
     describe.add_argument("id", help="Archetype id")
     describe.add_argument("--json", action="store_true", help="Print machine-readable archetype record")
+
+    validate = subparsers.add_parser("validate-spec", help="Validate a GameSpec against RKG rules")
+    validate.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
+    validate.add_argument("--json", action="store_true", help="Print machine-readable validation result")
 
     args = parser.parse_args()
 
@@ -89,6 +93,23 @@ def main() -> int:
             print("required roles: " + ", ".join(record["required_asset_roles"]))
             print("screenshots: " + ", ".join(record["screenshot_states"]))
         return 0
+
+    if args.command == "validate-spec":
+        try:
+            issues = validate_game_spec(load_game_spec(Path(args.spec)))
+        except (OSError, GameSpecError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        payload = {"ok": not issues, "issues": issues}
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        elif issues:
+            print("invalid GameSpec")
+            for issue in issues:
+                print(f"- {issue}")
+        else:
+            print("GameSpec ok")
+        return 1 if issues else 0
 
     parser.print_help()
     return 2

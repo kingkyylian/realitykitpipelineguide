@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from typing import Any, Mapping
 
+from rkg.archetypes import describe_archetype
+
 
 JsonDict = dict[str, Any]
 
@@ -61,19 +63,21 @@ def validate_game_spec(spec: Mapping[str, Any], *, app_store: bool = True) -> li
     loop = _section(spec, "loop", issues)
     assets = _section(spec, "assets", issues)
     release = _section(spec, "release", issues)
+    archetype: Mapping[str, Any] | None = None
 
     if game:
         _require_fields(game, "game", REQUIRED_GAME_FIELDS, issues)
         _validate_game(game, app_store, issues)
+        archetype = _validate_archetype(game, issues)
     if loop:
         _require_fields(loop, "loop", REQUIRED_LOOP_FIELDS, issues)
         if "scoring" in loop and not isinstance(loop["scoring"], Mapping):
             issues.append("loop.scoring must be an object")
     if assets:
-        _validate_assets(assets, issues)
+        _validate_assets(assets, issues, archetype)
     if release:
         _require_fields(release, "release", REQUIRED_RELEASE_FIELDS, issues)
-        _validate_release(release, issues)
+        _validate_release(release, issues, archetype)
 
     return issues
 
@@ -118,7 +122,21 @@ def _validate_game(game: Mapping[str, Any], app_store: bool, issues: list[str]) 
         issues.append("game.monetization external_unlock is not allowed for App Store builds")
 
 
-def _validate_assets(assets: Mapping[str, Any], issues: list[str]) -> None:
+def _validate_archetype(game: Mapping[str, Any], issues: list[str]) -> Mapping[str, Any] | None:
+    archetype_id = game.get("archetype")
+    if archetype_id is None or archetype_id == "":
+        return None
+    if not isinstance(archetype_id, str):
+        issues.append("game.archetype must be a string")
+        return None
+    try:
+        return describe_archetype(archetype_id)
+    except ValueError:
+        issues.append(f"game.archetype is not supported: {archetype_id}")
+        return None
+
+
+def _validate_assets(assets: Mapping[str, Any], issues: list[str], archetype: Mapping[str, Any] | None) -> None:
     if not assets:
         issues.append("assets must contain at least one asset")
         return
@@ -130,9 +148,33 @@ def _validate_assets(assets: Mapping[str, Any], issues: list[str]) -> None:
             issues.append(f"assets.{asset_id} must be an object")
             continue
         _require_fields(asset, f"assets.{asset_id}", REQUIRED_ASSET_FIELDS, issues)
+        _validate_asset_role(asset_id, asset, archetype, issues)
 
 
-def _validate_release(release: Mapping[str, Any], issues: list[str]) -> None:
+def _validate_asset_role(
+    asset_id: object,
+    asset: Mapping[str, Any],
+    archetype: Mapping[str, Any] | None,
+    issues: list[str],
+) -> None:
+    role = asset.get("role")
+    if role is None or role == "":
+        return
+    if not isinstance(role, str):
+        issues.append(f"assets.{asset_id} role must be a string")
+        return
+    if archetype is None:
+        return
+    allowed_roles = set(archetype["required_asset_roles"]) | set(archetype["optional_asset_roles"])
+    if role not in allowed_roles:
+        issues.append(f"assets.{asset_id} role {role} is not used by {archetype['id']}")
+
+
+def _validate_release(
+    release: Mapping[str, Any],
+    issues: list[str],
+    archetype: Mapping[str, Any] | None,
+) -> None:
     devices = release.get("devices")
     if devices is not None and (not isinstance(devices, list) or not all(isinstance(device, str) for device in devices)):
         issues.append("release.devices must be a list of strings")
@@ -146,3 +188,8 @@ def _validate_release(release: Mapping[str, Any], issues: list[str]) -> None:
         issues.append("release.screenshots must be a list of strings")
     elif screenshots == []:
         issues.append("release.screenshots must contain at least one screenshot")
+    elif archetype is not None and isinstance(screenshots, list):
+        allowed_states = set(archetype["screenshot_states"])
+        for screenshot in screenshots:
+            if screenshot not in allowed_states:
+                issues.append(f"release.screenshots state {screenshot} is not used by {archetype['id']}")

@@ -29,6 +29,45 @@ Feature brief
 -> release note
 ```
 
+## Game Factory Boundary
+
+The pipeline is split into two layers:
+
+| Layer | Responsibility |
+| --- | --- |
+| RKP | Asset contracts, Blender/USDZ output, manifest health, RealityKit verification, screenshot acceptance, and release checks. |
+| RKG | Commercial game specs, archetype templates, reusable gameplay modules, QA orchestration, store-pack generation, and variant review. |
+
+Keep RKP narrow. It should answer whether an asset is planned, built, verified, and accepted. RKG can call RKP, but it must not bypass RKP's manifest, budget, fallback, or screenshot gates.
+
+Future games should start from `Docs/game-factory.md` before code or art work begins.
+
+## Commercial Variant Rule
+
+Do not ship shallow reskins as separate apps. A new Bundle ID needs a material difference in at least one of these areas:
+
+- Core mechanic or input pattern.
+- Progression structure.
+- Audience or fantasy.
+- Level/content depth.
+- Art direction that changes readability and game feel, not only colors or names.
+
+If a variant only changes title, icon, palette, or a few meshes, keep it as an update, level pack, or IAP inside the existing app instead of creating another app.
+
+## Game Factory Gates
+
+Every new game moves through these gates:
+
+| Gate | Pass condition |
+| --- | --- |
+| Idea score | `python3 Tools/rkg.py score-idea idea.json` returns `pass` or `revise`; rejected ideas stop before scaffolding. |
+| Vertical slice | Procedural placeholders support start, core action, score/result, reset, and one repeatable session. |
+| Asset acceptance | First gameplay-relevant USDZ is loaded in RealityKit and accepted with screenshot evidence. |
+| QA | Spec validation, manifest validation, tests, simulator build, screenshots, privacy notes, and metadata checks pass. |
+| Store pack | Review notes, screenshots, privacy notes, support URL checklist, monetization notes, and honest metadata are ready. |
+
+Kill weak games at the gate. The factory is for repeatable quality, not automatic submissions.
+
 ## Codex Skill Mode
 
 This repo includes an installable skill:

@@ -12,6 +12,41 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 59: RKG Idea Score Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 14:31 +03
+**Amaç:** RKG/Game Factory katmanında proje scaffold öncesi fikir eleme kapısını CLI ve testlerle netleştirmek.
+
+**Yapılanlar:**
+
+- `src/rkg/idea_score.py` eklendi.
+- `rkg score-idea <idea.json> [--json]` alt komutu eklendi.
+- Fikir skoru `pass`, `revise`, `reject` verdict'i üretiyor.
+- İlk dalga için büyük scope bayrakları reject ediliyor: multiplayer, open world, backend, heavy character animation, moderation, user-generated content.
+- `rkg init-game` generated Swift output'u spec text'i için string literal escape yapacak şekilde düzeltildi.
+- Generated `GameView` ilk gameplay asset id'sini `Entity.load(named:)` ile deniyor, yoksa procedural target fallback'e dönüyor.
+- `PyYAML>=6.0` package dependency olarak eklendi; CLI'nın `.yaml` desteği fresh install'da karşılıksız kalmıyor.
+- `Docs/game-factory.md`, `Docs/production-playbook.md` ve `Docs/ai-handoff.md` RKG score gate ile güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_score_idea.py: first run failed as expected; rkg.idea_score module was missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_score_idea.py: ok, 5 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py: first run failed as expected; Swift escaping and generated asset load were missing
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py: ok, 6 tests
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 68 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: 0 errors, 4 warnings
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+RKG asset kabulünü kendisi sahiplenmemeli; generated runtime sadece RKP'nin kabul edeceği asset id'sini denemeli ve fallback'i korumalı. Game idea gate'i de scaffold'dan önce çalışmalı, yoksa factory zayıf oyunları otomatik proje haline getirir.
+
 ### Sprint 58: Ruff Lint Configuration
 
 **Durum:** Tamamlandı

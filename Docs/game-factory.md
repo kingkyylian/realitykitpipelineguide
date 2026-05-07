@@ -1,0 +1,206 @@
+# RealityKit Game Factory
+
+This document defines how to turn the asset pipeline into a repeatable commercial game workflow.
+
+## Principle
+
+RKP remains the RealityKit asset pipeline. RKG is the game factory layer above it.
+
+RKP owns:
+
+- Asset manifest entries.
+- Blender and USDZ generation.
+- Asset budgets.
+- Procedural fallbacks.
+- USDZ inspection.
+- Runtime screenshot acceptance.
+- Release checks.
+
+RKG owns:
+
+- Game specs.
+- Archetype templates.
+- Reusable gameplay modules.
+- QA orchestration.
+- Store metadata packs.
+- Variant review.
+
+RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot evidence.
+
+## Anti-Spam Rule
+
+Each shipped game must be meaningfully distinct. A new app must change at least one of these:
+
+- Core mechanic.
+- Input model.
+- Progression.
+- Audience fantasy.
+- Level structure.
+- Content depth.
+- Art direction tied to readability and game feel.
+
+Palette swaps, renamed enemies, new icons, or one exchanged mesh are not enough for a separate app. Those belong in the original app as updates, level packs, or in-app purchases.
+
+## Factory Gates
+
+### 1. Idea Score
+
+Score the idea before generating a project.
+
+Required answers:
+
+- What does the player do every 3 seconds?
+- What makes this different from the previous game?
+- Can the first playable ship with 3 to 5 asset classes?
+- Can a 30-second video explain the hook?
+- What is the App Review risk?
+- What is the monetization model?
+
+Reject ideas that need multiplayer, open worlds, heavy character animation, user-generated content, or backend systems in the first version.
+
+Machine gate:
+
+```bash
+python3 Tools/rkg.py score-idea idea.json
+```
+
+Minimum idea file:
+
+```json
+{
+  "idea": {
+    "title": "Ring Dash",
+    "player_action": "tap moving targets every few seconds",
+    "differentiator": "precision rings shrink as the streak grows",
+    "first_playable_assets": ["target_basic", "arena_floor", "timer_gate"],
+    "video_hook": "a thirty-second clip shows shrinking rings, streaks, and the result screen",
+    "app_review_risk": "low",
+    "monetization": "paid",
+    "scope_flags": []
+  }
+}
+```
+
+`score-idea` returns `pass`, `revise`, or `reject`. Rejected ideas should not reach `rkg init-game`.
+
+### 2. Vertical Slice
+
+The first playable uses procedural placeholders before custom art.
+
+Required behavior:
+
+- Start session.
+- Core input.
+- Score or progress feedback.
+- Miss/fail behavior.
+- Reset.
+- Result state.
+- Deterministic repeatability for QA.
+
+### 3. Asset Acceptance
+
+The first imported asset must be gameplay-relevant, not decorative.
+
+Acceptance requires:
+
+- Manifest entry.
+- Runtime USDZ under `Assets/Imported`.
+- Scale/origin/material notes.
+- Texture and triangle budget.
+- Fallback behavior.
+- RealityKit screenshot evidence.
+- `rkp accept-asset`.
+
+### 4. QA
+
+Minimum command gate:
+
+```bash
+python3 -m unittest discover -s Tests
+python3 Tools/rkp.py doctor
+python3 Tools/rkp.py release-check
+```
+
+For player-facing changes, also run the app in simulator or on device and capture evidence under `Docs/screenshots` when the screenshot documents a lasting state.
+
+### 5. Store Pack
+
+The store pack must exist before TestFlight submission:
+
+```text
+Docs/store/metadata.md
+Docs/store/review-notes.md
+Docs/store/privacy.md
+Docs/store/screenshots.md
+```
+
+Metadata must describe the real game. Screenshots must show actual gameplay, not only title art.
+
+## First Archetypes
+
+Start with small, replayable game shapes:
+
+| Archetype | Why it is first-wave friendly |
+| --- | --- |
+| Target shooter | Low asset count, clear scoring, fast session loop. |
+| Lane dodger | Simple input, readable obstacles, good replayability. |
+| Toss physics | RealityKit physics can create feel with few assets. |
+| Stack puzzle | Short sessions and strong screenshot clarity. |
+| Wave defense lite | Reuses target/spawn/scoring systems, but has higher scope. |
+
+Avoid first-wave games that require multiplayer, large maps, complex animation, or moderation.
+
+## GameSpec Contract
+
+Every generated game starts with `GameSpec.yaml`:
+
+```yaml
+game:
+  id: ring_dash
+  display_name: Ring Dash
+  archetype: target_shooter
+  session_seconds: 60
+  camera: fixed_non_ar
+  input: tap
+  monetization: paid
+
+loop:
+  player_action: tap targets before they expire
+  fail_condition: time expires
+  scoring:
+    hit: 10
+    perfect: 25
+    streak_bonus: true
+
+assets:
+  target_basic:
+    type: gameplay_target
+    budget: "1500 tris / 512 texture"
+    fallback: procedural_rings
+
+release:
+  devices:
+    - iPhone 15
+    - iPad
+  screenshots:
+    - gameplay_start
+    - mid_session
+    - results
+```
+
+The spec is intentionally small. Add gameplay only after the first session works.
+
+## Weekly Cadence
+
+| Day | Output |
+| ---: | --- |
+| 0 | Score five ideas and pick one. |
+| 1 | Generate project and procedural first playable. |
+| 2 | Implement mechanic, scoring, reset, and result state. |
+| 3 | Build and accept the first gameplay asset. |
+| 4 | Add progression, audio, haptics, and polish. |
+| 5 | QA, device check, and performance pass. |
+| 6 | Store pack and TestFlight build. |
+| 7 | Submit, iterate, or kill. |
+
+The default decision is to kill weak prototypes. Shipping fewer stronger games is safer than filling the store with thin variants.

@@ -1,0 +1,148 @@
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def valid_spec() -> dict:
+    return {
+        "game": {
+            "id": "ring_dash",
+            "display_name": "Ring Dash",
+            "archetype": "target_shooter",
+            "session_seconds": 60,
+            "camera": "fixed_non_ar",
+            "input": "tap",
+            "monetization": "paid",
+        },
+        "loop": {
+            "player_action": "tap targets before they expire",
+            "fail_condition": "time expires",
+            "scoring": {"hit": 10, "perfect": 25, "streak_bonus": True},
+        },
+        "assets": {
+            "target_basic": {
+                "type": "gameplay_target",
+                "budget": "1500 tris / 512 texture",
+                "fallback": "procedural_rings",
+            }
+        },
+        "release": {
+            "devices": ["iPhone 15", "iPad"],
+            "screenshots": ["gameplay_start", "mid_session", "results"],
+        },
+    }
+
+
+class RkgInitGameTests(unittest.TestCase):
+    def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(ROOT / "Tools" / "rkg.py"), *args],
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+        )
+
+    def write_spec(self, root: Path, spec: dict) -> Path:
+        path = root / "GameSpec.json"
+        path.write_text(json.dumps(spec, indent=2) + "\n", encoding="utf-8")
+        return path
+
+    def test_init_game_creates_realitykit_project_skeleton(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((output / "GameSpec.json").exists())
+            self.assertTrue((output / "project.yml").exists())
+            self.assertTrue((output / "rkp.json").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "RingDashApp.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "ContentView.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "GameView.swift").exists())
+            self.assertTrue((output / "Docs" / "store" / "metadata.md").exists())
+            self.assertTrue((output / "Docs" / "store" / "review-notes.md").exists())
+            self.assertTrue((output / "Docs" / "store" / "privacy.md").exists())
+
+    def test_init_game_writes_planned_manifest_assets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            manifest = json.loads((output / "Tools" / "asset_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["project"], "Ring Dash")
+            self.assertEqual(manifest["assets"][0]["id"], "target_basic")
+            self.assertEqual(manifest["assets"][0]["status"], "planned")
+            self.assertEqual(manifest["assets"][0]["file"], "target_basic.usdz")
+            self.assertEqual(manifest["assets"][0]["fallback"], "procedural_rings")
+
+    def test_init_game_escapes_swift_string_literals_from_spec_text(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec = valid_spec()
+            spec["game"]["display_name"] = 'Ring "Dash"'
+            spec["loop"]["player_action"] = "tap targets\nbefore they expire"
+            spec_path = self.write_spec(root, spec)
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "RingDash" / "ContentView.swift").read_text(encoding="utf-8")
+            self.assertIn('Text("Ring \\"Dash\\"")', content)
+            self.assertIn('Text("tap targets\\nbefore they expire")', content)
+
+    def test_init_game_generated_view_references_planned_asset_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "RingDash" / "GameView.swift").read_text(encoding="utf-8")
+            self.assertIn('try? Entity.load(named: "target_basic")', content)
+            self.assertIn("proceduralTarget()", content)
+
+    def test_init_game_refuses_non_empty_output_without_force(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+            output.mkdir()
+            (output / "keep.txt").write_text("keep\n", encoding="utf-8")
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("output directory is not empty", result.stderr)
+            self.assertEqual((output / "keep.txt").read_text(encoding="utf-8"), "keep\n")
+
+    def test_init_game_rejects_invalid_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec = valid_spec()
+            del spec["assets"]["target_basic"]["fallback"]
+            spec_path = self.write_spec(root, spec)
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(root / "BadGame"))
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("assets.target_basic.fallback is required", result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

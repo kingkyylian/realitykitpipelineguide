@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives.
 
 ## CLI Roadmap
 
@@ -203,7 +203,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | GameSpec | Required fields, supported archetype, valid roles, screenshot states. |
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
-| Scaffolding | Generated files exist, Swift literals escape correctly, asset ids load with fallback. |
+| Scaffolding | Generated files exist, Swift literals escape correctly, every declared asset role gets a generated load attempt with fallback. |
 | Generated modules | Pure rule tests for state transitions and scoring. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
 

@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 69: RKG Role-Aware Generated Scene
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-07 17:42 +03
+**Amaç:** Generated scene kurulumunu single primary asset varsayımından çıkarıp tüm declared asset role'ları runtime load attempt kapsamına almak.
+
+**Yapılanlar:**
+
+- `GameSceneController.swift` üretimi artık spec'teki tüm asset kayıtlarını deterministic entity planına çeviriyor.
+- Her asset için `AssetLoader.loadPrimaryEntity(assetId:role:)` çağrısı üretiliyor; imported USDZ yoksa role-based fallback çalışmaya devam ediyor.
+- `lane_dodger` regression testi eklendi: `player`, `obstacle` ve `arena` rollerinin hepsi generated scene'de yüklenmek zorunda.
+- Hard-coded `FallbackFactory.makeFallback(role: "arena") + primary` sahne kurulumu kaldırıldı.
+- `Docs/rkg-architecture.md` generated scene role coverage davranışıyla güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generated_scene_loads_all_declared_required_roles: first run failed as expected; crate and lane_floor load attempts were missing
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generated_scene_loads_all_declared_required_roles Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generated_modules_reference_planned_asset_ids: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_spec.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py Tests/test_rkg_verify_game.py: ok, 32 tests
+/opt/homebrew/bin/python3.12 -m py_compile src/rkg/scaffold.py src/rkg/spec.py: ok
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, rkg verify-game>": lane-dodger-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 91 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Multi-archetype factory için ilk runtime eşiği mekanik çeşitliliği değil, role coverage. Bir oyun türü `player`, `obstacle`, `arena` diyorsa generated project bu rolleri scene'e bağlamalı; yoksa RKP asset acceptance yolu runtime'da görünmez kalır.
+
 ### Sprint 68: RKG Required Archetype Roles
 
 **Durum:** Tamamlandı

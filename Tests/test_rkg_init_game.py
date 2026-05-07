@@ -46,6 +46,38 @@ def valid_spec() -> dict:
     }
 
 
+def lane_dodger_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "lane_dash"
+    spec["game"]["display_name"] = "Lane Dash"
+    spec["game"]["archetype"] = "lane_dodger"
+    spec["game"]["input"] = "drag"
+    spec["loop"]["player_action"] = "drag between lanes to dodge obstacles"
+    spec["loop"]["fail_condition"] = "hit an obstacle"
+    spec["assets"] = {
+        "runner": {
+            "type": "character",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "crate": {
+            "type": "hazard",
+            "role": "obstacle",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_box",
+        },
+        "lane_floor": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_session", "near_miss", "results"]
+    return spec
+
+
 class RkgInitGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -158,6 +190,21 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('loadPrimaryEntity(assetId: "target_basic", role: "target")', scene_controller)
             self.assertNotIn("cameraTransform =", scene_controller)
             self.assertIn("makeFallback(role: String)", fallback_factory)
+
+    def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, lane_dodger_spec())
+            output = root / "LaneDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            scene_controller = (output / "Sources" / "LaneDash" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn('loadPrimaryEntity(assetId: "runner", role: "player")', scene_controller)
+            self.assertIn('loadPrimaryEntity(assetId: "crate", role: "obstacle")', scene_controller)
+            self.assertIn('loadPrimaryEntity(assetId: "lane_floor", role: "arena")', scene_controller)
+            self.assertNotIn('FallbackFactory.makeFallback(role: "arena")', scene_controller)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

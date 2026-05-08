@@ -36,6 +36,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / f"{swift_name}App.swift", _app_swift(swift_name))
     _write_text(output / "Sources" / swift_name / "ContentView.swift", content_view_swift(display_name, spec))
     _write_text(output / "Sources" / swift_name / "GameState.swift", _game_state_swift(spec))
+    _write_text(output / "Sources" / swift_name / "SessionControl.swift", _session_control_swift())
     _write_text(output / "Sources" / swift_name / "ScreenshotState.swift", _screenshot_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
@@ -236,6 +237,28 @@ enum ScreenshotState: String, CaseIterable, Identifiable {{
         "Docs/screenshots/\\(rawValue).jpg"
     }}
 }}
+"""
+
+
+def _session_control_swift() -> str:
+    return """import Foundation
+
+enum SessionControl {
+    static func isPlaying(_ state: GameSessionState) -> Bool {
+        state.phase == .playing
+    }
+
+    static func reset() -> GameSessionState {
+        GameSessionState()
+    }
+
+    static func markResult(_ state: GameSessionState, event: String) -> GameSessionState {
+        var next = state
+        next.phase = .result
+        next.lastEvent = event
+        return next
+    }
+}
 """
 
 

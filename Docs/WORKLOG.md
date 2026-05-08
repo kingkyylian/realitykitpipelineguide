@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 89: RKG Shared Session Control Module
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:37 +03
+**Amaç:** Generated playable ContentView'lerde tekrar eden playing/reset davranışını ortak Swift modülüne almak.
+
+**Yapılanlar:**
+
+- `plan-game` source file listesine `Sources/<GameName>/SessionControl.swift` eklendi.
+- `rkg init-game` artık her generated proje için `SessionControl.swift` yazıyor.
+- `SessionControl` `isPlaying`, `reset`, ve `markResult` helper'larını üretiyor.
+- `lane_dodger`, `wave_defense_lite`, `toss_physics`, ve `stack_puzzle` generated ContentView'leri `state.phase == .playing` ve direkt `GameSessionState()` reset yerine `SessionControl` kullanıyor.
+- RKG architecture, game factory, changelog ve AI handoff dokümanları yeni generated Swift modül sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_session_control_generator_emits_shared_session_helpers Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold: first run failed as expected; `SessionControl.swift` was not planned/generated and ContentView reset/playing logic was inline
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_session_control_generator_emits_shared_session_helpers Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold: ok, 5 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_plan_game.py: ok, 31 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert SessionControl usage, rkg verify-game>": session-control-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 120 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+`SessionControl` şu an küçük ama doğru sınırda: UI state'in oynuyor mu/sıfırlanıyor mu bilgisini merkezi hale getiriyor, archetype-specific start/core action kurallarını ise `GameRules` içinde bırakıyor. Bu çizgi yeni reusable modules işinde gereksiz abstraction riskini düşük tutuyor.
+
 ### Sprint 88: RKG Typed Screenshot State Module
 
 **Durum:** Tamamlandı

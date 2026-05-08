@@ -95,6 +95,17 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("var evidencePath: String", swift)
         self.assertIn('"Docs/screenshots/\\(rawValue).jpg"', swift)
 
+    def test_session_control_generator_emits_shared_session_helpers(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_session_control_swift"))
+
+        swift = scaffold._session_control_swift()
+
+        self.assertIn("enum SessionControl", swift)
+        self.assertIn("static func isPlaying(_ state: GameSessionState) -> Bool", swift)
+        self.assertIn("state.phase == .playing", swift)
+        self.assertIn("static func reset() -> GameSessionState", swift)
+        self.assertIn("static func markResult(_ state: GameSessionState, event: String) -> GameSessionState", swift)
+
 
 if __name__ == "__main__":
     unittest.main()

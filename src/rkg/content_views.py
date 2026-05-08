@@ -77,7 +77,7 @@ struct ContentView: View {{
     @State private var stablePlacement = true
 
     private var isPlaying: Bool {{
-        state.phase == .playing
+        SessionControl.isPlaying(state)
     }}
 
     var body: some View {{
@@ -129,7 +129,7 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.bordered)
                     Button("Reset") {{
-                        state = GameSessionState()
+                        state = SessionControl.reset()
                         stablePlacement = true
                     }}
                     .buttonStyle(.bordered)
@@ -159,7 +159,7 @@ struct ContentView: View {{
     @State private var throwPower = 0.5
 
     private var isPlaying: Bool {{
-        state.phase == .playing
+        SessionControl.isPlaying(state)
     }}
 
     var body: some View {{
@@ -205,7 +205,7 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.borderedProminent)
                     Button("Reset") {{
-                        state = GameSessionState()
+                        state = SessionControl.reset()
                         throwPower = 0.5
                     }}
                     .buttonStyle(.bordered)
@@ -234,7 +234,7 @@ struct ContentView: View {{
     @State private var state = GameSessionState()
 
     private var isPlaying: Bool {{
-        state.phase == .playing
+        SessionControl.isPlaying(state)
     }}
 
     var body: some View {{
@@ -287,7 +287,7 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.bordered)
                     Button("Reset") {{
-                        state = GameSessionState()
+                        state = SessionControl.reset()
                     }}
                     .buttonStyle(.bordered)
                 }}
@@ -315,7 +315,7 @@ struct ContentView: View {{
     @State private var state = GameSessionState()
 
     private var isPlaying: Bool {{
-        state.phase == .playing
+        SessionControl.isPlaying(state)
     }}
 
     var body: some View {{
@@ -364,7 +364,7 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.borderedProminent)
                     Button("Reset") {{
-                        state = GameSessionState()
+                        state = SessionControl.reset()
                     }}
                     .buttonStyle(.bordered)
                 }}

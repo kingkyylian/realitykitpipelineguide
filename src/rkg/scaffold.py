@@ -306,6 +306,8 @@ def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
         return _toss_physics_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "wave_defense_lite":
         return _wave_defense_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "stack_puzzle":
+        return _stack_puzzle_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -476,8 +478,56 @@ final class GameSceneController {{
 """
 
 
+def _stack_puzzle_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    lines: list[str] = []
+    obstacle_bound = False
+    for entity in runtime_entities_for(spec):
+        variable = entity["variable"]
+        asset_id = _swift_string_literal(entity["asset_id"])
+        role = _swift_string_literal(entity["role"])
+        position = entity["position"]
+        lines.append(
+            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+        {variable}.position = {position}
+        anchor.addChild({variable})"""
+        )
+        if entity["role"] == "player":
+            lines.append(f"        pieceEntity = {variable}")
+        elif entity["role"] in {"obstacle", "hazard"} and not obstacle_bound:
+            lines.append(f"        obstacleEntity = {variable}")
+            obstacle_bound = True
+    entity_lines = "\n\n".join(lines)
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var pieceEntity: Entity?
+    private var obstacleEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        pieceEntity?.position = piecePosition(piecesPlaced: state.piecesPlaced, stablePieces: state.stablePieces)
+        pieceEntity?.scale = state.collapsed ? [0.80, 0.80, 0.80] : [1, 1, 1]
+        obstacleEntity?.position.y = state.collapsed ? 0.18 : 0
+        obstacleEntity?.scale = state.collapsed ? [1.20, 1.20, 1.20] : [1, 1, 1]
+    }}
+
+    private func piecePosition(piecesPlaced: Int, stablePieces: Int) -> SIMD3<Float> {{
+        let height = Float(max(0, stablePieces)) * 0.12
+        let offset = Float((piecesPlaced % 3) - 1) * 0.12
+        return [offset, height, -0.85]
+    }}
+}}
+"""
+
+
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
-    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics", "wave_defense_lite"}:
+    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics", "wave_defense_lite", "stack_puzzle"}:
         return _state_bound_game_view_swift()
     return """import RealityKit
 import SwiftUI

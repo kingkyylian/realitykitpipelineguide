@@ -82,7 +82,7 @@ struct ContentView: View {{
 
     var body: some View {{
         ZStack(alignment: .top) {{
-            GameView()
+            GameView(state: state)
                 .ignoresSafeArea()
 
             VStack(spacing: 8) {{

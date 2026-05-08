@@ -579,6 +579,31 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("next.phase = .result", rules)
             self.assertIn("next.collapsed = true", rules)
 
+    def test_init_game_binds_stack_puzzle_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, stack_puzzle_spec())
+            output = root / "StackTower"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "StackTower" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "StackTower" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "StackTower" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var pieceEntity: Entity?", scene_controller)
+            self.assertIn("private var obstacleEntity: Entity?", scene_controller)
+            self.assertIn("pieceEntity = block", scene_controller)
+            self.assertIn("obstacleEntity = bumper", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("pieceEntity?.position = piecePosition(", scene_controller)
+            self.assertIn("pieceEntity?.scale = state.collapsed ? [0.80, 0.80, 0.80] : [1, 1, 1]", scene_controller)
+            self.assertIn("obstacleEntity?.position.y = state.collapsed ? 0.18 : 0", scene_controller)
+            self.assertIn("private func piecePosition(piecesPlaced: Int, stablePieces: Int) -> SIMD3<Float>", scene_controller)
+
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -37,8 +37,7 @@ class RkgContentViewTests(unittest.TestCase):
 
         self.assertIn("@State private var state = GameSessionState()", content)
         self.assertIn("@State private var stablePlacement = true", content)
-        self.assertIn("GameView()", content)
-        self.assertNotIn("GameView(state: state)", content)
+        self.assertIn("GameView(state: state)", content)
         self.assertIn('Text("Pieces \\(state.piecesPlaced)/\\(GameRules.maxPieces)")', content)
         self.assertIn('Toggle("Stable", isOn: $stablePlacement)', content)
         self.assertIn('Button(isPlaying ? "Place" : "Start")', content)

@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 84: RKG Stack Puzzle Scene Binding
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:05 +03
+**Amaç:** `stack_puzzle` generated app'i overlay-only loop'tan RealityKit state-bound scene loop'a taşımak.
+
+**Yapılanlar:**
+
+- `stack_puzzle` generated `ContentView.swift` artık `GameView(state: state)` çağırıyor.
+- `stack_puzzle` generated `GameView.swift` state-bound coordinator yolunu kullanıyor.
+- `stack_puzzle` generated `GameSceneController.swift` piece ve obstacle entity referanslarını saklıyor.
+- Piece entity pozisyonu `piecesPlaced` ve `stablePieces` üzerinden height/offset feedback'i alıyor.
+- Collapse halinde piece scale'i küçülüyor, obstacle entity yukarı çıkıp büyüyerek fail/result state'i görselleştiriyor.
+- Gerçek generated `stack_puzzle` proje `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_stack_puzzle_state_to_realitykit_scene: first run failed as expected; stack ContentView still called GameView() and scene had no update(state:)
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_stack_puzzle_state_to_realitykit_scene Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_state_bound_game_view_generator_is_archetype_neutral: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_archetype_runtime.py Tests/test_rkg_scaffold_generators.py: first run caught stale stack content-view contract expecting GameView()
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_archetype_runtime.py Tests/test_rkg_scaffold_generators.py: ok, 29 tests
+/opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, rkg verify-game>": stack-puzzle-scene-bound-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 115 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Bu sprintle ilk dört non-generic RKG archetype (`lane_dodger`, `toss_physics`, `wave_defense_lite`, `stack_puzzle`) hem playable SwiftUI state loop'una hem de RealityKit scene state binding'ine sahip oldu. Bundan sonra en değerli bakım işi, archetype-specific scene-controller generator'larındaki ortak entity load/reference wiring'i azaltmak.
+
 ### Sprint 83: RKG State-Bound GameView and Wave Scene Binding
 
 **Durum:** Tamamlandı

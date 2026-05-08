@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 91: RKG Screenshot QA Plan Command
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:51 +03
+**Amaç:** `screenshot_proofs` ve store screenshot QA runbook bilgisini makine-okunur `rkg qa-plan` CLI yüzeyine bağlamak.
+
+**Yapılanlar:**
+
+- `src/rkg/qa_plan.py` eklendi.
+- `build_qa_plan` GameSpec'ten ordered screenshot capture step listesi üretiyor.
+- Her QA step `order`, `state`, `screenshot_state_case`, `drive`, `visible_roles`, `expected_evidence`, `capture_path`, ve `automation` alanlarını içeriyor.
+- `rkg qa-plan <GameSpec> [--json]` CLI komutu eklendi; dosya yazmadan text veya JSON capture plan döndürüyor.
+- `Docs/store/screenshot-qa.md` üretimi aynı `qa_steps_for` helper'ını kullanacak şekilde toparlandı.
+- Changelog, game factory, production playbook, RKG architecture ve AI handoff dokümanları `qa-plan` sözleşmesiyle güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_qa_plan.py: first run failed as expected; `rkg.qa_plan` module was missing
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_qa_plan.py Tests/test_rkg_store_pack.py: ok, 7 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_qa_plan.py Tests/test_rkg_store_pack.py Tests/test_rkg_plan_game.py Tests/test_rkg_init_game.py: ok, 31 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 125 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Store runbook insan-readable çıktı olmaya devam ediyor; `qa-plan --json` aynı capture sırasını simulator automation veya başka ajanların okuyabileceği kararlı veri yüzeyine çeviriyor.
+
 ### Sprint 90: RKG Result Transition Routing
 
 **Durum:** Tamamlandı

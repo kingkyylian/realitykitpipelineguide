@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from rkg.archetypes import describe_archetype
+from rkg.qa_plan import qa_steps_for
 
 
 StorePack = dict[str, str]
@@ -85,17 +86,14 @@ def screenshots_checklist(spec: Mapping[str, Any], archetype: Mapping[str, Any])
 
 
 def screenshot_qa_runbook(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> str:
-    roles = _required_visible_roles(spec, archetype)
     rows = [
         "| Order | State | Drive the game to this state | Expected evidence | Capture path |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for index, state in enumerate(spec["release"]["screenshots"], start=1):
-        state_name = str(state)
-        proof = _screenshot_proof(state_name, archetype)
+    for step in qa_steps_for(spec, archetype):
         rows.append(
-            f"| {index} | {state_name} | {proof} | Required roles visible: {roles} | "
-            f"Docs/screenshots/{state_name}.jpg |"
+            f"| {step['order']} | {step['state']} | {step['drive']} | {step['expected_evidence']} | "
+            f"{step['capture_path']} |"
         )
     return (
         "# Screenshot QA Runbook\n\n"

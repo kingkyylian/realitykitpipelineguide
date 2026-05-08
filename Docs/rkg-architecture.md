@@ -163,6 +163,7 @@ The state-bound scene generators share one entity setup helper for the repeated 
 | `rkg describe-archetype <id>` | Explain required roles, modules, screenshots, risk. | Text and `--json`. |
 | `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
+| `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; does not write files. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
 | `rkg verify-game <dir>` | Run generated project tests, RKP doctor/release gate, and optional screenshot checks. | Implemented with command-only verification. |
 
@@ -215,6 +216,30 @@ Current `plan-game --json` shape:
     "mid_session": "Tap Start, then score at least one hit; state.score > 0.",
     "results": "End the session or reset after play; state.phase == .result or result UI is visible."
   }
+}
+```
+
+Current `qa-plan --json` shape:
+
+```json
+{
+  "game_id": "lane_dash",
+  "display_name": "Lane Dash",
+  "archetype": "lane_dodger",
+  "preflight": ["rkg verify-game <generated-project>"],
+  "capture_root": "Docs/screenshots",
+  "steps": [
+    {
+      "order": 1,
+      "state": "gameplay_start",
+      "screenshot_state_case": "gameplayStart",
+      "drive": "Tap Start; state.phase == .playing; runner, obstacle, and arena are visible.",
+      "visible_roles": ["player", "obstacle", "arena"],
+      "expected_evidence": "Required roles visible: player, obstacle, arena",
+      "capture_path": "Docs/screenshots/gameplay_start.jpg",
+      "automation": "manual_capture"
+    }
+  ]
 }
 ```
 

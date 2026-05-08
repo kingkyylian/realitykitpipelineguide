@@ -63,7 +63,7 @@ Every new game moves through these gates:
 | Idea score | `python3 Tools/rkg.py score-idea idea.json` returns `pass` or `revise`; rejected ideas stop before scaffolding. |
 | Vertical slice | Procedural placeholders support start, core action, score/result, reset, and one repeatable session. |
 | Asset acceptance | First gameplay-relevant USDZ is loaded in RealityKit and accepted with screenshot evidence. |
-| QA | Spec validation, manifest validation, tests, simulator build, screenshots, privacy notes, and metadata checks pass. |
+| QA | Spec validation, `qa-plan`, manifest validation, tests, simulator build, screenshots, privacy notes, and metadata checks pass. |
 | Store pack | Review notes, screenshots, privacy notes, support URL checklist, monetization notes, and honest metadata are ready. |
 
 Kill weak games at the gate. The factory is for repeatable quality, not automatic submissions.

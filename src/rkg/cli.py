@@ -8,6 +8,7 @@ from pathlib import Path
 from rkg.archetypes import describe_archetype, list_archetypes
 from rkg.idea_score import load_idea, score_game_idea
 from rkg.plan import build_game_plan
+from rkg.qa_plan import build_qa_plan
 from rkg.scaffold import init_game
 from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
 from rkg.verify import verify_game
@@ -43,6 +44,10 @@ def main() -> int:
     plan_game = subparsers.add_parser("plan-game", help="Preview generated game files without writing output")
     plan_game.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
     plan_game.add_argument("--json", action="store_true", help="Print machine-readable game plan")
+
+    qa_plan = subparsers.add_parser("qa-plan", help="Print screenshot capture QA steps without writing output")
+    qa_plan.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
+    qa_plan.add_argument("--json", action="store_true", help="Print machine-readable screenshot QA plan")
 
     verify = subparsers.add_parser("verify-game", help="Run verification gates for a generated RKG project")
     verify.add_argument("project", help="Path to generated game directory")
@@ -140,6 +145,25 @@ def main() -> int:
             print("screenshots:")
             for state in payload["screenshot_states"]:
                 print(f"- {state}")
+        return 0
+
+    if args.command == "qa-plan":
+        try:
+            payload = build_qa_plan(load_game_spec(Path(args.spec)))
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"qa plan: {payload['display_name']} ({payload['game_id']})")
+            for command in payload["preflight"]:
+                print(f"preflight: {command}")
+            print("steps:")
+            for step in payload["steps"]:
+                print(f"{step['order']}. {step['state']} -> {step['capture_path']}")
+                print(f"   drive: {step['drive']}")
+                print(f"   evidence: {step['expected_evidence']}")
         return 0
 
     if args.command == "verify-game":

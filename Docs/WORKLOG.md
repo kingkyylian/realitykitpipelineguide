@@ -12,6 +12,38 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 94: RKG Result Overlay Wiring
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 18:25 +03
+**Amaç:** Generated `ResultView.swift` modülünü playable archetype overlay'lerine gerçek result-state UI olarak bağlamak.
+
+**Yapılanlar:**
+
+- `lane_dodger`, `wave_defense_lite`, `toss_physics`, ve `stack_puzzle` generated ContentView'leri `state.phase == .result` olduğunda `ResultView(state:onReset:)` gösteriyor.
+- `ResultView` reset button label'ını hard-coded `"Reset"` yerine `InputIntent.resetTitle` üzerinden alıyor.
+- Toss ve stack reset closure'ları local kontrol state'lerini de eski başlangıç değerine döndürüyor (`throwPower`, `stablePlacement`).
+- Changelog, game factory, RKG architecture ve AI handoff dokümanları result overlay sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_result_view_generator_uses_shared_reset_title Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: first run failed as expected; `ResultView` was generated but not wired into ContentViews
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_result_view_generator_uses_shared_reset_title Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: ok, 7 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_plan_game.py: ok, 34 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, assert ResultView wiring, rkg verify-game>": result-view-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 128 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+Bu adım yeni abstraction eklemekten çok boşa duran generated modülü gerçek vertical slice'a bağladı. Result phase artık sadece state enum değeri değil, oyuncunun görebildiği resetlenebilir bir UI durumu.
+
 ### Sprint 93: RKG Input Intent Module
 
 **Durum:** Tamamlandı

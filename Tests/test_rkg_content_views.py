@@ -33,6 +33,9 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("FeedbackState.message(for: state)", content)
         self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
         self.assertIn("state = SessionControl.reset()", content)
+        self.assertIn("if state.phase == .result", content)
+        self.assertIn("ResultView(state: state)", content)
+        self.assertIn("throwPower = 0.5", content)
         self.assertIn("state = GameRules.resolveToss(state, power: throwPower)", content)
 
     def test_stack_puzzle_content_view_contract_is_outside_scaffold(self) -> None:
@@ -49,6 +52,9 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn('Button("Collapse")', content)
         self.assertIn("Button(InputIntent.resetTitle)", content)
         self.assertIn("state = SessionControl.reset()", content)
+        self.assertIn("if state.phase == .result", content)
+        self.assertIn("ResultView(state: state)", content)
+        self.assertIn("stablePlacement = true", content)
         self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
 
     def test_generic_content_view_contract_remains_available(self) -> None:

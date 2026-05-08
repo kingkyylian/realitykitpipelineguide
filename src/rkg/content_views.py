@@ -134,6 +134,13 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.bordered)
                 }}
+
+                if state.phase == .result {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                        stablePlacement = true
+                    }}
+                }}
             }}
             .padding()
             .background(.thinMaterial)
@@ -209,6 +216,13 @@ struct ContentView: View {{
                         throwPower = 0.5
                     }}
                     .buttonStyle(.bordered)
+                }}
+
+                if state.phase == .result {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                        throwPower = 0.5
+                    }}
                 }}
             }}
             .padding()
@@ -291,6 +305,12 @@ struct ContentView: View {{
                     }}
                     .buttonStyle(.bordered)
                 }}
+
+                if state.phase == .result {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
+                }}
             }}
             .padding()
             .background(.thinMaterial)
@@ -367,6 +387,12 @@ struct ContentView: View {{
                         state = SessionControl.reset()
                     }}
                     .buttonStyle(.bordered)
+                }}
+
+                if state.phase == .result {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
                 }}
             }}
             .padding()

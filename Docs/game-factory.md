@@ -127,7 +127,7 @@ Required behavior:
 - Score or progress feedback.
 - Miss/fail behavior.
 - Reset.
-- Result state.
+- Result state through the generated `ResultView` overlay when `state.phase == .result`.
 - Deterministic repeatability for QA.
 
 ### 3. Asset Acceptance

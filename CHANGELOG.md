@@ -22,6 +22,7 @@
 - Routed generated result/fail transitions through the shared `SessionControl.markResult` helper.
 - Routed generated last-event display text through the shared `FeedbackState.message` helper.
 - Routed generated primary/reset button labels through the shared `InputIntent` helper.
+- Wired generated `ResultView` into playable archetype overlays when `state.phase == .result`.
 - Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
 - Clarified the multi-archetype RKG scope so target shooter remains one fixture, not the whole product.
 

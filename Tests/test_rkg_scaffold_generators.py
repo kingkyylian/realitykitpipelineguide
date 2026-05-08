@@ -126,6 +126,15 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn('static let primaryActionTitle = "Dodge"', swift)
         self.assertIn("static func primaryButtonTitle(isPlaying: Bool) -> String", swift)
 
+    def test_result_view_generator_uses_shared_reset_title(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_result_view_swift"))
+
+        swift = scaffold._result_view_swift()
+
+        self.assertIn("struct ResultView: View", swift)
+        self.assertIn('Text("Score \\(state.score)")', swift)
+        self.assertIn("Button(InputIntent.resetTitle, action: onReset)", swift)
+
 
 if __name__ == "__main__":
     unittest.main()

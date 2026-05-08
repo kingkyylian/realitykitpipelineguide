@@ -640,7 +640,7 @@ struct ResultView: View {
         VStack(spacing: 8) {
             Text("Score \\(state.score)")
                 .font(.title2.monospacedDigit())
-            Button("Reset", action: onReset)
+            Button(InputIntent.resetTitle, action: onReset)
                 .buttonStyle(.borderedProminent)
         }
     }

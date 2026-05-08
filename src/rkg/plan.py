@@ -13,6 +13,7 @@ GENERATED_SOURCE_MODULES = [
     "ContentView.swift",
     "GameState.swift",
     "SessionControl.swift",
+    "FeedbackState.swift",
     "ScreenshotState.swift",
     "GameRules.swift",
     "GameSceneController.swift",

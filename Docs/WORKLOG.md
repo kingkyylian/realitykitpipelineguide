@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 92: RKG Feedback State Module
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:58 +03
+**Amaç:** Generated Swift overlay'lerdeki last-event feedback metnini ortak `FeedbackState.swift` modülüne almak.
+
+**Yapılanlar:**
+
+- `plan-game` source file listesine `Sources/<GameName>/FeedbackState.swift` eklendi.
+- `rkg init-game` artık her generated proje için `FeedbackState.swift` yazıyor.
+- `FeedbackState.message(for:)` generated overlay'lerin gösterdiği `lastEvent` metnini merkezi hale getiriyor.
+- `lane_dodger`, `wave_defense_lite`, `toss_physics`, ve `stack_puzzle` generated ContentView'leri inline `state.lastEvent.capitalized` yerine `FeedbackState.message(for: state)` kullanıyor.
+- RKG architecture, game factory, changelog ve AI handoff dokümanları yeni generated Swift modül sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_feedback_state_generator_emits_display_message_helper Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold: first run failed as expected; `FeedbackState.swift` was not planned/generated and ContentView feedback text was inline
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_feedback_state_generator_emits_display_message_helper Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold: ok, 5 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_plan_game.py: ok, 32 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert FeedbackState usage, rkg verify-game>": feedback-state-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 126 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+`FeedbackState` küçük ama yararlı bir sınır: UI copy formatı ContentView'lerden çıkıyor, ancak event kararları ve gameplay-specific flags hâlâ ilgili `GameRules`/archetype akışlarında kalıyor.
+
 ### Sprint 91: RKG Screenshot QA Plan Command
 
 **Durum:** Tamamlandı

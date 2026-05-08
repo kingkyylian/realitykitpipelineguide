@@ -106,7 +106,7 @@ struct ContentView: View {{
                 HStack(spacing: 12) {{
                     Text("Stable \\(state.stablePieces)")
                         .font(.caption.monospacedDigit())
-                    Text(state.lastEvent.capitalized)
+                    Text(FeedbackState.message(for: state))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -190,7 +190,7 @@ struct ContentView: View {{
                         .font(.caption.monospacedDigit())
                     Slider(value: $throwPower, in: 0...1)
                         .frame(maxWidth: 180)
-                    Text(state.lastEvent.capitalized)
+                    Text(FeedbackState.message(for: state))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }}
@@ -268,7 +268,7 @@ struct ContentView: View {{
                     Text("Cleared \\(state.clearedThreats)")
                         .font(.caption.monospacedDigit())
                     Spacer()
-                    Text(state.lastEvent.capitalized)
+                    Text(FeedbackState.message(for: state))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }}
@@ -349,7 +349,7 @@ struct ContentView: View {{
                     Text("Near \\(state.nearMisses)")
                         .font(.caption.monospacedDigit())
                     Spacer()
-                    Text(state.lastEvent.capitalized)
+                    Text(FeedbackState.message(for: state))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }}

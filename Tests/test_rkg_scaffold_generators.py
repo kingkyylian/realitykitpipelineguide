@@ -106,6 +106,15 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("static func reset() -> GameSessionState", swift)
         self.assertIn("static func markResult(_ state: GameSessionState, event: String) -> GameSessionState", swift)
 
+    def test_feedback_state_generator_emits_display_message_helper(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_feedback_state_swift"))
+
+        swift = scaffold._feedback_state_swift()
+
+        self.assertIn("enum FeedbackState", swift)
+        self.assertIn("static func message(for state: GameSessionState) -> String", swift)
+        self.assertIn("state.lastEvent.capitalized", swift)
+
 
 if __name__ == "__main__":
     unittest.main()

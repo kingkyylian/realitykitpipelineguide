@@ -37,6 +37,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "ContentView.swift", content_view_swift(display_name, spec))
     _write_text(output / "Sources" / swift_name / "GameState.swift", _game_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "SessionControl.swift", _session_control_swift())
+    _write_text(output / "Sources" / swift_name / "FeedbackState.swift", _feedback_state_swift())
     _write_text(output / "Sources" / swift_name / "ScreenshotState.swift", _screenshot_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
@@ -257,6 +258,17 @@ enum SessionControl {
         next.phase = .result
         next.lastEvent = event
         return next
+    }
+}
+"""
+
+
+def _feedback_state_swift() -> str:
+    return """import Foundation
+
+enum FeedbackState {
+    static func message(for state: GameSessionState) -> String {
+        state.lastEvent.capitalized
     }
 }
 """

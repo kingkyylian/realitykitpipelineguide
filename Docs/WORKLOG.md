@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 95: RKG Session Result Helper
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 18:31 +03
+**Amaç:** Generated result overlay görünürlük kararını inline `state.phase == .result` yerine `SessionControl.isResult` sözleşmesine taşımak.
+
+**Yapılanlar:**
+
+- `SessionControl.swift` generator'ı `isResult(_:)` helper'ını üretiyor.
+- `lane_dodger`, `wave_defense_lite`, `toss_physics`, ve `stack_puzzle` generated ContentView'leri result overlay branch'inde `SessionControl.isResult(state)` kullanıyor.
+- Changelog, game factory, RKG architecture ve AI handoff dokümanları result visibility sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_session_control_generator_emits_shared_session_helpers Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: first run failed as expected; `isResult` helper was missing and ContentViews still checked `state.phase` inline
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_session_control_generator_emits_shared_session_helpers Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: ok, 7 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_plan_game.py: ok, 34 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert SessionControl.isResult usage, rkg verify-game>": session-result-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 128 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+`SessionControl` artık oynuyor mu ve result mı sorularını birlikte sahipleniyor. Result UI branch'leri aynı lifecycle sözleşmesine bağlı kaldığı için sonraki fail/miss davranışı eklemeleri ContentView phase detayına yayılmadan ilerleyebilir.
+
 ### Sprint 94: RKG Result Overlay Wiring
 
 **Durum:** Tamamlandı

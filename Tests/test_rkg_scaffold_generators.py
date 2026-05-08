@@ -103,6 +103,8 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("enum SessionControl", swift)
         self.assertIn("static func isPlaying(_ state: GameSessionState) -> Bool", swift)
         self.assertIn("state.phase == .playing", swift)
+        self.assertIn("static func isResult(_ state: GameSessionState) -> Bool", swift)
+        self.assertIn("state.phase == .result", swift)
         self.assertIn("static func reset() -> GameSessionState", swift)
         self.assertIn("static func markResult(_ state: GameSessionState, event: String) -> GameSessionState", swift)
 

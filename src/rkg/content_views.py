@@ -135,7 +135,7 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
-                if state.phase == .result {{
+                if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()
                         stablePlacement = true
@@ -218,7 +218,7 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
-                if state.phase == .result {{
+                if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()
                         throwPower = 0.5
@@ -306,7 +306,7 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
-                if state.phase == .result {{
+                if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()
                     }}
@@ -389,7 +389,7 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
-                if state.phase == .result {{
+                if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()
                     }}

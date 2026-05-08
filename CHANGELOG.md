@@ -20,6 +20,7 @@
 - Renamed the shared state-bound generated `GameView` helper away from lane-dodger-specific terminology.
 - Extracted shared generated scene entity load/reference wiring for state-bound RKG archetypes.
 - Routed generated result/fail transitions through the shared `SessionControl.markResult` helper.
+- Routed generated result overlay visibility through the shared `SessionControl.isResult` helper.
 - Routed generated last-event display text through the shared `FeedbackState.message` helper.
 - Routed generated primary/reset button labels through the shared `InputIntent` helper.
 - Wired generated `ResultView` into playable archetype overlays when `state.phase == .result`.

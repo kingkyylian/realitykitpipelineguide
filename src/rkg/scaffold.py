@@ -250,6 +250,10 @@ enum SessionControl {
         state.phase == .playing
     }
 
+    static func isResult(_ state: GameSessionState) -> Bool {
+        state.phase == .result
+    }
+
     static func reset() -> GameSessionState {
         GameSessionState()
     }

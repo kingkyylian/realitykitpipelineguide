@@ -304,6 +304,8 @@ def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
         return _lane_dodger_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "toss_physics":
         return _toss_physics_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "wave_defense_lite":
+        return _wave_defense_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -426,9 +428,57 @@ final class GameSceneController {{
 """
 
 
+def _wave_defense_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    lines: list[str] = []
+    threat_bound = False
+    for entity in runtime_entities_for(spec):
+        variable = entity["variable"]
+        asset_id = _swift_string_literal(entity["asset_id"])
+        role = _swift_string_literal(entity["role"])
+        position = entity["position"]
+        lines.append(
+            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+        {variable}.position = {position}
+        anchor.addChild({variable})"""
+        )
+        if entity["role"] == "player":
+            lines.append(f"        defenderEntity = {variable}")
+        elif entity["role"] in {"target", "obstacle", "hazard"} and not threat_bound:
+            lines.append(f"        threatEntity = {variable}")
+            threat_bound = True
+    entity_lines = "\n\n".join(lines)
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var defenderEntity: Entity?
+    private var threatEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        threatEntity?.position = threatPosition(wave: state.wave, threatsRemaining: state.threatsRemaining)
+        threatEntity?.scale = state.threatsRemaining == 0 ? [0.75, 0.75, 0.75] : [1, 1, 1]
+        defenderEntity?.scale = state.isDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]
+        defenderEntity?.position.y = state.health <= 1 ? -0.05 : 0
+    }}
+
+    private func threatPosition(wave: Int, threatsRemaining: Int) -> SIMD3<Float> {{
+        let lane = Float((wave + threatsRemaining) % 3 - 1)
+        let pressure = Float(max(0, threatsRemaining))
+        return [lane * 0.45, 0, -1.05 - pressure * 0.08]
+    }}
+}}
+"""
+
+
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
-    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics"}:
-        return _lane_dodger_game_view_swift()
+    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics", "wave_defense_lite"}:
+        return _state_bound_game_view_swift()
     return """import RealityKit
 import SwiftUI
 
@@ -446,7 +496,7 @@ struct GameView: UIViewRepresentable {
 """
 
 
-def _lane_dodger_game_view_swift() -> str:
+def _state_bound_game_view_swift() -> str:
     return """import RealityKit
 import SwiftUI
 

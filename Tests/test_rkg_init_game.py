@@ -357,6 +357,30 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("next.phase = .result", rules)
             self.assertIn("next.isDefeated = true", rules)
 
+    def test_init_game_binds_wave_defense_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, wave_defense_spec())
+            output = root / "WaveGate"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "WaveGate" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "WaveGate" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "WaveGate" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var defenderEntity: Entity?", scene_controller)
+            self.assertIn("private var threatEntity: Entity?", scene_controller)
+            self.assertIn("defenderEntity = guardian", scene_controller)
+            self.assertIn("threatEntity = threat", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("threatEntity?.position = threatPosition(", scene_controller)
+            self.assertIn("defenderEntity?.scale = state.isDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]", scene_controller)
+            self.assertIn("private func threatPosition(wave: Int, threatsRemaining: Int) -> SIMD3<Float>", scene_controller)
+
     def test_init_game_generates_lane_dodger_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

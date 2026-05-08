@@ -12,6 +12,46 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 83: RKG State-Bound GameView and Wave Scene Binding
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 16:55 +03
+**Amaç:** Sprint 82 değişikliklerini commit'leyip state-bound `GameView` generator borcunu temizlemek ve `wave_defense_lite` overlay state'ini RealityKit scene'e bağlamak.
+
+**Yapılanlar:**
+
+- Sprint 82 değişiklikleri `71d7fff Add stack puzzle loop and toss scene binding` commit'iyle kaydedildi.
+- `scaffold.py` içindeki state-bound generated `GameView` helper'ı lane-dodger özel adından `_state_bound_game_view_swift` adına taşındı.
+- `Tests/test_rkg_scaffold_generators.py` eklendi; state-bound `GameView` generator sözleşmesi archetype-neutral helper üzerinden kapsanıyor.
+- `wave_defense_lite` generated `ContentView.swift` artık `GameView(state: state)` çağırıyor.
+- `wave_defense_lite` generated `GameSceneController.swift` defender ve threat entity referanslarını saklıyor.
+- Threat entity pozisyonu `wave` ve `threatsRemaining` üzerinden güncelleniyor.
+- Defender entity low-health ve defeated state için basit position/scale feedback'i alıyor.
+- Gerçek generated `wave_defense_lite` proje `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_state_bound_game_view_generator_is_archetype_neutral: first run failed as expected; `_state_bound_game_view_swift` helper missing
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_state_bound_game_view_generator_is_archetype_neutral Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_lane_dodger_state_to_realitykit_scene Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_toss_physics_state_to_realitykit_scene: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_wave_defense_state_to_realitykit_scene: first run failed as expected; wave ContentView still called GameView() and scene had no update(state:)
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_wave_defense_state_to_realitykit_scene Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_state_bound_game_view_generator_is_archetype_neutral: ok, 2 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_archetype_runtime.py Tests/test_rkg_scaffold_generators.py: ok, 28 tests
+/opt/homebrew/bin/python3.12 -c "<generate wave_defense_lite temp project, rkg verify-game>": wave-defense-scene-bound-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 114 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+State-bound `GameView` artık lane-dodger'a özel isim taşımıyor. Scene-controller tarafında hâlâ benzer entity load/reference wiring blokları var; sıradaki düşük riskli refactor bu tekrarı yardımcı fonksiyonlara çekmek olabilir.
+
 ### Sprint 82: RKG Stack Loop and Toss Scene Binding
 
 **Durum:** Tamamlandı

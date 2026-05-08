@@ -32,6 +32,19 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn('Button(isPlaying ? "Throw" : "Start")', content)
         self.assertIn("state = GameRules.resolveToss(state, power: throwPower)", content)
 
+    def test_stack_puzzle_content_view_contract_is_outside_scaffold(self) -> None:
+        content = content_view_swift("Stack Tower", spec_for("stack_puzzle"))
+
+        self.assertIn("@State private var state = GameSessionState()", content)
+        self.assertIn("@State private var stablePlacement = true", content)
+        self.assertIn("GameView()", content)
+        self.assertNotIn("GameView(state: state)", content)
+        self.assertIn('Text("Pieces \\(state.piecesPlaced)/\\(GameRules.maxPieces)")', content)
+        self.assertIn('Toggle("Stable", isOn: $stablePlacement)', content)
+        self.assertIn('Button(isPlaying ? "Place" : "Start")', content)
+        self.assertIn('Button("Collapse")', content)
+        self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
+
     def test_generic_content_view_contract_remains_available(self) -> None:
         content = content_view_swift('Ring "Dash"', spec_for("target_shooter"))
 

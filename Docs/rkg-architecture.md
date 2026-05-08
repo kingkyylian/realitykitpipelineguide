@@ -147,7 +147,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `stack_puzzle` receives first-pass archetype state/rules so gameplay-specific logic can grow without leaking into `GameView`. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, and near-miss state. `wave_defense_lite` has a minimal playable SwiftUI overlay loop for start, fire, damage, wave progression, health/result, reset, and scoring. `toss_physics` has a playable SwiftUI overlay loop for start, power selection, throw resolution, attempts, landing/result, reset, and scoring.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `stack_puzzle` has a minimal playable SwiftUI overlay loop for start, stable/unstable placement, collapse/result, reset, piece count, stable count, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, and near-miss state. `wave_defense_lite` has a minimal playable SwiftUI overlay loop for start, fire, damage, wave progression, health/result, reset, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, and scoring.
 
 ## CLI Roadmap
 
@@ -218,7 +218,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, every declared asset role gets a generated load attempt with fallback. |
-| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, and playable overlay loops for `lane_dodger`, `wave_defense_lite`, and `toss_physics`. |
+| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
 
 ## Store Pack Contract

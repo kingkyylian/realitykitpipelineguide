@@ -12,6 +12,51 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 82: RKG Stack Loop and Toss Scene Binding
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 16:45 +03
+**Amaç:** Lokal release hazırlığını netleştirip RKG tarafında sıradaki oynanabilir archetype ve scene binding işlerini TDD ile ilerletmek.
+
+**Yapılanlar:**
+
+- `CHANGELOG.md` içine mevcut lokal RKG commitlerini kapsayan `Unreleased` bölümü eklendi.
+- `Docs/ai-handoff.md` release notu güncellendi: mevcut `v0.1.0` tag'i yeniden yazılmayacak, sonraki yayın yeni tag/release olarak hazırlanacak.
+- `stack_puzzle` generated `ContentView.swift` artık `@State private var state = GameSessionState()` ve `stablePlacement` toggle'ı kullanıyor.
+- `stack_puzzle` overlay'i score, placed pieces, stable pieces, last event, `Place/Start`, `Collapse`, ve `Reset` kontrollerini üretiyor.
+- `GameRules` stack puzzle için `startStackPuzzleSession`, `placeStackPiece` ve `collapseStack` üretiyor.
+- `toss_physics` generated `ContentView.swift` artık `GameView(state: state)` çağırıyor.
+- `toss_physics` generated `GameView.swift` state-bound coordinator yolunu kullanıyor.
+- `toss_physics` generated `GameSceneController.swift` projectile ve target entity referanslarını saklıyor; projectile pozisyonu/scale'i `lastThrowPower`, `landedInZone`, ve `attemptsRemaining` üzerinden güncelleniyor.
+- Gerçek generated `stack_puzzle` ve `toss_physics` projeleri `rkg verify-game` ile build kapısından geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: first run failed as expected; stack start/place/collapse rules and ContentView controls missing
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: ok, 3 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_toss_physics_state_to_realitykit_scene: first run failed as expected; toss ContentView still called GameView() and scene had no projectile update(state:)
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_toss_physics_state_to_realitykit_scene: ok, 1 test
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_archetype_runtime.py: ok, 26 tests
+/opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, rkg verify-game>": first run caught Swift compile failure; stack ContentView incorrectly passed state into GameView
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold: first regression run failed as expected; stack ContentView emitted GameView(state:)
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_toss_physics_state_to_realitykit_scene: ok, 2 tests
+/opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, rkg verify-game>": stack-puzzle-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -c "<generate toss_physics temp project, rkg verify-game>": toss-physics-scene-bound-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 112 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+String-contract testleri hızlı yön veriyor ama Swift compile kapısı hâlâ zorunlu. `stack_puzzle` için gerçek generated project build'i, testlerin yakalamadığı `GameView(state:)` imza uyumsuzluğunu buldu. Bundan sonra yeni generated Swift UI sözleşmeleri en az bir gerçek `rkg verify-game` kapısıyla kapatılmalı.
+
 ### Sprint 81: RKG Scaffold Cleanup
 
 **Durum:** Tamamlandı

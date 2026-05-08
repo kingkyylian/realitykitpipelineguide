@@ -302,6 +302,8 @@ enum FallbackFactory {
 def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
     if str(spec["game"]["archetype"]) == "lane_dodger":
         return _lane_dodger_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "toss_physics":
+        return _toss_physics_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -370,8 +372,62 @@ final class GameSceneController {{
 """
 
 
+def _toss_physics_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    lines: list[str] = []
+    for entity in runtime_entities_for(spec):
+        variable = entity["variable"]
+        asset_id = _swift_string_literal(entity["asset_id"])
+        role = _swift_string_literal(entity["role"])
+        position = entity["position"]
+        lines.append(
+            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+        {variable}.position = {position}
+        anchor.addChild({variable})"""
+        )
+        if entity["role"] == "projectile":
+            lines.append(f"        projectileEntity = {variable}")
+        elif entity["role"] == "target":
+            lines.append(f"        targetEntity = {variable}")
+    entity_lines = "\n\n".join(lines)
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var projectileEntity: Entity?
+    private var targetEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        projectileEntity?.position = projectilePosition(
+            power: state.lastThrowPower,
+            landed: state.landedInZone,
+            attemptsRemaining: state.attemptsRemaining
+        )
+        projectileEntity?.scale = state.landedInZone ? [1.25, 1.25, 1.25] : [1, 1, 1]
+        targetEntity?.position.y = state.landedInZone ? 0.05 : 0
+    }}
+
+    private func projectilePosition(power: Double, landed: Bool, attemptsRemaining: Int) -> SIMD3<Float> {{
+        if attemptsRemaining == GameRules.maxAttempts && !landed {{
+            return [0, 0.20, -0.65]
+        }}
+        if landed {{
+            return [0, 0.10, -1.25]
+        }}
+        let clampedPower = Float(GameRules.clampedThrowPower(power))
+        return [0, 0.20 + clampedPower * 0.45, -0.65 - clampedPower * 0.75]
+    }}
+}}
+"""
+
+
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
-    if str(spec["game"]["archetype"]) == "lane_dodger":
+    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics"}:
         return _lane_dodger_game_view_swift()
     return """import RealityKit
 import SwiftUI

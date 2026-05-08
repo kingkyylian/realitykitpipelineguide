@@ -140,6 +140,50 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             """static func scoreForStack(piecesPlaced: Int, stablePieces: Int) -> Int {
     piecesPlaced * 10 + stablePieces * 5
 }""",
+            """static func startStackPuzzleSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.lastEvent = "started"
+    return state
+}""",
+            """static func placeStackPiece(_ state: GameSessionState, stable: Bool) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startStackPuzzleSession(sessionSeconds: next.sessionSeconds)
+    }
+    if next.piecesPlaced >= maxPieces {
+        next.phase = .result
+        next.lastEvent = "tower complete"
+        return next
+    }
+    next.piecesPlaced = nextPieceIndex(after: next.piecesPlaced)
+    if stable {
+        next.stablePieces = min(next.stablePieces + 1, next.piecesPlaced)
+        next.lastEvent = "stable piece"
+    } else {
+        next.phase = .result
+        next.collapsed = true
+        next.lastEvent = "collapsed"
+    }
+    next.score = scoreForStack(piecesPlaced: next.piecesPlaced, stablePieces: next.stablePieces)
+    if next.piecesPlaced >= maxPieces && !next.collapsed {
+        next.phase = .result
+        next.lastEvent = "tower complete"
+    }
+    return next
+}""",
+            """static func collapseStack(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return next
+    }
+    next.phase = .result
+    next.collapsed = true
+    next.lastEvent = "collapsed"
+    next.score = scoreForStack(piecesPlaced: next.piecesPlaced, stablePieces: next.stablePieces)
+    return next
+}""",
         ]
     if archetype_id == "wave_defense_lite":
         return [

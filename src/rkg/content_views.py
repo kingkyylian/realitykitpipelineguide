@@ -16,6 +16,8 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
         return _wave_defense_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "toss_physics":
         return _toss_physics_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "stack_puzzle":
+        return _stack_puzzle_content_view_swift(title, subtitle, player_action)
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -67,6 +69,88 @@ def _swift_string_literal(value: object) -> str:
     return json.dumps(str(value), ensure_ascii=True)
 
 
+def _stack_puzzle_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameSessionState()
+    @State private var stablePlacement = true
+
+    private var isPlaying: Bool {{
+        state.phase == .playing
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView()
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Pieces \\(state.piecesPlaced)/\\(GameRules.maxPieces)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Stable \\(state.stablePieces)")
+                        .font(.caption.monospacedDigit())
+                    Text(state.lastEvent.capitalized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Toggle("Stable", isOn: $stablePlacement)
+                        .font(.caption)
+                        .fixedSize()
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(isPlaying ? "Place" : "Start") {{
+                        placeStackPuzzlePiece()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button("Collapse") {{
+                        state = GameRules.collapseStack(state)
+                    }}
+                    .buttonStyle(.bordered)
+                    Button("Reset") {{
+                        state = GameSessionState()
+                        stablePlacement = true
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+        }}
+    }}
+
+    private func placeStackPuzzlePiece() {{
+        if !isPlaying {{
+            state = GameRules.startStackPuzzleSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.placeStackPiece(state, stable: stablePlacement)
+    }}
+}}
+"""
+
+
 def _toss_physics_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
     return f"""import SwiftUI
 
@@ -80,7 +164,7 @@ struct ContentView: View {{
 
     var body: some View {{
         ZStack(alignment: .top) {{
-            GameView()
+            GameView(state: state)
                 .ignoresSafeArea()
 
             VStack(spacing: 8) {{

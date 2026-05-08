@@ -31,7 +31,7 @@ It is not a game-first repository. Treat the fixture app as a test harness for t
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 | Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz`, `release-check --assets`, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
-| Game Factory CLI | First batch active | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`; `score-idea`, `list-archetypes`, `describe-archetype`, and `init-game` are the first RKG surfaces |
+| Game Factory CLI | First batch active | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `src/rkg/archetype_runtime.py`, `src/rkg/content_views.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`, `Tests/test_rkg_archetype_runtime.py`, `Tests/test_rkg_content_views.py`; `score-idea`, `list-archetypes`, `describe-archetype`, `plan-game`, `init-game`, and `verify-game` are active RKG surfaces |
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
@@ -49,18 +49,19 @@ Recommended order:
 
 MCP status: no standalone MCP server ships yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for current automation and future MCP-style wrapping.
 
-Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"` and `rkg = "rkg.cli:main"`, implementation modules live under `src/rkp` and `src/rkg`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `doctor --blender`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `verify-asset`, `accept-asset`, direct USDZ fallback, Meshy USDZ draft generation, and `release-check` are config-aware. `inspect-usdz` checks package existence, expected base color texture, PNG/JPEG dimensions against `maxTextureSize`, text USDA `primvars:st`, and known triangle budget status before screenshot acceptance. `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release-check, stopping at the first failed gate. `release-check --assets` inspects all imported manifest assets before the optional Xcode build. `prompt-asset` remains deterministic by default; Claude script generation requires explicit `--generator claude` and the optional AI dependency. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. `rkg score-idea` evaluates first-wave scope before scaffolding; `rkg list-archetypes` and `rkg describe-archetype` expose the seed archetype registry; `rkg init-game` generates a minimal fixed-camera SwiftUI + RealityKit project with planned RKP manifest assets and procedural runtime fallback. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
+Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"` and `rkg = "rkg.cli:main"`, implementation modules live under `src/rkp` and `src/rkg`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `doctor --blender`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `verify-asset`, `accept-asset`, direct USDZ fallback, Meshy USDZ draft generation, and `release-check` are config-aware. `inspect-usdz` checks package existence, expected base color texture, PNG/JPEG dimensions against `maxTextureSize`, text USDA `primvars:st`, and known triangle budget status before screenshot acceptance. `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release-check, stopping at the first failed gate. `release-check --assets` inspects all imported manifest assets before the optional Xcode build. `prompt-asset` remains deterministic by default; Claude script generation requires explicit `--generator claude` and the optional AI dependency. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. `rkg score-idea` evaluates first-wave scope before scaffolding; `rkg list-archetypes` and `rkg describe-archetype` expose the seed archetype registry; `rkg init-game` generates a minimal fixed-camera SwiftUI + RealityKit project with planned RKP manifest assets and procedural runtime fallback. Current generated playable coverage: `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle` have playable SwiftUI loops; `lane_dodger` and `toss_physics` also bind SwiftUI state into RealityKit scene entity movement. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
 
 ## Current Recommended Next Task
 
 If the user asks to make the repository look professional on GitHub, do this next:
 
-1. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
-2. Create or update the `v0.1.0` tag/release from `CHANGELOG.md` after release notes are reviewed.
-3. Add README badges if they are not already present.
-4. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-5. Add a first-good-issue list for learners.
-6. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
+1. Review and publish the local commits that are ahead of `origin/main`; do not rewrite the existing `v0.1.0` tag.
+2. Create the next release/tag from the `CHANGELOG.md` `Unreleased` section after the release notes are reviewed.
+3. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
+4. Add README badges if they are not already present.
+5. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
+6. Add a first-good-issue list for learners.
+7. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
 
 If the user asks to continue education content, do this next:
 
@@ -72,10 +73,10 @@ If the user asks to continue education content, do this next:
 If the user asks to continue the game factory route, do this next:
 
 1. Keep RKG framed as a multi-archetype RealityKit game factory, not a target-shooter generator.
-2. Add an archetype template registry and shared template contract before deepening any single archetype.
-3. Define reusable generated Swift modules for start, core action, feedback, fail/miss, reset, result, and screenshot states.
-4. Add generated-project build verification with XcodeGen when environment permits.
-5. Add store-pack screenshot checklist generation from `release.screenshots`.
+2. Bind `wave_defense_lite` or `stack_puzzle` SwiftUI state into RealityKit scene entity movement.
+3. Extract the duplicated state-bound `GameView` generator now shared by `lane_dodger` and `toss_physics`.
+4. Define reusable generated Swift modules for start, core action, feedback, fail/miss, reset, result, and screenshot states.
+5. Add store-pack screenshot checklist expansion from `release.screenshots`.
 
 ## Key Files to Read First
 

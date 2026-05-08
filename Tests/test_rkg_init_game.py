@@ -481,6 +481,30 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("next.attemptsRemaining = consumeAttempt(next.attemptsRemaining)", rules)
             self.assertIn("next.phase = .result", rules)
 
+    def test_init_game_binds_toss_physics_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, toss_physics_spec())
+            output = root / "TossArc"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "TossArc" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "TossArc" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "TossArc" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var projectileEntity: Entity?", scene_controller)
+            self.assertIn("private var targetEntity: Entity?", scene_controller)
+            self.assertIn("projectileEntity = ball", scene_controller)
+            self.assertIn("targetEntity = hoop", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("projectileEntity?.position = projectilePosition(", scene_controller)
+            self.assertIn("projectileEntity?.scale = state.landedInZone ? [1.25, 1.25, 1.25] : [1, 1, 1]", scene_controller)
+            self.assertIn("private func projectilePosition(power: Double, landed: Bool, attemptsRemaining: Int) -> SIMD3<Float>", scene_controller)
+
     def test_init_game_generates_stack_puzzle_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -499,6 +523,37 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func nextPieceIndex(after piecesPlaced: Int) -> Int", rules)
             self.assertIn("static func isStable(stablePieces: Int, piecesPlaced: Int) -> Bool", rules)
             self.assertIn("static func scoreForStack(piecesPlaced: Int, stablePieces: Int) -> Int", rules)
+
+    def test_init_game_generates_playable_stack_puzzle_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, stack_puzzle_spec())
+            output = root / "StackTower"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "StackTower" / "ContentView.swift").read_text(encoding="utf-8")
+            state = (output / "Sources" / "StackTower" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "StackTower" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameSessionState()", content)
+            self.assertIn("@State private var stablePlacement = true", content)
+            self.assertIn('Text("Pieces \\(state.piecesPlaced)/\\(GameRules.maxPieces)")', content)
+            self.assertIn('Text("Stable \\(state.stablePieces)")', content)
+            self.assertIn("Text(state.lastEvent.capitalized)", content)
+            self.assertIn('Toggle("Stable", isOn: $stablePlacement)', content)
+            self.assertIn('Button(isPlaying ? "Place" : "Start")', content)
+            self.assertIn('Button("Collapse")', content)
+            self.assertIn('Button("Reset")', content)
+            self.assertIn("state = GameRules.startStackPuzzleSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
+            self.assertIn("state = GameRules.collapseStack(state)", content)
+            self.assertIn("var collapsed: Bool = false", state)
+            self.assertIn("static func startStackPuzzleSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func placeStackPiece(_ state: GameSessionState, stable: Bool) -> GameSessionState", rules)
+            self.assertIn("static func collapseStack(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("next.phase = .result", rules)
+            self.assertIn("next.collapsed = true", rules)
 
     def test_init_game_refuses_non_empty_output_without_force(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

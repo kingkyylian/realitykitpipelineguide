@@ -30,6 +30,17 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("static func clearThreat(_ state: GameSessionState) -> GameSessionState", rules)
         self.assertIn("static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState", rules)
 
+    def test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold(self) -> None:
+        fields = archetype_state_fields("stack_puzzle")
+        rules = "\n".join(archetype_rule_members("stack_puzzle"))
+
+        self.assertIn("var piecesPlaced: Int = 0", fields)
+        self.assertIn("var stablePieces: Int = 0", fields)
+        self.assertIn("var collapsed: Bool = false", fields)
+        self.assertIn("static func startStackPuzzleSession(sessionSeconds: Int) -> GameSessionState", rules)
+        self.assertIn("static func placeStackPiece(_ state: GameSessionState, stable: Bool) -> GameSessionState", rules)
+        self.assertIn("static func collapseStack(_ state: GameSessionState) -> GameSessionState", rules)
+
     def test_unknown_archetype_uses_empty_runtime_contract(self) -> None:
         self.assertEqual(archetype_state_fields("target_shooter"), [])
         self.assertEqual(archetype_rule_members("target_shooter"), [])

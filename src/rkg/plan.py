@@ -12,6 +12,7 @@ GENERATED_SOURCE_MODULES = [
     "{swift_name}App.swift",
     "ContentView.swift",
     "GameState.swift",
+    "ScreenshotState.swift",
     "GameRules.swift",
     "GameSceneController.swift",
     "GameView.swift",

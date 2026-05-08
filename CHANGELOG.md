@@ -6,7 +6,7 @@
 
 - `rkg` RealityKit game-factory CLI surface for idea scoring, archetype discovery, spec validation, game planning, project scaffolding, generated game verification, and store-pack checklist generation.
 - Archetype registry for `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, and `wave_defense_lite`.
-- Config-aware generated game projects with shared Swift modules: `GameState`, `GameRules`, `GameSceneController`, `GameView`, `AssetLoader`, `FallbackFactory`, and result/UI surfaces.
+- Config-aware generated game projects with shared Swift modules: `GameState`, `ScreenshotState`, `GameRules`, `GameSceneController`, `GameView`, `AssetLoader`, `FallbackFactory`, and result/UI surfaces.
 - Required asset-role validation and runtime entity planning for generated games.
 - Archetype screenshot proof cues exposed through `plan-game --json` and generated store screenshot checklists.
 - Generated store screenshot QA runbooks that sequence capture states from `screenshot_proofs`.

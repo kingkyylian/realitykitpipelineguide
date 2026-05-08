@@ -102,6 +102,7 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(payload["swift_name"], "RingDash")
         self.assertEqual(payload["archetype"]["id"], "target_shooter")
         self.assertIn("Sources/RingDash/GameState.swift", payload["files"])
+        self.assertIn("Sources/RingDash/ScreenshotState.swift", payload["files"])
         self.assertIn("Sources/RingDash/FallbackFactory.swift", payload["files"])
         self.assertIn("Docs/store/screenshots.md", payload["files"])
         self.assertIn("Docs/store/screenshot-qa.md", payload["files"])

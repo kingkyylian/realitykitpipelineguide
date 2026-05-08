@@ -7,7 +7,7 @@ from typing import Any, Mapping
 
 from rkg.archetype_runtime import archetype_rule_members, archetype_state_fields, indent_swift_block
 from rkg.content_views import content_view_swift
-from rkg.plan import runtime_entities_for, swift_name_for
+from rkg.plan import runtime_entities_for, swift_identifier_for, swift_name_for
 from rkg.spec import assert_valid_game_spec
 from rkg.store_pack import build_store_pack
 
@@ -36,6 +36,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / f"{swift_name}App.swift", _app_swift(swift_name))
     _write_text(output / "Sources" / swift_name / "ContentView.swift", content_view_swift(display_name, spec))
     _write_text(output / "Sources" / swift_name / "GameState.swift", _game_state_swift(spec))
+    _write_text(output / "Sources" / swift_name / "ScreenshotState.swift", _screenshot_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
@@ -216,6 +217,24 @@ struct GameSessionState {{
     var attempt: Int = 1
     var lastEvent: String = "none"
 {extra_fields}
+}}
+"""
+
+
+def _screenshot_state_swift(spec: Mapping[str, Any]) -> str:
+    cases = "\n".join(
+        f'    case {swift_identifier_for(str(state))} = "{state}"' for state in spec["release"]["screenshots"]
+    )
+    return f"""import Foundation
+
+enum ScreenshotState: String, CaseIterable, Identifiable {{
+{cases}
+
+    var id: String {{ rawValue }}
+
+    var evidencePath: String {{
+        "Docs/screenshots/\\(rawValue).jpg"
+    }}
 }}
 """
 

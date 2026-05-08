@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 88: RKG Typed Screenshot State Module
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:27 +03
+**Amaç:** Generated Swift projelerde `release.screenshots` listesini typed `ScreenshotState` modülüne dönüştürmek.
+
+**Yapılanlar:**
+
+- `plan-game` source file listesine `Sources/<GameName>/ScreenshotState.swift` eklendi.
+- `rkg init-game` artık her generated proje için `ScreenshotState.swift` yazıyor.
+- `ScreenshotState` enum'u `String`, `CaseIterable`, ve `Identifiable`; case raw value'ları GameSpec screenshot state id'lerini koruyor.
+- Her case için `evidencePath` `Docs/screenshots/<state>.jpg` yolunu üretüyor.
+- RKG architecture, game factory, changelog ve AI handoff dokümanları yeni generated Swift modül sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_screenshot_state_generator_emits_typed_release_states: first run failed as expected; `ScreenshotState.swift` was not planned/generated and helper was missing
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_screenshot_state_generator_emits_typed_release_states: ok, 3 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py: ok, 27 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert ScreenshotState near_miss case, rkg verify-game>": screenshot-state-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 119 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Store QA runbook insanın izleyeceği capture sırasını veriyor; `ScreenshotState.swift` aynı state id'lerini Swift tarafında typed sözleşmeye bağlıyor. Bu, ileride screenshot capture automation veya in-app QA overlay için aynı release state kaynaklarını kullanmayı kolaylaştıracak.
+
 ### Sprint 87: RKG Screenshot QA Runbook
 
 **Durum:** Tamamlandı

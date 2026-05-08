@@ -83,6 +83,18 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn('let spike = AssetLoader.loadPrimaryEntity(assetId: "spike", role: "obstacle")', entity_lines)
         self.assertEqual(entity_lines.count("obstacleEntity ="), 1)
 
+    def test_screenshot_state_generator_emits_typed_release_states(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_screenshot_state_swift"))
+
+        swift = scaffold._screenshot_state_swift(scene_spec())
+
+        self.assertIn("enum ScreenshotState: String, CaseIterable, Identifiable", swift)
+        self.assertIn('case gameplayStart = "gameplay_start"', swift)
+        self.assertIn('case midSession = "mid_session"', swift)
+        self.assertIn('case results = "results"', swift)
+        self.assertIn("var evidencePath: String", swift)
+        self.assertIn('"Docs/screenshots/\\(rawValue).jpg"', swift)
+
 
 if __name__ == "__main__":
     unittest.main()

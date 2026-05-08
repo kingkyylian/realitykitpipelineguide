@@ -209,6 +209,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertTrue((output / "Sources" / "RingDash" / "ContentView.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "GameView.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "GameState.swift").exists())
+            self.assertTrue((output / "Sources" / "RingDash" / "ScreenshotState.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "GameRules.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "GameSceneController.swift").exists())
             self.assertTrue((output / "Sources" / "RingDash" / "AssetLoader.swift").exists())

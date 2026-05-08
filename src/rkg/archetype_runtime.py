@@ -69,9 +69,8 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     next.distance += 1
     next.obstacleLane = nextObstacleLane(after: next.distance)
     if isCollision(playerLane: next.currentLane, obstacleLane: next.obstacleLane) {
-        next.phase = .result
         next.isDefeated = true
-        next.lastEvent = "hit obstacle"
+        next = SessionControl.markResult(next, event: "hit obstacle")
     } else if isNearMiss(playerLane: next.currentLane, obstacleLane: next.obstacleLane) {
         next.nearMisses += 1
         next.lastEvent = "near miss"
@@ -117,11 +116,9 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     next.attemptsRemaining = consumeAttempt(next.attemptsRemaining)
     next.score += scoreForLanding(inZone: landed, power: clampedPower)
     if landed {
-        next.phase = .result
-        next.lastEvent = "landed"
+        next = SessionControl.markResult(next, event: "landed")
     } else if next.attemptsRemaining == 0 {
-        next.phase = .result
-        next.lastEvent = "attempts spent"
+        next = SessionControl.markResult(next, event: "attempts spent")
     } else {
         next.lastEvent = "missed"
     }
@@ -153,8 +150,7 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
         return startStackPuzzleSession(sessionSeconds: next.sessionSeconds)
     }
     if next.piecesPlaced >= maxPieces {
-        next.phase = .result
-        next.lastEvent = "tower complete"
+        next = SessionControl.markResult(next, event: "tower complete")
         return next
     }
     next.piecesPlaced = nextPieceIndex(after: next.piecesPlaced)
@@ -162,14 +158,12 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
         next.stablePieces = min(next.stablePieces + 1, next.piecesPlaced)
         next.lastEvent = "stable piece"
     } else {
-        next.phase = .result
         next.collapsed = true
-        next.lastEvent = "collapsed"
+        next = SessionControl.markResult(next, event: "collapsed")
     }
     next.score = scoreForStack(piecesPlaced: next.piecesPlaced, stablePieces: next.stablePieces)
     if next.piecesPlaced >= maxPieces && !next.collapsed {
-        next.phase = .result
-        next.lastEvent = "tower complete"
+        next = SessionControl.markResult(next, event: "tower complete")
     }
     return next
 }""",
@@ -178,10 +172,9 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     if next.phase != .playing {
         return next
     }
-    next.phase = .result
     next.collapsed = true
-    next.lastEvent = "collapsed"
     next.score = scoreForStack(piecesPlaced: next.piecesPlaced, stablePieces: next.stablePieces)
+    next = SessionControl.markResult(next, event: "collapsed")
     return next
 }""",
         ]
@@ -234,9 +227,8 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     }
     next.health = healthAfterDamage(next.health)
     if isDefeated(health: next.health) {
-        next.phase = .result
         next.isDefeated = true
-        next.lastEvent = "base breached"
+        next = SessionControl.markResult(next, event: "base breached")
     } else {
         next.lastEvent = "took damage"
     }

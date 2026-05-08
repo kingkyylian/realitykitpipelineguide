@@ -12,6 +12,41 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 90: RKG Result Transition Routing
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:43 +03
+**Amaç:** Generated GameRules içindeki result/fail transition'larını `SessionControl.markResult` üzerinden geçirmek.
+
+**Yapılanlar:**
+
+- `lane_dodger` collision sonucunu `SessionControl.markResult(next, event: "hit obstacle")` ile kapatıyor.
+- `toss_physics` landing ve attempts-spent result transition'larını `SessionControl.markResult` ile kapatıyor.
+- `stack_puzzle` collapsed ve tower-complete result transition'larını `SessionControl.markResult` ile kapatıyor.
+- `wave_defense_lite` defeated/base-breached transition'ını `SessionControl.markResult` ile kapatıyor.
+- Archetype-specific flag ve score alanları kendi rules içinde kalıyor; shared helper yalnızca phase/event result yazımını topluyor.
+- Changelog, game factory, RKG architecture ve AI handoff dokümanları güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_lane_dodger_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_wave_defense_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_toss_physics_result_transitions_use_session_control Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: first run failed as expected; generated GameRules still wrote result phase/event inline
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_lane_dodger_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_wave_defense_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_toss_physics_result_transitions_use_session_control Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_lane_dodger_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_wave_defense_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_toss_physics_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_stack_puzzle_loop: ok, 8 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetype_runtime.py Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_scaffold_generators.py: ok, 33 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, assert markResult usage, rkg verify-game>": result-control-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 121 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+`SessionControl.markResult` artık gerçek generated rules tarafından kullanılıyor. Ortak helper'ın sınırı net: result phase/event standardizasyonu burada, skor ve archetype-specific outcome flag'leri hâlâ ilgili archetype rule'larında.
+
 ### Sprint 89: RKG Shared Session Control Module
 
 **Durum:** Tamamlandı

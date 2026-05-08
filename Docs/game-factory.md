@@ -111,7 +111,7 @@ python3 Tools/rkg.py validate-spec GameSpec.yaml
 python3 Tools/rkg.py plan-game GameSpec.yaml
 ```
 
-`plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation.
+`plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation. Archetype rules should use `SessionControl.markResult` for result/fail transitions after setting their own gameplay-specific flags.
 
 ### 2. Vertical Slice
 

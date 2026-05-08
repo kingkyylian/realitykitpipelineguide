@@ -20,6 +20,7 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("var obstacleLane: Int = 0", fields)
         self.assertIn("var isDefeated: Bool = false", fields)
         self.assertIn("static func advanceLaneDodgerFrame(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "hit obstacle")', rules)
 
     def test_wave_defense_runtime_contract_is_exposed_outside_scaffold(self) -> None:
         fields = archetype_state_fields("wave_defense_lite")
@@ -29,6 +30,7 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("var clearedThreats: Int = 0", fields)
         self.assertIn("static func clearThreat(_ state: GameSessionState) -> GameSessionState", rules)
         self.assertIn("static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "base breached")', rules)
 
     def test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold(self) -> None:
         fields = archetype_state_fields("stack_puzzle")
@@ -40,6 +42,13 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("static func startStackPuzzleSession(sessionSeconds: Int) -> GameSessionState", rules)
         self.assertIn("static func placeStackPiece(_ state: GameSessionState, stable: Bool) -> GameSessionState", rules)
         self.assertIn("static func collapseStack(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "collapsed")', rules)
+
+    def test_toss_physics_result_transitions_use_session_control(self) -> None:
+        rules = "\n".join(archetype_rule_members("toss_physics"))
+
+        self.assertIn('next = SessionControl.markResult(next, event: "landed")', rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "attempts spent")', rules)
 
     def test_unknown_archetype_uses_empty_runtime_contract(self) -> None:
         self.assertEqual(archetype_state_fields("target_shooter"), [])

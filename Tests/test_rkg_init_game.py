@@ -359,7 +359,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func startWaveDefenseSession(sessionSeconds: Int) -> GameSessionState", rules)
             self.assertIn("static func clearThreat(_ state: GameSessionState) -> GameSessionState", rules)
             self.assertIn("static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState", rules)
-            self.assertIn("next.phase = .result", rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "base breached")', rules)
             self.assertIn("next.isDefeated = true", rules)
 
     def test_init_game_binds_wave_defense_state_to_realitykit_scene(self) -> None:
@@ -438,9 +438,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func startLaneDodgerSession(sessionSeconds: Int) -> GameSessionState", rules)
             self.assertIn("static func advanceLaneDodgerFrame(_ state: GameSessionState) -> GameSessionState", rules)
             self.assertIn("static func isNearMiss(playerLane: Int, obstacleLane: Int) -> Bool", rules)
-            self.assertIn("next.phase = .result", rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "hit obstacle")', rules)
             self.assertIn("next.isDefeated = true", rules)
-            self.assertIn('next.lastEvent = "hit obstacle"', rules)
 
     def test_init_game_binds_lane_dodger_state_to_realitykit_scene(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -512,7 +511,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func startTossSession(sessionSeconds: Int) -> GameSessionState", rules)
             self.assertIn("static func resolveToss(_ state: GameSessionState, power: Double) -> GameSessionState", rules)
             self.assertIn("next.attemptsRemaining = consumeAttempt(next.attemptsRemaining)", rules)
-            self.assertIn("next.phase = .result", rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "landed")', rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "attempts spent")', rules)
 
     def test_init_game_binds_toss_physics_state_to_realitykit_scene(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -587,7 +587,8 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func startStackPuzzleSession(sessionSeconds: Int) -> GameSessionState", rules)
             self.assertIn("static func placeStackPiece(_ state: GameSessionState, stable: Bool) -> GameSessionState", rules)
             self.assertIn("static func collapseStack(_ state: GameSessionState) -> GameSessionState", rules)
-            self.assertIn("next.phase = .result", rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "collapsed")', rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "tower complete")', rules)
             self.assertIn("next.collapsed = true", rules)
 
     def test_init_game_binds_stack_puzzle_state_to_realitykit_scene(self) -> None:

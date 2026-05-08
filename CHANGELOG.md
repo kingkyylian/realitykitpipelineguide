@@ -19,6 +19,7 @@
 - Clarified the public product boundary: RKP is the active toolkit surface, RKG is experimental, and the included app is a verification fixture.
 - Added Makefile `bootstrap-dev` and `verify-local` targets for local contributor setup and lint/test/doctor verification.
 - Aligned Ruff configuration with test/tool bootstrap imports, cleaned current lint debt, and kept `pipeline doctor` from scanning local `.venv` metadata.
+- Split the RealityKit fixture view into focused arena, target factory, hit-effect, and material helpers while preserving target fallback order.
 - Split growing RKG Swift string emitters out of `src/rkg/scaffold.py` into focused runtime/content-view generation modules.
 - Renamed the shared state-bound generated `GameView` helper away from lane-dodger-specific terminology.
 - Extracted shared generated scene entity load/reference wiring for state-bound RKG archetypes.

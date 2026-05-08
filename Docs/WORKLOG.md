@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 97: GameARView Fixture Refactor
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 18:55 +03
+**Amaç:** Fixture app'in tek büyük `GameARView.swift` dosyasını davranışı bozmadan daha okunur öğretici parçalara ayırmak.
+
+**Yapılanlar:**
+
+- `GameARView.swift` 622 satırdan 430 satıra indirildi.
+- Arena/backdrop kurulumu `ArenaBuilder.swift` içine taşındı.
+- Target asset sırası, imported orientation/scale, spawn slotları ve procedural fallback `TargetFactory.swift` içine taşındı.
+- Hit spark/flash lifecycle `HitEffectSystem.swift` içine taşındı.
+- PBR material helper'ı `RealityMaterials.swift` ile ortaklaştırıldı.
+- Refactor sınırını koruyan `Tests/test_fixture_refactor.py` eklendi.
+- XcodeGen project dosyası yeni Swift kaynaklarını içerecek şekilde yenilendi.
+
+**Verification:**
+
+```text
+.venv/bin/python -m unittest Tests/test_fixture_refactor.py: first run failed as expected; ArenaBuilder.swift missing
+.venv/bin/python -m unittest Tests/test_fixture_refactor.py: ok, 1 test
+.venv/bin/python -m ruff check Tests/test_fixture_refactor.py: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: first run failed because stale .xcodeproj did not include new Swift files
+rtk xcodegen generate: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok; CoreSimulator sandbox warnings only
+rtk make verify-local: ok, compileall + Ruff + 130 tests + pipeline doctor
+rtk make validate: manifest ok
+rtk .venv/bin/python Tools/rkp.py doctor: pipeline doctor: ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Bu refactor davranış eklemedi; amaç fixture app'i üretim oyunu gibi büyütmek değil, asset pipeline kanıt harness'ını okunabilir tutmak. Yeni Swift dosyası ekleyince doğrudan `xcodebuild` öncesi XcodeGen yenilemek gerekiyor; aksi halde `.xcodeproj` yeni dosyaları görmüyor.
+
 ### Sprint 96: Product Boundary and Dev Setup
 
 **Durum:** Tamamlandı

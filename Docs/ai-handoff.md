@@ -87,17 +87,19 @@ If the user asks to continue the game factory route, do this next:
 5. `Docs/WORKLOG.md`
 6. `Tools/asset_manifest.json`
 7. `Sources/RealityKitPipelineDemo/GameARView.swift`
+8. `Sources/RealityKitPipelineDemo/TargetFactory.swift`
+9. `Sources/RealityKitPipelineDemo/ArenaBuilder.swift`
 
 ## Known Implementation Details
 
 - `GameARView` uses non-AR RealityKit mode as a verification fixture.
-- `GameARView` loads `target_basic_textured` first, then `target_basic`, then procedural fallback.
-- Imported target scale is normalized with `0.90`.
-- Spawn positions are deterministic slots for teaching/debugging.
+- `TargetFactory` loads `target_basic_textured` first, then `target_basic`, then procedural fallback.
+- `TargetFactory` normalizes imported target scale with `0.90`.
+- `TargetFactory` owns deterministic spawn slots for teaching/debugging.
 - Ring scoring is deterministic screen-space scoring: bullseye `+5`, inner ring `+3`, outer ring `+1`.
-- `GameARView.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
+- `ArenaBuilder.addArena()` tries `arena_floor` first, then falls back to procedural floor + lane markers.
 - `arena_floor.usdz` is imported and manifest status is `imported`.
-- Fixture polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX.
+- Fixture polish exists: darker backdrop, readable HUD, reticle overlay, projectile-delayed scoring, and hit spark VFX through `HitEffectSystem`.
 - Modern RealityKit pass exists: physics bodies, collision events, PBR helper materials, and SDK-stable target spawn animation with `move(to:relativeTo:duration:)`.
 - Public onboarding includes `README.md`, `LICENSE`, `CONTRIBUTING.md`, `Makefile`, GitHub Actions, issue templates, and `Tools/blender`.
 - `Build/` is ignored scratch output.

@@ -5,11 +5,6 @@ import SwiftUI
 import UIKit
 
 final class GameARView: ARView {
-    private struct LoadedTargetAsset {
-        let name: String
-        let model: ModelEntity
-    }
-
     private struct Projectile {
         let entity: ModelEntity
         let velocity: SIMD3<Float>
@@ -18,34 +13,17 @@ final class GameARView: ARView {
         var age: TimeInterval
     }
 
-    private struct HitEffect {
-        let root: Entity
-        let flash: ModelEntity
-        var sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)]
-        var age: TimeInterval
-        let duration: TimeInterval
-    }
-
     private let gameSession: GameSession
     private let worldAnchor = AnchorEntity(world: .zero)
+    private var targetFactory = TargetFactory()
+    private var hitEffectSystem = HitEffectSystem()
     private var subscriptions: [Cancellable] = []
     private var projectiles: [Projectile] = []
     private var targets: [ModelEntity] = []
-    private var hitEffects: [HitEffect] = []
     private var lastSpawnToken = 0
     private var lastResetToken = 0
-    private var nextTargetSlot = 0
     private var hasConfiguredScene = false
-    private let importedTargetOrientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
-    private let importedTargetScale: Float = 0.90
     private let playerOrigin = SIMD3<Float>(0, 0.08, 0.2)
-    private let targetSpawnSlots: [SIMD3<Float>] = [
-        [-0.32, 0.28, -1.92],
-        [0.32, 0.28, -1.92],
-        [0.0, 0.50, -2.05],
-        [-0.62, 0.18, -2.02],
-        [0.62, 0.18, -2.02]
-    ]
 
     init(frame: CGRect, session: GameSession) {
         self.gameSession = session
@@ -70,8 +48,8 @@ final class GameARView: ARView {
         scene.anchors.append(worldAnchor)
 
         addLighting()
-        addShowcaseBackdrop()
-        addArena()
+        ArenaBuilder.addShowcaseBackdrop(to: worldAnchor)
+        ArenaBuilder.addArena(to: worldAnchor)
         gameSession.startRun(targetCount: targetCountForCurrentWave())
         spawnWaveTargets()
 
@@ -113,111 +91,17 @@ final class GameARView: ARView {
         worldAnchor.addChild(light)
     }
 
-    private func addShowcaseBackdrop() {
-        let backdropMaterial = makePBRMaterial(
-            color: UIColor(red: 0.08, green: 0.10, blue: 0.12, alpha: 1),
-            roughness: 0.82,
-            metallic: 0.0
-        )
-        let backdrop = ModelEntity(mesh: .generateBox(size: [3.8, 1.6, 0.06]), materials: [backdropMaterial])
-        backdrop.name = "showcase_backdrop"
-        backdrop.position = [0, 0.18, -2.85]
-        worldAnchor.addChild(backdrop)
-    }
-
-    private func addArena() {
-        if let importedArena = ImportedAssetLoader.loadModel(named: "arena_floor") {
-            importedArena.name = "arena_floor"
-            importedArena.position = [0, -0.42, -1.6]
-            worldAnchor.addChild(importedArena)
-            return
-        }
-
-        let floorMaterial = makePBRMaterial(
-            color: UIColor(red: 0.14, green: 0.18, blue: 0.20, alpha: 1),
-            roughness: 0.9,
-            metallic: 0.0
-        )
-        let floor = ModelEntity(mesh: .generateBox(size: [3.2, 0.04, 3.2]), materials: [floorMaterial])
-        floor.name = "arena_floor"
-        floor.position = [0, -0.42, -1.6]
-        worldAnchor.addChild(floor)
-
-        let laneMaterial = makePBRMaterial(
-            color: UIColor(red: 0.20, green: 0.30, blue: 0.34, alpha: 1),
-            roughness: 0.74,
-            metallic: 0.0
-        )
-        for x in stride(from: -1.2, through: 1.2, by: 0.6) {
-            let lane = ModelEntity(mesh: .generateBox(size: [0.018, 0.012, 2.9]), materials: [laneMaterial])
-            lane.position = [Float(x), -0.38, -1.6]
-            worldAnchor.addChild(lane)
-        }
-    }
-
     private func spawnTarget() {
-        let importedTarget = loadTargetAsset()
-        let target = importedTarget?.model ?? makeProceduralTarget()
-        if let importedTarget {
-            applyImportedTargetOrientation(to: target)
-            target.scale = SIMD3<Float>(repeating: importedTargetScale)
-            gameSession.status = "\(importedTarget.name) ready"
+        let spawnedTarget = targetFactory.makeTarget(playerOrigin: playerOrigin, relativeTo: worldAnchor)
+        let target = spawnedTarget.model
+        if let assetName = spawnedTarget.assetName {
+            gameSession.status = "\(assetName) ready"
         }
 
-        let targetPosition = nextSpawnPosition()
-
-        target.name = "target"
-        target.position = targetPosition
-        if importedTarget != nil {
-            target.look(at: playerOrigin, from: targetPosition, relativeTo: worldAnchor)
-            target.orientation *= simd_quatf(angle: .pi, axis: [0, 1, 0])
-        }
-
-        target.components.set(CollisionComponent(shapes: [.generateSphere(radius: 0.32)]))
-        target.components.set(PhysicsBodyComponent(
-            shapes: [.generateSphere(radius: 0.32)],
-            mass: 0,
-            mode: .static
-        ))
         targets.append(target)
         worldAnchor.addChild(target)
         animateTargetSpawn(target)
         gameSession.activeTargets = targets.count
-    }
-
-    private func loadTargetAsset() -> LoadedTargetAsset? {
-        for name in ["target_basic_textured", "target_basic"] {
-            if let model = ImportedAssetLoader.loadModel(named: name) {
-                return LoadedTargetAsset(name: name, model: model)
-            }
-        }
-        return nil
-    }
-
-    private func nextSpawnPosition() -> SIMD3<Float> {
-        let position = targetSpawnSlots[nextTargetSlot % targetSpawnSlots.count]
-        nextTargetSlot += 1
-        return position
-    }
-
-    private func applyImportedTargetOrientation(to entity: Entity) {
-        guard !entity.children.isEmpty else {
-            entity.orientation = importedTargetOrientation
-            return
-        }
-
-        for child in entity.children {
-            child.orientation *= importedTargetOrientation
-        }
-    }
-
-    private func makeProceduralTarget() -> ModelEntity {
-        let material = makePBRMaterial(
-            color: UIColor(red: 0.95, green: 0.38, blue: 0.18, alpha: 1),
-            roughness: 0.44,
-            metallic: 0.0
-        )
-        return ModelEntity(mesh: .generateSphere(radius: 0.15), materials: [material])
     }
 
     @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
@@ -263,7 +147,7 @@ final class GameARView: ARView {
         intendedTargetID: ObjectIdentifier?,
         scoreOverride: (points: Int, zone: String)?
     ) {
-        let material = makePBRMaterial(
+        let material = RealityMaterials.pbr(
             color: UIColor(red: 0.30, green: 0.72, blue: 1.0, alpha: 1),
             roughness: 0.26,
             metallic: 0.0
@@ -328,7 +212,7 @@ final class GameARView: ARView {
             removeExpiredProjectiles()
         }
 
-        updateHitEffects(deltaTime: deltaTime)
+        hitEffectSystem.update(deltaTime: deltaTime)
     }
 
     private func handleCollision(_ event: CollisionEvents.Began) {
@@ -389,7 +273,7 @@ final class GameARView: ARView {
 
         for target in targets where hitTargets.contains(ObjectIdentifier(target)) {
             let score = hitScores[ObjectIdentifier(target)] ?? (points: 1, zone: "Outer ring")
-            addHitEffect(at: target.position, points: score.points)
+            hitEffectSystem.add(at: target.position, points: score.points, playerOrigin: playerOrigin, worldAnchor: worldAnchor)
             playHitSound(points: score.points)
         }
 
@@ -427,7 +311,7 @@ final class GameARView: ARView {
         let score = projectile.scoreOverride ?? scoreForHit(projectilePosition: projectile.entity.position, target: target)
 
         gameSession.recordHit(points: score.points, zone: score.zone)
-        addHitEffect(at: target.position, points: score.points)
+        hitEffectSystem.add(at: target.position, points: score.points, playerOrigin: playerOrigin, worldAnchor: worldAnchor)
         playHitSound(points: score.points)
 
         projectile.entity.removeFromParent()
@@ -483,11 +367,11 @@ final class GameARView: ARView {
     }
 
     private func targetCountForCurrentWave() -> Int {
-        WaveRules.targetCountForCurrentWave(wave: gameSession.wave, maxTargets: targetSpawnSlots.count)
+        WaveRules.targetCountForCurrentWave(wave: gameSession.wave, maxTargets: targetFactory.maxSpawnSlots)
     }
 
     private func targetCountForNextWave() -> Int {
-        WaveRules.targetCountForNextWave(wave: gameSession.wave, maxTargets: targetSpawnSlots.count)
+        WaveRules.targetCountForNextWave(wave: gameSession.wave, maxTargets: targetFactory.maxSpawnSlots)
     }
 
     private func spawnWaveTargets() {
@@ -515,45 +399,6 @@ final class GameARView: ARView {
         }
     }
 
-    private func addHitEffect(at position: SIMD3<Float>, points: Int) {
-        let root = Entity()
-        root.name = "hit_effect"
-        root.position = position
-
-        let color: UIColor
-        switch points {
-        case 5:
-            color = UIColor(red: 0.20, green: 0.92, blue: 1.0, alpha: 1.0)
-        case 3:
-            color = UIColor(red: 1.0, green: 0.82, blue: 0.22, alpha: 1.0)
-        default:
-            color = UIColor(red: 0.98, green: 0.34, blue: 0.24, alpha: 1.0)
-        }
-
-        let material = SimpleMaterial(color: color, roughness: 0.35, isMetallic: false)
-        var sparks: [(entity: ModelEntity, velocity: SIMD3<Float>)] = []
-
-        for index in 0..<18 {
-            let angle = (Float(index) / 18.0) * 2.0 * .pi
-            let vertical = sin(Float(index) * 1.7) * 0.07
-            let spark = ModelEntity(mesh: .generateSphere(radius: 0.014), materials: [material])
-            spark.position = [0, 0, 0.03]
-            root.addChild(spark)
-            sparks.append((
-                entity: spark,
-                velocity: [cos(angle) * 0.62, sin(angle) * 0.62, vertical + 0.16]
-            ))
-        }
-
-        let flash = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
-        flash.position = [0, 0, 0.04]
-        root.addChild(flash)
-
-        root.look(at: playerOrigin, from: position, relativeTo: worldAnchor)
-        worldAnchor.addChild(root)
-        hitEffects.append(HitEffect(root: root, flash: flash, sparks: sparks, age: 0, duration: 0.36))
-    }
-
     private func animateTargetSpawn(_ target: Entity) {
         let originalScale = target.scale
         let finalTransform = target.transform
@@ -572,50 +417,13 @@ final class GameARView: ARView {
         }
     }
 
-    private func makePBRMaterial(color: UIColor, roughness: Float, metallic: Float) -> PhysicallyBasedMaterial {
-        var material = PhysicallyBasedMaterial()
-        material.baseColor = .init(tint: color)
-        material.roughness = .init(floatLiteral: roughness)
-        material.metallic = .init(floatLiteral: metallic)
-        return material
-    }
-
-    private func updateHitEffects(deltaTime: TimeInterval) {
-        guard !hitEffects.isEmpty else { return }
-
-        for index in hitEffects.indices {
-            hitEffects[index].age += deltaTime
-            let progress = min(Float(hitEffects[index].age / hitEffects[index].duration), 1.0)
-            let dt = Float(deltaTime)
-
-            for i in hitEffects[index].sparks.indices {
-                hitEffects[index].sparks[i].velocity.y -= 3.2 * dt
-                hitEffects[index].sparks[i].entity.position += hitEffects[index].sparks[i].velocity * dt
-                let fadeScale = max(0, 1.0 - progress * 1.1)
-                hitEffects[index].sparks[i].entity.scale = SIMD3<Float>(repeating: fadeScale)
-            }
-
-            let flashScale = sin(progress * .pi) * 1.8
-            hitEffects[index].flash.scale = SIMD3<Float>(repeating: max(0, flashScale))
-        }
-
-        hitEffects.removeAll { effect in
-            let shouldRemove = effect.age >= effect.duration
-            if shouldRemove {
-                effect.root.removeFromParent()
-            }
-            return shouldRemove
-        }
-    }
-
     private func resetScene() {
         projectiles.forEach { $0.entity.removeFromParent() }
         targets.forEach { $0.removeFromParent() }
-        hitEffects.forEach { $0.root.removeFromParent() }
         projectiles.removeAll()
         targets.removeAll()
-        hitEffects.removeAll()
-        nextTargetSlot = 0
+        hitEffectSystem.removeAll()
+        targetFactory.resetSpawnSlots()
         gameSession.reset()
         spawnWaveTargets()
     }

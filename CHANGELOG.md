@@ -15,6 +15,7 @@
 
 - Split growing RKG Swift string emitters out of `src/rkg/scaffold.py` into focused runtime/content-view generation modules.
 - Renamed the shared state-bound generated `GameView` helper away from lane-dodger-specific terminology.
+- Extracted shared generated scene entity load/reference wiring for state-bound RKG archetypes.
 - Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
 - Clarified the multi-archetype RKG scope so target shooter remains one fixture, not the whole product.
 

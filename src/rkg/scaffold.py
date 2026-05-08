@@ -333,23 +333,28 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
         anchor.addChild({variable})"""
 
 
-def _lane_dodger_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+def _scene_entity_setup_lines(spec: Mapping[str, Any], bindings: list[tuple[str, set[str]]]) -> str:
     lines: list[str] = []
+    bound_properties: set[str] = set()
     for entity in runtime_entities_for(spec):
-        variable = entity["variable"]
-        asset_id = _swift_string_literal(entity["asset_id"])
-        role = _swift_string_literal(entity["role"])
-        position = entity["position"]
-        lines.append(
-            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
-        {variable}.position = {position}
-        anchor.addChild({variable})"""
-        )
-        if entity["role"] == "player":
-            lines.append(f"        playerEntity = {variable}")
-        elif entity["role"] == "obstacle":
-            lines.append(f"        obstacleEntity = {variable}")
-    entity_lines = "\n\n".join(lines)
+        lines.append(_runtime_entity_swift(entity))
+        for property_name, roles in bindings:
+            if property_name in bound_properties:
+                continue
+            if entity["role"] in roles:
+                lines.append(f"        {property_name} = {entity['variable']}")
+                bound_properties.add(property_name)
+    return "\n\n".join(lines)
+
+
+def _lane_dodger_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("playerEntity", {"player"}),
+            ("obstacleEntity", {"obstacle", "hazard"}),
+        ],
+    )
     return f"""import RealityKit
 
 final class GameSceneController {{
@@ -377,22 +382,13 @@ final class GameSceneController {{
 
 
 def _toss_physics_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
-    lines: list[str] = []
-    for entity in runtime_entities_for(spec):
-        variable = entity["variable"]
-        asset_id = _swift_string_literal(entity["asset_id"])
-        role = _swift_string_literal(entity["role"])
-        position = entity["position"]
-        lines.append(
-            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
-        {variable}.position = {position}
-        anchor.addChild({variable})"""
-        )
-        if entity["role"] == "projectile":
-            lines.append(f"        projectileEntity = {variable}")
-        elif entity["role"] == "target":
-            lines.append(f"        targetEntity = {variable}")
-    entity_lines = "\n\n".join(lines)
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("projectileEntity", {"projectile"}),
+            ("targetEntity", {"target"}),
+        ],
+    )
     return f"""import RealityKit
 
 final class GameSceneController {{
@@ -431,24 +427,13 @@ final class GameSceneController {{
 
 
 def _wave_defense_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
-    lines: list[str] = []
-    threat_bound = False
-    for entity in runtime_entities_for(spec):
-        variable = entity["variable"]
-        asset_id = _swift_string_literal(entity["asset_id"])
-        role = _swift_string_literal(entity["role"])
-        position = entity["position"]
-        lines.append(
-            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
-        {variable}.position = {position}
-        anchor.addChild({variable})"""
-        )
-        if entity["role"] == "player":
-            lines.append(f"        defenderEntity = {variable}")
-        elif entity["role"] in {"target", "obstacle", "hazard"} and not threat_bound:
-            lines.append(f"        threatEntity = {variable}")
-            threat_bound = True
-    entity_lines = "\n\n".join(lines)
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("defenderEntity", {"player"}),
+            ("threatEntity", {"target", "obstacle", "hazard"}),
+        ],
+    )
     return f"""import RealityKit
 
 final class GameSceneController {{
@@ -479,24 +464,13 @@ final class GameSceneController {{
 
 
 def _stack_puzzle_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
-    lines: list[str] = []
-    obstacle_bound = False
-    for entity in runtime_entities_for(spec):
-        variable = entity["variable"]
-        asset_id = _swift_string_literal(entity["asset_id"])
-        role = _swift_string_literal(entity["role"])
-        position = entity["position"]
-        lines.append(
-            f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
-        {variable}.position = {position}
-        anchor.addChild({variable})"""
-        )
-        if entity["role"] == "player":
-            lines.append(f"        pieceEntity = {variable}")
-        elif entity["role"] in {"obstacle", "hazard"} and not obstacle_bound:
-            lines.append(f"        obstacleEntity = {variable}")
-            obstacle_bound = True
-    entity_lines = "\n\n".join(lines)
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("pieceEntity", {"player"}),
+            ("obstacleEntity", {"obstacle", "hazard"}),
+        ],
+    )
     return f"""import RealityKit
 
 final class GameSceneController {{

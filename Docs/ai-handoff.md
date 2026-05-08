@@ -73,9 +73,9 @@ If the user asks to continue education content, do this next:
 If the user asks to continue the game factory route, do this next:
 
 1. Keep RKG framed as a multi-archetype RealityKit game factory, not a target-shooter generator.
-2. Extract duplicated state-bound scene-controller entity wiring across `lane_dodger`, `toss_physics`, `wave_defense_lite`, and `stack_puzzle`.
-3. Add generated screenshots/state checklist metadata that knows which playable state proves each archetype.
-4. Define reusable generated Swift modules for start, core action, feedback, fail/miss, reset, result, and screenshot states.
+2. Add generated screenshots/state checklist metadata that knows which playable state proves each archetype.
+3. Define reusable generated Swift modules for start, core action, feedback, fail/miss, reset, result, and screenshot states.
+4. Consider extracting common state-update formula helpers only if another archetype repeats the same movement pattern.
 5. Add store-pack screenshot checklist expansion from `release.screenshots`.
 
 ## Key Files to Read First

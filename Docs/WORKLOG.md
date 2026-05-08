@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 85: RKG Scene Entity Wiring Helper
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:15 +03
+**Amaç:** State-bound RKG scene-controller generator'larında tekrarlanan entity load/reference wiring kodunu ortak helper'a çekmek.
+
+**Yapılanlar:**
+
+- `Tests/test_rkg_scaffold_generators.py` içine `_scene_entity_setup_lines` sözleşmesi eklendi.
+- Yeni helper `AssetLoader.loadPrimaryEntity`, initial position assignment, `anchor.addChild`, ve ilk matching role reference assignment işini tek yerde topluyor.
+- `lane_dodger`, `toss_physics`, `wave_defense_lite`, ve `stack_puzzle` scene-controller generator'ları helper'ı kullanacak şekilde refactor edildi.
+- Role binding helper aynı role'den birden fazla asset olduğunda ilk match'i reference olarak bağlıyor, diğer entity'leri scene'e eklemeye devam ediyor.
+- Dört state-bound generated archetype gerçek `rkg verify-game` kapısından tekrar geçirildi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_scene_entity_setup_lines_load_and_bind_first_matching_roles: first run failed as expected; `_scene_entity_setup_lines` helper missing
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_scene_entity_setup_lines_load_and_bind_first_matching_roles Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_lane_dodger_state_to_realitykit_scene Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_toss_physics_state_to_realitykit_scene Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_wave_defense_state_to_realitykit_scene Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_stack_puzzle_state_to_realitykit_scene: ok, 5 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_init_game.py Tests/test_rkg_content_views.py Tests/test_rkg_archetype_runtime.py Tests/test_rkg_scaffold_generators.py: ok, 30 tests
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, rkg verify-game>": lane-dodger-refactor-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -c "<generate toss_physics temp project, rkg verify-game>": toss-physics-refactor-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -c "<generate wave_defense_lite temp project, rkg verify-game>": wave-defense-refactor-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -c "<generate stack_puzzle temp project, rkg verify-game>": stack-puzzle-refactor-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 116 tests
+/opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+git diff --check: ok
+node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+/opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+/opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Generated Swift çıktısı davranış olarak aynı kaldı, ama scene-controller generator'ları artık ortak role-binding primitive'ini kullanıyor. Bundan sonra yeni state-bound archetype eklerken yalnızca reference role mapping'i ve update(state:) formülü yazmak yeterli olmalı.
+
 ### Sprint 84: RKG Stack Puzzle Scene Binding
 
 **Durum:** Tamamlandı

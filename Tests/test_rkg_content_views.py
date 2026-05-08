@@ -31,7 +31,7 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("@State private var throwPower = 0.5", content)
         self.assertIn("SessionControl.isPlaying(state)", content)
         self.assertIn("FeedbackState.message(for: state)", content)
-        self.assertIn('Button(isPlaying ? "Throw" : "Start")', content)
+        self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
         self.assertIn("state = SessionControl.reset()", content)
         self.assertIn("state = GameRules.resolveToss(state, power: throwPower)", content)
 
@@ -45,8 +45,9 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("GameView(state: state)", content)
         self.assertIn('Text("Pieces \\(state.piecesPlaced)/\\(GameRules.maxPieces)")', content)
         self.assertIn('Toggle("Stable", isOn: $stablePlacement)', content)
-        self.assertIn('Button(isPlaying ? "Place" : "Start")', content)
+        self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
         self.assertIn('Button("Collapse")', content)
+        self.assertIn("Button(InputIntent.resetTitle)", content)
         self.assertIn("state = SessionControl.reset()", content)
         self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
 
@@ -55,7 +56,7 @@ class RkgContentViewTests(unittest.TestCase):
 
         self.assertIn('Text("Ring \\"Dash\\"")', content)
         self.assertIn("@State private var score = 0", content)
-        self.assertIn('Button(isPlaying ? "Reset" : "Start")', content)
+        self.assertIn("Button(isPlaying ? InputIntent.resetTitle : InputIntent.startTitle)", content)
 
 
 if __name__ == "__main__":

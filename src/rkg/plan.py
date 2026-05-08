@@ -14,6 +14,7 @@ GENERATED_SOURCE_MODULES = [
     "GameState.swift",
     "SessionControl.swift",
     "FeedbackState.swift",
+    "InputIntent.swift",
     "ScreenshotState.swift",
     "GameRules.swift",
     "GameSceneController.swift",

@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 93: RKG Input Intent Module
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 18:19 +03
+**Amaç:** Generated Swift overlay'lerdeki primary/reset button label kararını ortak `InputIntent.swift` modülüne almak.
+
+**Yapılanlar:**
+
+- `plan-game` source file listesine `Sources/<GameName>/InputIntent.swift` eklendi.
+- `rkg init-game` artık her generated proje için `InputIntent.swift` yazıyor.
+- `InputIntent` `startTitle`, `resetTitle`, `primaryActionTitle`, ve `primaryButtonTitle(isPlaying:)` helper'larını üretiyor.
+- `lane_dodger`, `wave_defense_lite`, `toss_physics`, ve `stack_puzzle` generated ContentView'leri primary action button label'ını `InputIntent.primaryButtonTitle` üzerinden alıyor.
+- Generated generic target-shooter fallback ContentView de start/reset label'larını `InputIntent` üzerinden alıyor.
+- RKG architecture, game factory, changelog ve AI handoff dokümanları yeni generated Swift modül sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_input_intent_generator_emits_primary_button_titles Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_generic_content_view_contract_remains_available: first run failed as expected; `InputIntent.swift` was not planned/generated and ContentView button labels were inline
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_input_intent_generator_emits_primary_button_titles Tests.test_rkg_content_views.RkgContentViewTests.test_toss_physics_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_stack_puzzle_content_view_contract_is_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_generic_content_view_contract_remains_available: ok, 6 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_init_game.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_plan_game.py: ok, 33 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate toss_physics temp project, assert InputIntent usage, rkg verify-game>": input-intent-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 127 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+`InputIntent` button copy kararını generated overlay'lerden çıkarıyor. Bu şimdilik sadece start/reset ve primary action title sınırında tutuldu; secondary archetype action'ları (`Damage`, `Collapse`) ayrı karar gerektirdiği için inline kaldı.
+
 ### Sprint 92: RKG Feedback State Module
 
 **Durum:** Tamamlandı

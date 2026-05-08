@@ -104,6 +104,7 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertIn("Sources/RingDash/GameState.swift", payload["files"])
         self.assertIn("Sources/RingDash/SessionControl.swift", payload["files"])
         self.assertIn("Sources/RingDash/FeedbackState.swift", payload["files"])
+        self.assertIn("Sources/RingDash/InputIntent.swift", payload["files"])
         self.assertIn("Sources/RingDash/ScreenshotState.swift", payload["files"])
         self.assertIn("Sources/RingDash/FallbackFactory.swift", payload["files"])
         self.assertIn("Docs/store/screenshots.md", payload["files"])

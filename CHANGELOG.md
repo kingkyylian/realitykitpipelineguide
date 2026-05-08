@@ -6,7 +6,7 @@
 
 - `rkg` RealityKit game-factory CLI surface for idea scoring, archetype discovery, spec validation, game planning, screenshot QA planning, project scaffolding, generated game verification, and store-pack checklist generation.
 - Archetype registry for `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, and `wave_defense_lite`.
-- Config-aware generated game projects with shared Swift modules: `GameState`, `SessionControl`, `FeedbackState`, `ScreenshotState`, `GameRules`, `GameSceneController`, `GameView`, `AssetLoader`, `FallbackFactory`, and result/UI surfaces.
+- Config-aware generated game projects with shared Swift modules: `GameState`, `SessionControl`, `FeedbackState`, `InputIntent`, `ScreenshotState`, `GameRules`, `GameSceneController`, `GameView`, `AssetLoader`, `FallbackFactory`, and result/UI surfaces.
 - Required asset-role validation and runtime entity planning for generated games.
 - Archetype screenshot proof cues exposed through `plan-game --json` and generated store screenshot checklists.
 - Generated store screenshot QA runbooks that sequence capture states from `screenshot_proofs`.
@@ -21,6 +21,7 @@
 - Extracted shared generated scene entity load/reference wiring for state-bound RKG archetypes.
 - Routed generated result/fail transitions through the shared `SessionControl.markResult` helper.
 - Routed generated last-event display text through the shared `FeedbackState.message` helper.
+- Routed generated primary/reset button labels through the shared `InputIntent` helper.
 - Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
 - Clarified the multi-archetype RKG scope so target shooter remains one fixture, not the whole product.
 

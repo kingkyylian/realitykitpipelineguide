@@ -115,6 +115,17 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("static func message(for state: GameSessionState) -> String", swift)
         self.assertIn("state.lastEvent.capitalized", swift)
 
+    def test_input_intent_generator_emits_primary_button_titles(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_input_intent_swift"))
+
+        swift = scaffold._input_intent_swift(scene_spec())
+
+        self.assertIn("enum InputIntent", swift)
+        self.assertIn('static let startTitle = "Start"', swift)
+        self.assertIn('static let resetTitle = "Reset"', swift)
+        self.assertIn('static let primaryActionTitle = "Dodge"', swift)
+        self.assertIn("static func primaryButtonTitle(isPlaying: Bool) -> String", swift)
+
 
 if __name__ == "__main__":
     unittest.main()

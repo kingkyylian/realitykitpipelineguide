@@ -38,6 +38,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "GameState.swift", _game_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "SessionControl.swift", _session_control_swift())
     _write_text(output / "Sources" / swift_name / "FeedbackState.swift", _feedback_state_swift())
+    _write_text(output / "Sources" / swift_name / "InputIntent.swift", _input_intent_swift(spec))
     _write_text(output / "Sources" / swift_name / "ScreenshotState.swift", _screenshot_state_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
@@ -272,6 +273,31 @@ enum FeedbackState {
     }
 }
 """
+
+
+def _input_intent_swift(spec: Mapping[str, Any]) -> str:
+    primary_action = _primary_action_title(str(spec["game"]["archetype"]))
+    return f"""import Foundation
+
+enum InputIntent {{
+    static let startTitle = "Start"
+    static let resetTitle = "Reset"
+    static let primaryActionTitle = {_swift_string_literal(primary_action)}
+
+    static func primaryButtonTitle(isPlaying: Bool) -> String {{
+        isPlaying ? primaryActionTitle : startTitle
+    }}
+}}
+"""
+
+
+def _primary_action_title(archetype_id: str) -> str:
+    return {
+        "lane_dodger": "Dodge",
+        "toss_physics": "Throw",
+        "stack_puzzle": "Place",
+        "wave_defense_lite": "Fire",
+    }.get(archetype_id, "Start")
 
 
 def _game_rules_swift(spec: Mapping[str, Any]) -> str:

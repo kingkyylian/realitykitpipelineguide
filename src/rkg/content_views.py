@@ -48,7 +48,7 @@ struct ContentView: View {{
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(isPlaying ? "Reset" : "Start") {{
+                    Button(isPlaying ? InputIntent.resetTitle : InputIntent.startTitle) {{
                         isPlaying.toggle()
                         if !isPlaying {{
                             score = 0
@@ -120,7 +120,7 @@ struct ContentView: View {{
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(isPlaying ? "Place" : "Start") {{
+                    Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
                         placeStackPuzzlePiece()
                     }}
                     .buttonStyle(.borderedProminent)
@@ -128,7 +128,7 @@ struct ContentView: View {{
                         state = GameRules.collapseStack(state)
                     }}
                     .buttonStyle(.bordered)
-                    Button("Reset") {{
+                    Button(InputIntent.resetTitle) {{
                         state = SessionControl.reset()
                         stablePlacement = true
                     }}
@@ -200,11 +200,11 @@ struct ContentView: View {{
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(isPlaying ? "Throw" : "Start") {{
+                    Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
                         throwToss()
                     }}
                     .buttonStyle(.borderedProminent)
-                    Button("Reset") {{
+                    Button(InputIntent.resetTitle) {{
                         state = SessionControl.reset()
                         throwPower = 0.5
                     }}
@@ -278,7 +278,7 @@ struct ContentView: View {{
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(isPlaying ? "Fire" : "Start") {{
+                    Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
                         fireWaveDefense()
                     }}
                     .buttonStyle(.borderedProminent)
@@ -286,7 +286,7 @@ struct ContentView: View {{
                         state = GameRules.applyThreatDamage(state)
                     }}
                     .buttonStyle(.bordered)
-                    Button("Reset") {{
+                    Button(InputIntent.resetTitle) {{
                         state = SessionControl.reset()
                     }}
                     .buttonStyle(.bordered)
@@ -359,11 +359,11 @@ struct ContentView: View {{
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button(isPlaying ? "Dodge" : "Start") {{
+                    Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
                         advanceLaneDodger()
                     }}
                     .buttonStyle(.borderedProminent)
-                    Button("Reset") {{
+                    Button(InputIntent.resetTitle) {{
                         state = SessionControl.reset()
                     }}
                     .buttonStyle(.bordered)

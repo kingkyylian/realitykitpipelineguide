@@ -4,7 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 REQUIRED_FILES = [
     "GameSpec.json",
     "rkp.json",

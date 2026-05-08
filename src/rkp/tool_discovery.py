@@ -5,7 +5,6 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-
 MACOS_BLENDER_APP = Path("/Applications/Blender.app/Contents/MacOS/Blender")
 
 

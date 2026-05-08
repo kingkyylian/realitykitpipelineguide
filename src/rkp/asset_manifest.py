@@ -6,7 +6,6 @@ from typing import Any
 
 from rkp.rkp_project import ProjectPaths, load_project
 
-
 JsonDict = dict[str, Any]
 Asset = dict[str, Any]
 

@@ -5,13 +5,12 @@ import argparse
 import json
 import re
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 from rkp.rkp_project import DEFAULT_CONFIG, ProjectPaths, load_project
 from rkp.tool_discovery import resolve_blender
-
 
 TEXT_EXTENSIONS = {
     ".md",
@@ -310,7 +309,7 @@ class Doctor:
 
     def _is_ignored(self, path: Path) -> bool:
         parts = path.relative_to(self.root).parts
-        if parts[0] in {".git", "Build", ".claude", "RealityKitPipelineDemo.xcodeproj"}:
+        if parts[0] in {".git", ".venv", "Build", ".claude", "RealityKitPipelineDemo.xcodeproj"}:
             return True
         return len(parts) >= 2 and parts[:2] == ("Docs", "checkpoints")
 

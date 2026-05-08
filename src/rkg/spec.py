@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from rkg.archetypes import describe_archetype
-
 
 JsonDict = dict[str, Any]
 

@@ -13,7 +13,6 @@ from rkp.new_asset import DEFAULT_BUDGETS, snake_case
 from rkp.rkp_project import ProjectPaths, load_project
 from rkp.runtime import module_command, package_env
 
-
 PROJECT = load_project()
 
 
@@ -438,7 +437,7 @@ def _load_anthropic_module():
         raise RuntimeError(
             "anthropic package is not installed; install rkp[ai] or run pipx inject rkp anthropic "
             "before using --generator claude"
-        )
+        ) from None
     return anthropic, api_key
 
 

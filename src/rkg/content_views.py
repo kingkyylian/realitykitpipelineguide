@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 
 def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:

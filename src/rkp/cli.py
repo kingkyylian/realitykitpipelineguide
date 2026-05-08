@@ -12,8 +12,7 @@ from rkp import __version__
 from rkp.asset_manifest import imported_asset_ids, load_manifest
 from rkp.pipeline_doctor import Doctor
 from rkp.rkp_project import CONFIG_FILE, DEFAULT_CONFIG, ProjectPaths, load_project
-from rkp.runtime import module_command, package_env, run
-
+from rkp.runtime import module_command, run
 
 _PROJECT: ProjectPaths | None = None
 

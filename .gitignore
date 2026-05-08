@@ -17,6 +17,7 @@ DerivedData/
 # Swift Package Manager / tooling
 .build/
 .swiftpm/
+.venv/
 __pycache__/
 *.pyc
 *.egg-info/

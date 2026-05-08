@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from rkg.archetype_runtime import archetype_rule_members, archetype_state_fields, indent_swift_block
 from rkg.content_views import content_view_swift
 from rkg.plan import runtime_entities_for, swift_identifier_for, swift_name_for
 from rkg.spec import assert_valid_game_spec
 from rkg.store_pack import build_store_pack
-
 
 JsonDict = dict[str, Any]
 

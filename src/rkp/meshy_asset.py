@@ -83,7 +83,7 @@ def generate_usdz(
     preview_data = _poll(preview_id, key, "preview")
 
     if refine:
-        print(f"  meshy: refining for PBR texture")
+        print("  meshy: refining for PBR texture")
         refine_id = _refine_task(preview_id, key)
         final_data = _poll(refine_id, key, "refine")
     else:
@@ -93,6 +93,6 @@ def generate_usdz(
     if not usdz_url:
         raise RuntimeError("Meshy response missing USDZ URL")
 
-    print(f"  meshy: downloading USDZ")
+    print("  meshy: downloading USDZ")
     _download(usdz_url, output_path)
     return output_path

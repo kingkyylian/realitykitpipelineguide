@@ -2,7 +2,6 @@ from pathlib import Path
 
 import bpy
 
-
 ROOT = Path(__file__).resolve().parents[2]
 IMPORTED_DIR = ROOT / "Assets" / "Imported"
 SOURCE_DIR = ROOT / "Assets" / "Source"

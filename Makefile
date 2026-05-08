@@ -3,8 +3,23 @@ SCHEME = RealityKitPipelineDemo
 DERIVED_DATA = Build/DerivedData
 SKILL_NAME = realitykit-pipeline-guide
 CODEX_HOME ?= $(HOME)/.codex
+PYTHON ?= python3
+VENV ?= .venv
+VENV_PYTHON = $(VENV)/bin/python
 
-.PHONY: generate build validate test lint doctor status new-asset prompt-asset make-asset build-asset inspect-usdz verify-asset accept-asset guide release-check install-skill clean
+.PHONY: bootstrap-dev verify-local generate build validate test lint doctor status new-asset prompt-asset make-asset build-asset inspect-usdz verify-asset accept-asset guide release-check install-skill clean
+
+bootstrap-dev:
+	$(PYTHON) -m venv "$(VENV)"
+	$(VENV_PYTHON) -m pip install --upgrade pip
+	$(VENV_PYTHON) -m pip install -e ".[dev]"
+	@echo "dev dependencies installed in $(VENV)"
+
+verify-local:
+	$(VENV_PYTHON) -m compileall -q src Tools Tests
+	$(VENV_PYTHON) -m ruff check src Tests Tools
+	$(VENV_PYTHON) -m unittest discover -s Tests
+	$(VENV_PYTHON) Tools/rkp.py doctor
 
 generate:
 	xcodegen generate
@@ -20,7 +35,7 @@ test:
 	python3 -m unittest discover -s Tests
 
 lint:
-	python3 -m ruff check src Tests Tools
+	$(VENV_PYTHON) -m ruff check src Tests Tools
 
 doctor:
 	python3 Tools/rkp.py doctor $(if $(blender),--blender,) $(if $(json),--json,)

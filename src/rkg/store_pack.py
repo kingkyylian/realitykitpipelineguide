@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from rkg.archetypes import describe_archetype
 from rkg.qa_plan import qa_steps_for
-
 
 StorePack = dict[str, str]
 

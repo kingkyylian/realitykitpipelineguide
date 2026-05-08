@@ -165,6 +165,21 @@ class RkpPackageTests(unittest.TestCase):
 
         self.assertEqual(doctor.findings, [])
 
+    def test_doctor_ignores_local_virtualenv_metadata(self) -> None:
+        from rkp.pipeline_doctor import Doctor
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            metadata = root / ".venv" / "lib" / "python3.13" / "site-packages" / "rkp.dist-info"
+            metadata.mkdir(parents=True)
+            local_path = "/Us" "ers/kyylian/Developer/RealityKitPipelineDemo"
+            (metadata / "direct_url.json").write_text(f'{{"url":"file://{local_path}"}}', encoding="utf-8")
+
+            doctor = Doctor(root)
+            doctor.check_public_text()
+
+        self.assertEqual(doctor.findings, [])
+
     def test_make_asset_subprocesses_use_package_modules(self) -> None:
         from rkp import cli
 

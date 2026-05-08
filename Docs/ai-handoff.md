@@ -31,7 +31,7 @@ It is not a game-first repository. Treat the fixture app as a test harness for t
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 | Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz`, `release-check --assets`, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
-| Game Factory CLI | First batch active | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `src/rkg/archetype_runtime.py`, `src/rkg/content_views.py`, `src/rkg/qa_plan.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`, `Tests/test_rkg_archetype_runtime.py`, `Tests/test_rkg_content_views.py`, `Tests/test_rkg_scaffold_generators.py`, `Tests/test_rkg_qa_plan.py`; `score-idea`, `list-archetypes`, `describe-archetype`, `plan-game`, `qa-plan`, `init-game`, and `verify-game` are active RKG surfaces |
+| Game Factory CLI | Experimental first batch | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `src/rkg/archetype_runtime.py`, `src/rkg/content_views.py`, `src/rkg/qa_plan.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`, `Tests/test_rkg_archetype_runtime.py`, `Tests/test_rkg_content_views.py`, `Tests/test_rkg_scaffold_generators.py`, `Tests/test_rkg_qa_plan.py`; `score-idea`, `list-archetypes`, `describe-archetype`, `plan-game`, `qa-plan`, `init-game`, and `verify-game` are active RKG surfaces, but generated games still need human product review and visual QA before any shipping claim |
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
@@ -72,7 +72,7 @@ If the user asks to continue education content, do this next:
 
 If the user asks to continue the game factory route, do this next:
 
-1. Keep RKG framed as a multi-archetype RealityKit game factory, not a target-shooter generator.
+1. Keep RKG framed as an experimental multi-archetype RealityKit game factory, not a target-shooter generator or finished app factory.
 2. Continue defining reusable generated Swift modules for core action and fail/miss behavior.
 3. Add a screenshot capture command that can consume `rkg qa-plan --json` after simulator automation exists.
 4. Consider extracting common state-update formula helpers only if another archetype repeats the same movement pattern.

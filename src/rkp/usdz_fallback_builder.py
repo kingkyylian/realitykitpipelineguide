@@ -13,8 +13,7 @@ from pathlib import Path
 
 from rkp.asset_manifest import asset_usdz_path, basecolor_texture_name, load_asset
 from rkp.prompt_asset import infer_palette
-from rkp.rkp_project import ProjectPaths, load_project
-
+from rkp.rkp_project import load_project
 
 PROJECT = load_project()
 

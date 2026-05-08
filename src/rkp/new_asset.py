@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from rkp.asset_manifest import asset_file_name, ensure_assets, find_asset, load_manifest, write_manifest
-from rkp.rkp_project import ProjectPaths, load_project
+from rkp.rkp_project import load_project
 
 PROJECT = load_project()
 

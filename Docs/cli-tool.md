@@ -259,6 +259,8 @@ Use `--assets` before release or handoff when imported USDZ files should be re-i
 The Makefile is a convenience wrapper around the CLI:
 
 ```bash
+make bootstrap-dev
+make verify-local
 make status
 make doctor
 make doctor blender=1
@@ -277,6 +279,8 @@ make lint
 python3 Tools/rkp.py clean --dry-run
 python3 Tools/rkp.py clean --apply
 ```
+
+Run `make bootstrap-dev` once in a cloned toolkit checkout before `make lint`; it creates `.venv`, installs the editable package, and installs the optional dev dependency group from `pyproject.toml` without mutating a Homebrew-managed Python environment.
 
 Prefer direct CLI commands when building automation, agents, or future MCP-style integrations. Prefer `make` for short local terminal usage.
 

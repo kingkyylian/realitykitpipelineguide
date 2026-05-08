@@ -14,7 +14,6 @@ from pathlib import Path
 from rkp.asset_manifest import asset_usdz_path, expected_basecolor_name, load_asset
 from rkp.rkp_project import ProjectPaths, load_project
 
-
 PROJECT = load_project()
 
 

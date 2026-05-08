@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from rkg.archetypes import describe_archetype
 from rkg.spec import assert_valid_game_spec
-
 
 JsonDict = dict[str, Any]
 

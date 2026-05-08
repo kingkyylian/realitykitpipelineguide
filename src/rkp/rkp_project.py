@@ -4,7 +4,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-
 CONFIG_FILE = "rkp.json"
 DEFAULT_CONFIG = {
     "manifest": "Tools/asset_manifest.json",

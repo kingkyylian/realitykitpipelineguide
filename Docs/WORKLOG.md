@@ -12,6 +12,41 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 96: Product Boundary and Dev Setup
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 18:45 +03
+**Amaç:** İlk kez gelen birinin RKP/RKG/fixture ayrımını doğru anlamasını sağlamak ve lokal dev/lint setup boşluğunu kapatmak.
+
+**Yapılanlar:**
+
+- README'ye product boundary matrisi eklendi.
+- `rkg` README ve game-factory dokümanlarında experimental olarak konumlandı.
+- Fixture app'in üretim oyunu değil verification harness olduğu ilk giriş yüzeyinde netleştirildi.
+- Makefile'a `.venv` tabanlı `bootstrap-dev` ve `verify-local` hedefleri eklendi.
+- `.venv/` `.gitignore` kapsamına alındı.
+- Ruff dev dependency olarak bağlandı; mevcut import/typing lint borcu temizlendi.
+- `pipeline doctor` `.venv` metadata'sını public text taramasından hariç tutuyor.
+- `Docs/cli-tool.md`, `Docs/ai-handoff.md`, `CHANGELOG.md`, ve worklog güncellendi.
+
+**Verification:**
+
+```text
+rtk make bootstrap-dev: ok, .venv içinde editable rkp + PyYAML + Ruff kuruldu
+.venv/bin/python -m unittest Tests.test_rkp_package.RkpPackageTests.test_doctor_ignores_local_virtualenv_metadata: ok, 1 test
+rtk make verify-local: ok, compileall + Ruff + 129 tests + pipeline doctor
+rtk make lint: ok, All checks passed!
+rtk make validate: manifest ok
+rtk .venv/bin/python Tools/rkp.py doctor: pipeline doctor: ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+İlk bakış analizindeki ana risk yanlış beklenti oluşmasıydı. Bu sprint kod üretmekten çok ürün sınırını görünür hale getiriyor: RKP aktif toolkit yüzeyi, RKG deneysel factory katmanı, fixture app ise kanıt harness'ı. Yerel setup boşluğu da gerçek koşuda yakalandı: Homebrew-managed Python global pip kurulumunu reddettiği için bootstrap `.venv` tabanına taşındı.
+
 ### Sprint 95: RKG Session Result Helper
 
 **Durum:** Tamamlandı

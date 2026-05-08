@@ -11,12 +11,22 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 ## What This Is
 
 - `rkp`: the installable CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, tests, and release checks.
+- `rkg`: an experimental game-factory CLI for scoring ideas, validating specs, scaffolding small RealityKit projects, and generating QA/store-pack docs. Treat it as active research on top of RKP, not as a finished commercial game generator.
 - `Skills/realitykit-pipeline-guide`: an installable Codex skill that points agents at the same asset, build, and documentation contracts.
 - `.claude/commands`: slash commands such as `/rkp`, `/rkp-asset`, and `/rkp-status` for agent-style usage.
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit verification fixture that proves pipeline output inside an iOS app.
 - `Docs`: the teaching, production, and AI-agent handoff layer around the same pipeline.
 
 Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy or load them in your own RealityKit game when needed; the fixture app is only a verification harness and does not automatically switch its default gameplay target to every newly generated asset.
+
+## Product Boundary
+
+| Surface | Maturity | Use it for | Do not assume |
+| --- | --- | --- | --- |
+| `rkp` asset pipeline | Preview, actively usable | Asset contracts, Blender/USDZ drafts, manifest health, screenshot acceptance, and release gates. | Fully automatic text-to-3D, automatic Xcode project edits, or asset acceptance without screenshot evidence. |
+| RealityKit fixture app | Verification harness | Proving imported USDZ files load and behave inside RealityKit. | A production game architecture or the default destination for every generated asset. |
+| `rkg` game factory | Experimental | GameSpec validation, small generated project scaffolds, archetype exploration, QA/store-pack planning. | A finished commercial game factory or automated App Store submission system. |
+| Codex skill and docs | Teaching/handoff layer | Keeping agents and contributors on the same commands, contracts, and verification gates. | A standalone MCP server; JSON CLI output is the current automation surface. |
 
 ## What You Learn
 
@@ -114,16 +124,19 @@ If you are developing this toolkit repo itself, clone it and use the repo-local 
 ```bash
 git clone https://github.com/kingkyylian/realitykitpipelineguide.git
 cd realitykitpipelineguide
-python3 Tools/rkp.py status
-python3 -m unittest discover -s Tests
-python3 Tools/rkp.py release-check
-python3 Tools/rkp.py release-check --assets
-python3 Tools/rkp.py clean --dry-run
-python3 -m pip install -e ".[dev]"
+make bootstrap-dev
+.venv/bin/python Tools/rkp.py status
+.venv/bin/python -m unittest discover -s Tests
+.venv/bin/python Tools/rkp.py release-check
+.venv/bin/python Tools/rkp.py release-check --assets
+.venv/bin/python Tools/rkp.py clean --dry-run
 make lint
+make verify-local
 make status
 make test
 ```
+
+`make bootstrap-dev` creates a local `.venv` and installs the editable package with the optional dev dependency group. This avoids mutating a Homebrew-managed Python environment.
 
 ### Prompt To Asset
 
@@ -324,6 +337,7 @@ The manifest format is intentionally simple JSON and can travel to another repo.
 
 - Blender background USDZ export is still machine-sensitive. On the current reference machine, Blender 4.5.8 crashed during the fresh-project walkthrough, and RKP recovered by building a fallback USDZ through `/usr/bin/usdzip`.
 - The fallback builder is for prompt-backed procedural drafts. It is enough to keep the asset loop moving, but visual acceptance still requires loading the USDZ in RealityKit and providing screenshot evidence.
+- RKG is experimental. It can scaffold and verify small fixed-camera RealityKit projects, but generated games still need human product review, visual QA, screenshots, and App Store preparation.
 - RKP does not automatically edit arbitrary Xcode projects. Add `Assets/Imported` to your app bundle yourself, or set `xcode_project` and `xcode_scheme` in `rkp.json` when you want `release-check` to run the Xcode build gate.
 - There is no standalone MCP server yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for agents and future MCP wrappers.
 - The package version is currently `0.1.0`. Until release tags are cut, GitHub installs track the default branch.

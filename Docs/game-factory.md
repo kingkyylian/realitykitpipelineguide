@@ -31,7 +31,13 @@ RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot
 
 ## Product Scope
 
-RKG is not a target-shooter generator. It is a general RealityKit game factory for small, shippable mobile games.
+RKG is not a target-shooter generator. It is the experimental game-factory layer for small RealityKit projects.
+
+Maturity boundary:
+
+- RKP is the more stable product surface today.
+- RKG can score ideas, validate specs, scaffold fixed-camera projects, generate store/QA docs, and verify generated projects.
+- RKG is not yet a finished commercial game factory. Generated projects still need human product review, visual QA, screenshots, App Store metadata review, and production polish before shipping.
 
 The target-shooter fixture is only the first reference archetype because it is easy to verify: one input, clear scoring, simple assets, and screenshot-friendly states. Do not let that fixture shape the product boundary. Any RKG feature should either support multiple archetypes directly or improve the shared factory layer that every archetype needs.
 

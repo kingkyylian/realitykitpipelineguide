@@ -83,6 +83,7 @@ class StorePackTests(unittest.TestCase):
         pack = build_store_pack(valid_spec())
 
         self.assertIn("Docs/store/screenshots.md", pack)
+        self.assertIn("Docs/store/screenshot-qa.md", pack)
         self.assertIn("Docs/store/monetization.md", pack)
         screenshots = pack["Docs/store/screenshots.md"]
         self.assertIn("| gameplay_start |", screenshots)
@@ -100,6 +101,15 @@ class StorePackTests(unittest.TestCase):
         self.assertIn("state.phase == .playing", screenshots)
         self.assertIn("state.nearMisses > 0", screenshots)
         self.assertIn("| near_miss |", screenshots)
+
+    def test_screenshot_qa_runbook_sequences_generated_proof_cues(self) -> None:
+        pack = build_store_pack(lane_dodger_spec())
+
+        runbook = pack["Docs/store/screenshot-qa.md"]
+        self.assertIn("| Order | State | Drive the game to this state | Expected evidence | Capture path |", runbook)
+        self.assertIn("| 1 | gameplay_start | Tap Start; state.phase == .playing;", runbook)
+        self.assertIn("| 3 | near_miss | Swipe next to the obstacle, then tap Dodge; state.nearMisses > 0.", runbook)
+        self.assertIn("Required roles visible: player, obstacle, arena", runbook)
 
 
 if __name__ == "__main__":

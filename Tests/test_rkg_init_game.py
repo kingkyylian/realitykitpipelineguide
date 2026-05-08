@@ -219,6 +219,7 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertTrue((output / "Docs" / "store" / "review-notes.md").exists())
             self.assertTrue((output / "Docs" / "store" / "privacy.md").exists())
             self.assertTrue((output / "Docs" / "store" / "screenshots.md").exists())
+            self.assertTrue((output / "Docs" / "store" / "screenshot-qa.md").exists())
             self.assertTrue((output / "Docs" / "store" / "monetization.md").exists())
 
     def test_init_game_writes_planned_manifest_assets(self) -> None:

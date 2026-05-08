@@ -239,6 +239,7 @@ Docs/store/metadata.md
 Docs/store/review-notes.md
 Docs/store/privacy.md
 Docs/store/screenshots.md
+Docs/store/screenshot-qa.md
 Docs/store/monetization.md
 ```
 
@@ -251,6 +252,8 @@ Required screenshot rows:
 | `generated_proof_cue` | The generated interaction or state value that proves the screenshot is real gameplay. |
 | `required_asset_roles` | Roles that must be visible or explained. |
 | `evidence_path` | `Docs/screenshots/<state>.jpg` once captured. |
+
+`Docs/store/screenshot-qa.md` sequences the same states in capture order, with the generated interaction cue, expected visible roles, and final screenshot path for each row.
 
 Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files and filtered `screenshot_proofs` in its dry-run output, so store scope and QA proof cues are visible before the project is generated.
 

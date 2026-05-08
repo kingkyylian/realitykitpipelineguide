@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 87: RKG Screenshot QA Runbook
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:22 +03
+**Amaç:** `screenshot_proofs` bilgisini generated store pack içinde sıralı QA capture talimatına dönüştürmek.
+
+**Yapılanlar:**
+
+- `plan-game` dry-run dosya listesine `Docs/store/screenshot-qa.md` eklendi.
+- `rkg init-game` store pack üretimi artık screenshot QA runbook dosyasını yazıyor.
+- QA runbook release screenshot state'lerini sırayla listeliyor; her satır generated proof cue, beklenen görünür asset rolleri ve evidence path içeriyor.
+- Store pack, game factory, RKG architecture, changelog ve AI handoff dokümanları yeni dosya sözleşmesine göre güncellendi.
+
+**Verification:**
+
+```text
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_store_pack.StorePackTests.test_screenshot_qa_runbook_sequences_generated_proof_cues: first run failed as expected; `Docs/store/screenshot-qa.md` was not planned/generated
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_creates_realitykit_project_skeleton Tests.test_rkg_store_pack.StorePackTests.test_screenshot_qa_runbook_sequences_generated_proof_cues Tests.test_rkg_store_pack.StorePackTests.test_store_pack_includes_screenshots_and_monetization_files: ok, 4 tests
+rtk /opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py Tests/test_rkg_init_game.py: ok, 27 tests
+rtk /opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert screenshot QA runbook, rkg verify-game>": qa-runbook-generated verify ok; release-check ok; generated project doctor warnings only for optional README/LICENSE/Makefile
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 118 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Checklist tekil screenshot gereksinimini anlatıyor; QA runbook ise capture sırasını ve beklenen kanıtı yürütülebilir hale getiriyor. Bir sonraki otomasyon adımı, bu dosyayı okuyup simulator screenshot komutlarını sıraya bağlamak olabilir.
+
 ### Sprint 86: RKG Screenshot Proof Metadata
 
 **Durum:** Tamamlandı

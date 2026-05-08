@@ -24,6 +24,7 @@ GENERATED_STORE_FILES = [
     "Docs/store/review-notes.md",
     "Docs/store/privacy.md",
     "Docs/store/screenshots.md",
+    "Docs/store/screenshot-qa.md",
     "Docs/store/monetization.md",
 ]
 

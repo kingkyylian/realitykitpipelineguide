@@ -17,6 +17,7 @@ def build_store_pack(spec: Mapping[str, Any]) -> StorePack:
         "Docs/store/review-notes.md": review_notes(display_name, spec),
         "Docs/store/privacy.md": privacy_notes(display_name),
         "Docs/store/screenshots.md": screenshots_checklist(spec, archetype),
+        "Docs/store/screenshot-qa.md": screenshot_qa_runbook(spec, archetype),
         "Docs/store/monetization.md": monetization_notes(spec),
     }
 
@@ -81,6 +82,28 @@ def screenshots_checklist(spec: Mapping[str, Any], archetype: Mapping[str, Any])
         proof = _screenshot_proof(str(state), archetype)
         rows.append(f"| {state} | {_screenshot_purpose(str(state))} | {proof} | {roles} | Docs/screenshots/{state}.jpg |")
     return "# Screenshot Checklist\n\n" + "\n".join(rows) + "\n"
+
+
+def screenshot_qa_runbook(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> str:
+    roles = _required_visible_roles(spec, archetype)
+    rows = [
+        "| Order | State | Drive the game to this state | Expected evidence | Capture path |",
+        "| --- | --- | --- | --- | --- |",
+    ]
+    for index, state in enumerate(spec["release"]["screenshots"], start=1):
+        state_name = str(state)
+        proof = _screenshot_proof(state_name, archetype)
+        rows.append(
+            f"| {index} | {state_name} | {proof} | Required roles visible: {roles} | "
+            f"Docs/screenshots/{state_name}.jpg |"
+        )
+    return (
+        "# Screenshot QA Runbook\n\n"
+        "Run `rkg verify-game` before capture. Drive the generated game through these rows in order, "
+        "resetting between rows when the previous state ends the session.\n\n"
+        + "\n".join(rows)
+        + "\n"
+    )
 
 
 def monetization_notes(spec: Mapping[str, Any]) -> str:

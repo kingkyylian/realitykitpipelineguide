@@ -37,6 +37,8 @@ class RkgArchetypeTests(unittest.TestCase):
         self.assertIn("player", record["required_asset_roles"])
         self.assertIn("GameState", record["runtime_modules"])
         self.assertIn("mid_session", record["screenshot_states"])
+        self.assertIn("near_miss", record["screenshot_proofs"])
+        self.assertIn("state.nearMisses > 0", record["screenshot_proofs"]["near_miss"])
 
     def test_unknown_archetype_raises_clear_error(self) -> None:
         with self.assertRaises(ValueError) as context:

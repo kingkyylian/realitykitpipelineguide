@@ -108,6 +108,8 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(payload["asset_roles"]["target_basic"], "target")
         self.assertEqual(payload["asset_roles"]["arena_floor"], "arena")
         self.assertEqual(payload["screenshot_states"], ["gameplay_start", "mid_session", "results"])
+        self.assertIn("screenshot_proofs", payload)
+        self.assertIn("state.phase == .playing", payload["screenshot_proofs"]["gameplay_start"])
 
     def test_build_game_plan_exposes_runtime_entities_for_declared_roles(self) -> None:
         payload = build_game_plan(lane_dodger_spec())
@@ -125,6 +127,7 @@ class RkgPlanGameTests(unittest.TestCase):
                 },
             ],
         )
+        self.assertIn("state.nearMisses > 0", payload["screenshot_proofs"]["near_miss"])
 
     def test_plan_game_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

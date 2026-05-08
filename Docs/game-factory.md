@@ -164,7 +164,7 @@ Docs/store/privacy.md
 Docs/store/screenshots.md
 ```
 
-Metadata must describe the real game. Screenshots must show actual gameplay, not only title art.
+Metadata must describe the real game. Screenshots must show actual gameplay, not only title art. Generated screenshot checklists include a proof cue for each state, such as the button sequence or `GameSessionState` value that should be true before capture.
 
 ## Seed Archetypes
 
@@ -189,6 +189,8 @@ Before deepening one archetype, define the shared template contract:
 | Fallbacks | Every role has a procedural fallback until RKP accepts imported art. |
 | Verification | Generated project can run tests, build, and capture the required screenshot states. |
 | Store pack | Metadata and screenshots describe actual generated gameplay. |
+
+Each archetype owns screenshot proof cues in the registry. `rkg plan-game --json` exposes the selected cues under `screenshot_proofs`, and `rkg init-game` writes them into `Docs/store/screenshots.md` so QA knows how to drive the generated project into every required capture state.
 
 ## GameSpec Contract
 

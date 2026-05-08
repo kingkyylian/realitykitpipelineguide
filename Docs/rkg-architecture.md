@@ -205,7 +205,12 @@ Current `plan-game --json` shape:
       "position": "[0, -0.45, 0]"
     }
   ],
-  "screenshot_states": ["gameplay_start", "mid_session", "results"]
+  "screenshot_states": ["gameplay_start", "mid_session", "results"],
+  "screenshot_proofs": {
+    "gameplay_start": "Tap Start; state.phase == .playing; target and arena are visible.",
+    "mid_session": "Tap Start, then score at least one hit; state.score > 0.",
+    "results": "End the session or reset after play; state.phase == .result or result UI is visible."
+  }
 }
 ```
 
@@ -243,10 +248,11 @@ Required screenshot rows:
 | --- | --- |
 | `state` | Screenshot state from archetype registry or GameSpec. |
 | `purpose` | What App Store reviewer/player should see. |
+| `generated_proof_cue` | The generated interaction or state value that proves the screenshot is real gameplay. |
 | `required_asset_roles` | Roles that must be visible or explained. |
 | `evidence_path` | `Docs/screenshots/<state>.jpg` once captured. |
 
-Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files in its dry-run output, so store scope is visible before the project is generated.
+Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files and filtered `screenshot_proofs` in its dry-run output, so store scope and QA proof cues are visible before the project is generated.
 
 ## Decision Rules
 

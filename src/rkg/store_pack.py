@@ -74,11 +74,12 @@ Update this file before submission if monetization, analytics, ads, Game Center,
 def screenshots_checklist(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> str:
     roles = _required_visible_roles(spec, archetype)
     rows = [
-        "| State | Purpose | Required asset roles | Evidence path |",
-        "| --- | --- | --- | --- |",
+        "| State | Purpose | Generated proof cue | Required asset roles | Evidence path |",
+        "| --- | --- | --- | --- | --- |",
     ]
     for state in spec["release"]["screenshots"]:
-        rows.append(f"| {state} | {_screenshot_purpose(str(state))} | {roles} | Docs/screenshots/{state}.jpg |")
+        proof = _screenshot_proof(str(state), archetype)
+        rows.append(f"| {state} | {_screenshot_purpose(str(state))} | {proof} | {roles} | Docs/screenshots/{state}.jpg |")
     return "# Screenshot Checklist\n\n" + "\n".join(rows) + "\n"
 
 
@@ -124,3 +125,12 @@ def _screenshot_purpose(state: str) -> str:
         "low_health": "Show failure tension.",
     }
     return labels.get(state, "Show an actual generated gameplay state.")
+
+
+def _screenshot_proof(state: str, archetype: Mapping[str, Any]) -> str:
+    proof_map = archetype.get("screenshot_proofs", {})
+    if isinstance(proof_map, Mapping):
+        proof = proof_map.get(state)
+        if isinstance(proof, str):
+            return proof
+    return "Capture after driving the generated game into this release state."

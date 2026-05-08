@@ -45,6 +45,7 @@ def build_game_plan(spec: Mapping[str, Any]) -> JsonDict:
         "asset_roles": _asset_roles(spec),
         "runtime_entities": runtime_entities_for(spec),
         "screenshot_states": list(spec["release"]["screenshots"]),
+        "screenshot_proofs": _screenshot_proofs(spec, archetype),
     }
 
 
@@ -72,6 +73,18 @@ def _asset_roles(spec: Mapping[str, Any]) -> dict[str, str]:
         role = asset.get("role") or asset.get("type")
         roles[str(asset_id)] = str(role)
     return roles
+
+
+def _screenshot_proofs(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> dict[str, str]:
+    proof_map = archetype.get("screenshot_proofs", {})
+    if not isinstance(proof_map, Mapping):
+        return {}
+    proofs: dict[str, str] = {}
+    for state in spec["release"]["screenshots"]:
+        proof = proof_map.get(state)
+        if isinstance(proof, str):
+            proofs[str(state)] = proof
+    return proofs
 
 
 def runtime_entities_for(spec: Mapping[str, Any]) -> list[JsonDict]:

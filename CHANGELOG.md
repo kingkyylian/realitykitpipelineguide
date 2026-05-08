@@ -8,6 +8,7 @@
 - Archetype registry for `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, and `wave_defense_lite`.
 - Config-aware generated game projects with shared Swift modules: `GameState`, `GameRules`, `GameSceneController`, `GameView`, `AssetLoader`, `FallbackFactory`, and result/UI surfaces.
 - Required asset-role validation and runtime entity planning for generated games.
+- Archetype screenshot proof cues exposed through `plan-game --json` and generated store screenshot checklists.
 - Minimal playable generated loops for `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`.
 - RealityKit state-to-scene binding for the generated `lane_dodger`, `toss_physics`, `wave_defense_lite`, and `stack_puzzle` archetypes.
 

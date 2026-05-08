@@ -48,6 +48,36 @@ def valid_spec() -> dict:
     }
 
 
+def lane_dodger_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "lane_dash"
+    spec["game"]["display_name"] = "Lane Dash"
+    spec["game"]["archetype"] = "lane_dodger"
+    spec["game"]["input"] = "drag"
+    spec["assets"] = {
+        "runner": {
+            "type": "character",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "crate": {
+            "type": "hazard",
+            "role": "obstacle",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_box",
+        },
+        "lane_floor": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_grid",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_session", "near_miss", "results"]
+    return spec
+
+
 class StorePackTests(unittest.TestCase):
     def test_store_pack_includes_screenshots_and_monetization_files(self) -> None:
         pack = build_store_pack(valid_spec())
@@ -61,6 +91,15 @@ class StorePackTests(unittest.TestCase):
         monetization = pack["Docs/store/monetization.md"]
         self.assertIn("Model: paid", monetization)
         self.assertIn("No external unlocks", monetization)
+
+    def test_screenshot_checklist_includes_generated_proof_cues(self) -> None:
+        pack = build_store_pack(lane_dodger_spec())
+
+        screenshots = pack["Docs/store/screenshots.md"]
+        self.assertIn("| State | Purpose | Generated proof cue | Required asset roles | Evidence path |", screenshots)
+        self.assertIn("state.phase == .playing", screenshots)
+        self.assertIn("state.nearMisses > 0", screenshots)
+        self.assertIn("| near_miss |", screenshots)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 86: RKG Screenshot Proof Metadata
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-08 17:17 +03
+**Amaç:** RKG archetype'larının store screenshot checklist ve `plan-game --json` çıktısında gerçek oynanış kanıtını tarif etmesini sağlamak.
+
+**Yapılanlar:**
+
+- Her seed archetype için `screenshot_proofs` registry alanı eklendi.
+- `rkg plan-game --json` çıktısı artık seçilen `release.screenshots` durumlarına filtrelenmiş `screenshot_proofs` döndürüyor.
+- `rkg init-game` store pack üretimi `Docs/store/screenshots.md` içine `Generated proof cue` kolonu yazıyor.
+- Proof cue metinleri buton/gesture akışını ve ilgili `GameSessionState` değerini birlikte tarif ediyor.
+- `CHANGELOG.md`, `Docs/rkg-architecture.md`, `Docs/game-factory.md`, ve `Docs/ai-handoff.md` yeni sözleşmeye göre güncellendi.
+
+**Verification:**
+
+```text
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetypes.py Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py: first run failed as expected; screenshot_proofs missing from registry/plan payload and generated checklist
+/opt/homebrew/bin/python3.12 -m unittest Tests.test_rkg_archetypes.RkgArchetypeTests.test_describe_archetype_exposes_roles_modules_and_screenshots Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_runtime_entities_for_declared_roles Tests.test_rkg_store_pack.StorePackTests.test_screenshot_checklist_includes_generated_proof_cues: ok, 4 tests
+/opt/homebrew/bin/python3.12 -m unittest Tests/test_rkg_archetypes.py Tests/test_rkg_plan_game.py Tests/test_rkg_store_pack.py Tests/test_rkg_init_game.py Tests/test_rkg_validate_spec.py: ok, 36 tests
+/opt/homebrew/bin/python3.12 -c "<generate lane_dodger temp project, assert screenshot proof cues, rkg verify-game>": lane-dodger-screenshot-proof-generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 -m unittest discover -s Tests: ok, 117 tests
+rtk /opt/homebrew/bin/python3.12 -m compileall -q src Tools Tests: ok
+rtk git diff --check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py doctor: pipeline doctor: ok
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk /opt/homebrew/bin/python3.12 Tools/rkp.py clean --apply: removed regenerated local scratch candidates
+```
+
+**Öğrenme notu:**
+
+Store screenshot checklist artık yalnızca hangi state'in yakalanacağını değil, o state'in generated oyunda nasıl kanıtlanacağını da söylüyor. Bu, sonraki QA automation adımı için doğrudan bir sıra verisi sağlayacak.
+
 ### Sprint 85: RKG Scene Entity Wiring Helper
 
 **Durum:** Tamamlandı

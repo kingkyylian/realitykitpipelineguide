@@ -57,8 +57,8 @@ class PublicPolishDocsTests(unittest.TestCase):
         next_task = handoff.split("## Current Recommended Next Task", 1)[1].split("## Key Files", 1)[0]
 
         self.assertNotIn("Product focus cleanup", next_task)
-        self.assertIn("Patch release follow-up", next_task)
-        self.assertIn("Docs/tool-evaluation-v0.2.0.md", next_task)
-        self.assertIn("v0.2.1", next_task)
+        self.assertNotIn("finish and publish `v0.2.1`", next_task)
+        self.assertIn("`v0.2.1` is published", next_task)
+        self.assertIn("Module 4", next_task)
         self.assertIn("Docs/blender-support.md", next_task)
         self.assertIn("Docs/first-good-issues.md", next_task)

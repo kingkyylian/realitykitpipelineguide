@@ -189,7 +189,7 @@ rkp build-asset enemy_drone
 make build-asset id=enemy_drone
 ```
 
-If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate.
+If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate. The direct fallback packages the configured procedural texture maps it knows how to generate, including baseColor and roughness maps for the Module 4 material-response draft.
 
 Skip Blender deliberately when you only need the direct USDZ draft:
 
@@ -209,7 +209,7 @@ make inspect-usdz id=enemy_drone
 make inspect-usdz id=enemy_drone json=1
 ```
 
-`inspect-usdz` checks whether the package exists, whether the expected base color texture is inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether USD text exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. Binary `.usdc` packages are decoded through `usdcat` when that tool is available; otherwise geometry/UV status remains `unknown` instead of being invented.
+`inspect-usdz` checks whether the package exists, whether configured `textureMaps` are inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether USD text exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. The JSON output includes `textureMaps` for all configured maps and keeps `baseColorTexture` as a compatibility alias for existing automation. Binary `.usdc` packages are decoded through `usdcat` when that tool is available; otherwise geometry/UV status remains `unknown` instead of being invented.
 
 Use `verify-asset` as the one-command asset quality gate:
 
@@ -319,6 +319,7 @@ rkp make-asset enemy_drone \
 - RKP generates asset contracts, Blender scripts, USDZ drafts, manifest status, and release checks; it does not automatically wire arbitrary Xcode project resources.
 - `release-check` skips Xcode unless `xcode_project` and `xcode_scheme` are configured in `rkp.json`.
 - Blender background export can fail on some machines. The USDZ fallback keeps the procedural prompt loop alive when `usdzip` exists, and `rkp build-asset --fallback-only` can run that path explicitly, but it does not replace visual acceptance.
+- Material-map inspection covers configured `textureMaps`, but screenshot evidence is still the human visual gate for whether the material response is readable.
 - No standalone MCP server ships yet. Use `status --json` and `doctor --json` as the current automation surface.
 - The published package version is `0.2.1`; pin to a tag for reproducible tool behavior.
 
@@ -331,7 +332,7 @@ rkp make-asset enemy_drone \
 - `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
 - `make-asset` orchestrates prompt scaffolding, optional USDZ build, optional screenshot acceptance, and optional release check.
 - `build-asset` may create or replace USDZ/source files through Blender or explicit direct fallback, but it does not mark the asset imported.
-- `inspect-usdz` reads a built USDZ package and reports texture presence, texture dimensions, UV, and known triangle budget gates without mutating files.
+- `inspect-usdz` reads a built USDZ package and reports configured texture map presence, texture dimensions, UV, and known triangle budget gates without mutating files.
 - `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release check, stopping at the first failed gate.
 - `accept-asset` requires screenshot evidence and records production acceptance.
 - `doctor` reads project state and should not mutate files. Core pipeline paths are errors; public showcase paths are warnings so minimal external projects can still use portable commands. `--blender` adds an explicit Blender executable diagnostic.

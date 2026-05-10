@@ -22,7 +22,9 @@ class ReleaseDocsTests(unittest.TestCase):
         self.assertLess(changelog.index("## v0.2.0"), changelog.index("## v0.1.0"))
 
         unreleased = changelog.split("## Unreleased", 1)[1].split("## v0.2.1", 1)[0]
-        self.assertIn("No unreleased changes yet", unreleased)
+        self.assertIn("Module 4 material response", unreleased)
+        self.assertIn("configured material-map reporting", unreleased)
+        self.assertIn("direct USDZ fallback builder", unreleased)
 
         v021 = changelog.split("## v0.2.1", 1)[1].split("## v0.2.0", 1)[0]
         self.assertIn("### Fixed", v021)
@@ -80,3 +82,11 @@ class ReleaseDocsTests(unittest.TestCase):
         self.assertIn("screenshot evidence must be a PNG or JPEG image", release)
         self.assertNotIn("Draft patch release notes", release)
         self.assertNotIn("Publish Checklist", release)
+
+    def test_handoff_knows_v021_is_published_and_module4_is_next(self) -> None:
+        handoff = read("Docs/ai-handoff.md")
+        current_task = handoff.split("## Current Recommended Next Task", 1)[1].split("## Key Files", 1)[0]
+
+        self.assertIn("`v0.2.1` is published", current_task)
+        self.assertIn("Module 4", current_task)
+        self.assertNotIn("finish and publish `v0.2.1`", current_task)

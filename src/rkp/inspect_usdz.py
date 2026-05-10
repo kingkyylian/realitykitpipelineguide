@@ -11,7 +11,13 @@ import sys
 import zipfile
 from pathlib import Path
 
-from rkp.asset_manifest import asset_usdz_path, expected_basecolor_name, load_asset
+from rkp.asset_manifest import (
+    asset_usdz_path,
+    expected_basecolor_name,
+    expected_texture_name,
+    load_asset,
+    texture_map_names,
+)
 from rkp.rkp_project import ProjectPaths, load_project
 
 PROJECT = load_project()
@@ -105,17 +111,35 @@ def inspect_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict:
         "triangles": None,
         "maxTriangles": asset.get("maxTriangles"),
         "triangleStatus": "unknown",
-        "baseColorTexture": {
-            "expected": expected_basecolor_name(asset),
+        "textureMaps": {},
+        "baseColorTexture": {},
+        "uv": {"st": None, "status": "unknown"},
+        "errors": [],
+    }
+
+    for map_name in texture_map_names(asset):
+        expected_name = expected_texture_name(asset, map_name)
+        if expected_name is None:
+            continue
+        payload["textureMaps"][map_name] = {
+            "expected": expected_name,
             "present": False,
             "width": None,
             "height": None,
             "maxSize": asset.get("maxTextureSize"),
             "sizeStatus": "unknown",
+        }
+    payload["baseColorTexture"] = payload["textureMaps"].get(
+        "baseColor",
+        {
+            "expected": expected_basecolor_name(asset),
+            "present": None,
+            "width": None,
+            "height": None,
+            "maxSize": asset.get("maxTextureSize"),
+            "sizeStatus": "not_required",
         },
-        "uv": {"st": None, "status": "unknown"},
-        "errors": [],
-    }
+    )
 
     if not usdz_path.exists():
         payload["errors"].append(f"missing USDZ: {project.rel(usdz_path)}")
@@ -128,24 +152,19 @@ def inspect_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict:
         with zipfile.ZipFile(usdz_path) as archive:
             entries = archive.namelist()
             payload["entries"] = entries
-            expected_texture = payload["baseColorTexture"]["expected"]
-            if expected_texture:
-                texture_member = next((name for name in entries if Path(name).name == expected_texture), None)
-                payload["baseColorTexture"]["present"] = texture_member is not None
+            for record in payload["textureMaps"].values():
+                texture_member = next((name for name in entries if Path(name).name == record["expected"]), None)
+                record["present"] = texture_member is not None
                 if texture_member:
                     dimensions = image_dimensions(archive.read(texture_member))
                     if dimensions:
                         width, height = dimensions
-                        payload["baseColorTexture"]["width"] = width
-                        payload["baseColorTexture"]["height"] = height
-                        max_size = payload["baseColorTexture"]["maxSize"]
+                        record["width"] = width
+                        record["height"] = height
+                        max_size = record["maxSize"]
                         if max_size is not None:
-                            payload["baseColorTexture"]["sizeStatus"] = (
-                                "ok" if max(width, height) <= max_size else "over"
-                            )
-            else:
-                payload["baseColorTexture"]["present"] = None
-                payload["baseColorTexture"]["sizeStatus"] = "not_required"
+                            record["sizeStatus"] = "ok" if max(width, height) <= max_size else "over"
+            payload["baseColorTexture"] = payload["textureMaps"].get("baseColor", payload["baseColorTexture"])
             text = _read_text_members(archive)
             if not text:
                 text = _read_usdcat_text(usdz_path, entries)
@@ -163,10 +182,11 @@ def inspect_asset(asset_id: str, project: ProjectPaths = PROJECT) -> dict:
 
     if payload["triangleStatus"] == "over":
         payload["errors"].append("triangle budget exceeded")
-    if payload["baseColorTexture"]["expected"] and not payload["baseColorTexture"]["present"]:
-        payload["errors"].append("baseColor texture missing from USDZ")
-    if payload["baseColorTexture"]["sizeStatus"] == "over":
-        payload["errors"].append("baseColor texture exceeds manifest maxTextureSize")
+    for map_name, record in payload["textureMaps"].items():
+        if not record["present"]:
+            payload["errors"].append(f"{map_name} texture missing from USDZ")
+        if record["sizeStatus"] == "over":
+            payload["errors"].append(f"{map_name} texture exceeds manifest maxTextureSize")
     if payload["uv"]["status"] == "missing":
         payload["errors"].append("st UV primvar missing from text USD")
 
@@ -198,6 +218,14 @@ def print_text(payload: dict) -> None:
         else:
             suffix = "" if max_size is None else f" / {max_size} ({texture.get('sizeStatus', 'unknown')})"
             print(f"baseColor size: {width}x{height}{suffix}")
+    for map_name, record in payload.get("textureMaps", {}).items():
+        if map_name == "baseColor":
+            continue
+        status = "present" if record.get("present") else "missing"
+        width = record.get("width")
+        height = record.get("height")
+        size = "unknown" if width is None or height is None else f"{width}x{height}"
+        print(f"{map_name} texture: {status}, size: {size}")
     print(f"uv st: {payload.get('uv', {}).get('status', 'unknown')}")
     entries = payload.get("entries", [])
     print(f"entries: {len(entries)}")

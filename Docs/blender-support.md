@@ -9,14 +9,14 @@ RKP is built around Blender-authored USDZ assets, but the CLI must remain useful
 | Blender 4.x with working USD export | Preferred authoring path | Generated Blender scripts, UV/material iteration, source asset edits. | Run `rkp inspect-usdz` and accept with screenshot evidence. |
 | Blender 4.5 LTS | Reference diagnostic target | Stable local authoring when background mode works on the machine. | Confirm with `rkp doctor --blender` before relying on it. |
 | Newer Blender previews or 5.x builds | Not the public baseline yet | Local experiments and compatibility checks. | Record failures in `Docs/WORKLOG.md`; keep fallback path available. |
-| No working Blender, but `usdzip` exists | Draft fallback path | Prompt-backed procedural USDZ drafts through automatic recovery or explicit `rkp build-asset --fallback-only`. | Do not mark imported until RealityKit screenshot evidence exists. |
+| No working Blender, but `usdzip` exists | Draft fallback path | Prompt-backed procedural USDZ drafts through automatic recovery or explicit `rkp build-asset --fallback-only`. The fallback can package configured procedural baseColor and roughness maps for supported teaching drafts. | Do not mark imported until RealityKit screenshot evidence exists. |
 | No Blender and no `usdzip` | Planning-only path | Manifest entries, asset briefs, and generator scripts. | Install a working authoring tool before build/acceptance. |
 
 ## Known Reference-Machine Behavior
 
 On the current reference machine, Blender 4.5.8 LTS, 5.1.0, and 5.1.1 were observed crashing during background startup before the generated Python asset script ran. RKP recovered by using the direct USDZ fallback through `/usr/bin/usdzip` for prompt-backed procedural assets.
 
-That fallback creates a real `.usdz`, but it does not replace visual acceptance. The asset should remain a draft until it is loaded in RealityKit and accepted with screenshot evidence.
+That fallback creates a real `.usdz`, and for supported teaching drafts it packages the manifest-configured texture maps that RKP can generate directly. It still does not replace visual acceptance. The asset should remain a draft until it is loaded in RealityKit and accepted with screenshot evidence.
 
 Use `--fallback-only` when you want to skip Blender entirely and produce the direct USDZ draft on purpose:
 

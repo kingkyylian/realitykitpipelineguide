@@ -50,6 +50,9 @@ final class GameARView: ARView {
         addLighting()
         ArenaBuilder.addShowcaseBackdrop(to: worldAnchor)
         ArenaBuilder.addArena(to: worldAnchor)
+        if ProcessInfo.processInfo.arguments.contains("--material-response-mode") {
+            MaterialResponseShowcase.add(to: worldAnchor)
+        }
         gameSession.startRun(targetCount: targetCountForCurrentWave())
         spawnWaveTargets()
 

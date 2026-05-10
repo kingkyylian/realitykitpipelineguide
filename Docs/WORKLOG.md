@@ -12,6 +12,55 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 108: Module 4 Material Response First Slice
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Base color sonrası ilk material response dersini roughness value ve roughness map karşılaştırmasıyla doğrulamak.
+
+**Yapılanlar:**
+
+- `inspect-usdz` configured material maps raporlayacak şekilde genişletildi; `baseColorTexture` alias'ı geriye dönük uyumluluk için korundu.
+- `material_response_targets` asset kontratı, Blender script'i, manifest kaydı ve brief'i eklendi.
+- Blender 4.5.8 LTS background export yine startup sırasında segfault verdi; direct USDZ fallback builder configured `baseColor` + `roughness` map paketleyecek şekilde genişletildi.
+- RealityKit fixture'a sadece `--material-response-mode` ile çalışan opt-in showcase eklendi; normal target fallback sırası değişmedi.
+- Simulator screenshot ile asset kabul edildi.
+
+**Acceptance:**
+
+- USDZ: `Assets/Imported/material_response_targets.usdz`
+- Screenshot: `Docs/screenshots/material_response_targets.png`
+- Manifest status: `imported`
+
+**Verification:**
+
+```text
+pipx install --force git+https://github.com/kingkyylian/realitykitpipelineguide.git@v0.2.1: installed package rkp 0.2.1
+rkp --version: rkp 0.2.1
+rkp init --project-name SmokeGame: ok in /private/tmp/rkp-v021-smoke-opf5Y5
+rkp doctor --json: ok, 0 errors, 3 expected recommended-path warnings in minimal project
+rkp build-asset smoke_drone --fallback-only: ok, 16068-byte USDZ
+rkp inspect-usdz smoke_drone --json: ok, 804 triangles, 512x512 baseColor, st UV present
+rtk .venv/bin/python -m unittest Tests/test_release_docs.py: ok, 6 tests
+rtk .venv/bin/python -m unittest Tests/test_rkp_project.py: ok, 23 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 159 tests before fallback builder update; ok, 161 tests inside release-check after fallback builder update
+rtk .venv/bin/python Tools/rkp.py build-asset material_response_targets: Blender segfaulted, direct USDZ fallback built 20281-byte USDZ
+rtk .venv/bin/python Tools/rkp.py inspect-usdz material_response_targets --json: ok, baseColor 512x512, roughness 512x512, triangles=576, st UV present
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok, CoreSimulator sandbox warnings only
+rtk xcrun simctl launch 1209CEA7-6253-43D7-A6B3-9B755F09BDB1 com.kyylian.RealityKitPipelineDemo --material-response-mode: ok
+rtk xcrun simctl io 1209CEA7-6253-43D7-A6B3-9B755F09BDB1 screenshot /Users/kyylian/Developer/RealityKitPipelineDemo/Docs/screenshots/material_response_targets.png: ok
+rtk .venv/bin/python Tools/rkp.py accept-asset material_response_targets --screenshot Docs/screenshots/material_response_targets.png: ok
+rtk .venv/bin/python Tools/rkp.py release-check --assets: ok, 161 tests, imported assets inspected, Xcode build ok
+```
+
+**Öğrenme notu:**
+
+Asset kabulü dosyanın oluşmasıyla değil, runtime evidence ve manifest/worklog kaydıyla tamamlanır. Bu slice baseColor ve roughness map paket sözleşmesini kanıtladı; screenshot'ta üç material-response paneli front-facing ve target fallback'lerden ayrı görünüyor. Roughness ayrımı mevcut fixture ışığında sınırlı okunuyor, bu yüzden Module 4'ün sonraki adımı map sayısını artırmak değil ışık açısı, yüzey formu veya kamera düzenini iyileştirmek olmalı.
+
+**Karar:**
+
+Blender background export referans makinede güvenilir değilken direct fallback yalnızca baseColor varsaymamalı. Manifest `textureMaps` ne istiyorsa fallback draft o map dosyalarını pakete koymalı; yine de screenshot acceptance görsel son kapı olarak kalır.
+
 ### Sprint 107: RKP Tool Evaluation Before Module 4
 
 **Durum:** Tamamlandı
@@ -52,7 +101,7 @@ rtk git diff --check: ok
 
 **Karar:**
 
-`v0.2.0` release geri yazılmayacak. Düzeltmeler `0.2.1` patch adayı olarak kalacak; push/tag/release için önce kullanıcı onayı ve GitHub Actions bekleme gerekecek.
+`v0.2.0` release geri yazılmayacak. Düzeltmeler `v0.2.1` patch release olarak yayınlandı; sonraki düzeltmeler yeni patch release ile yapılacak. Module 4'e geçmeden önce istenirse son bir temiz tag-install smoke test çalıştırılabilir.
 
 ### Sprint 104: v0.2.0 Release Candidate Notes
 

@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -122,6 +123,8 @@ class RkpProjectTests(unittest.TestCase):
         texture_name: str | None = None,
         texture_size: tuple[int, int] | None = None,
         include_st_uv: bool = True,
+        texture_maps: list[str] | None = None,
+        extra_textures: dict[str, tuple[int, int]] | None = None,
     ) -> None:
         manifest_path = root / "Pipeline" / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -133,7 +136,7 @@ class RkpProjectTests(unittest.TestCase):
                 "status": "planned",
                 "maxTriangles": triangle_budget,
                 "maxTextureSize": 512,
-                "textureMaps": ["baseColor"],
+                "textureMaps": texture_maps or ["baseColor"],
                 "notes": "inspectable test asset",
             }
         )
@@ -157,6 +160,8 @@ def Mesh "Mesh"
                     f"textures/{texture_name}",
                     self.png_bytes(*texture_size) if texture_size else b"png",
                 )
+            for extra_name, extra_size in (extra_textures or {}).items():
+                archive.writestr(f"textures/{extra_name}", self.png_bytes(*extra_size))
 
     def test_find_project_root_walks_up_to_rkp_json(self) -> None:
         from Tools.rkp_project import find_project_root
@@ -751,6 +756,59 @@ with zipfile.ZipFile(output, "w") as zf:
             self.assertEqual(result.returncode, 1)
             self.assertIn("baseColor size: 1024x512 / 512 (over)", result.stdout)
 
+    def test_inspect_usdz_reports_configured_material_maps(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_inspectable_usdz_asset(
+                root,
+                "material_maps",
+                texture_name="material_maps_basecolor.png",
+                texture_size=(512, 512),
+                texture_maps=["baseColor", "roughness"],
+                extra_textures={"material_maps_roughness.png": (512, 512)},
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "Tools" / "rkp.py"), "inspect-usdz", "material_maps", "--json"],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertTrue(payload["textureMaps"]["baseColor"]["present"])
+            self.assertTrue(payload["textureMaps"]["roughness"]["present"])
+            self.assertEqual(payload["textureMaps"]["roughness"]["width"], 512)
+            self.assertEqual(payload["textureMaps"]["roughness"]["height"], 512)
+            self.assertEqual(payload["textureMaps"]["roughness"]["sizeStatus"], "ok")
+            self.assertEqual(payload["baseColorTexture"], payload["textureMaps"]["baseColor"])
+
+    def test_inspect_usdz_rejects_missing_roughness_map_when_configured(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_inspectable_usdz_asset(
+                root,
+                "missing_roughness",
+                texture_name="missing_roughness_basecolor.png",
+                texture_size=(512, 512),
+                texture_maps=["baseColor", "roughness"],
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "Tools" / "rkp.py"), "inspect-usdz", "missing_roughness", "--json"],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            payload = json.loads(result.stdout)
+            self.assertFalse(payload["textureMaps"]["roughness"]["present"])
+            self.assertIn("roughness texture missing from USDZ", payload["errors"])
+
     def test_fallback_builder_uses_external_config_and_reports_missing_usdzip(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -775,6 +833,60 @@ with zipfile.ZipFile(output, "w") as zf:
             self.assertEqual(result.returncode, 127)
             self.assertIn("usdzip not found", result.stderr)
             self.assertFalse((root / "GameAssets" / "portable_fallback.usdz").exists())
+
+    @unittest.skipUnless(shutil.which("usdzip"), "usdzip not installed")
+    def test_fallback_builder_packages_configured_material_maps(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            manifest_path = root / "Pipeline" / "manifest.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["assets"].append(
+                {
+                    "id": "portable_material_response",
+                    "file": "portable_material_response.usdz",
+                    "type": "material_response_showcase",
+                    "status": "planned",
+                    "maxTriangles": 1800,
+                    "maxTextureSize": 1024,
+                    "textureMaps": ["baseColor", "roughness"],
+                    "notes": "temporary material response fallback asset",
+                }
+            )
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            build = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "usdz_fallback_builder.py"),
+                    "--id",
+                    "portable_material_response",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(build.returncode, 0, build.stderr)
+            inspect = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "inspect-usdz",
+                    "portable_material_response",
+                    "--json",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(inspect.returncode, 0, inspect.stderr)
+            payload = json.loads(inspect.stdout)
+            self.assertTrue(payload["textureMaps"]["baseColor"]["present"])
+            self.assertTrue(payload["textureMaps"]["roughness"]["present"])
+            self.assertEqual(payload["textureMaps"]["roughness"]["sizeStatus"], "ok")
+            self.assertEqual(payload["triangleStatus"], "ok")
 
     def test_release_check_uses_external_manifest_and_skips_missing_optional_gates(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

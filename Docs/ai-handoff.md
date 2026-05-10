@@ -61,6 +61,7 @@ Do not expand RKG while doing product-focus cleanup unless a test or doc boundar
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
+| Material response first slice | Started | `Assets/Imported/material_response_targets.usdz`, `Docs/screenshots/material_response_targets.png`, `rkp inspect-usdz` textureMaps output |
 
 ## Planned Learning Modules
 
@@ -79,14 +80,15 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 ## Current Recommended Next Task
 
-Patch release follow-up: finish and publish `v0.2.1` before Module 4.
+Post-release state: `v0.2.1` is published and GitHub Actions passed on the release commit. Do not rewrite `v0.2.0` or `v0.2.1`; use a future patch release for corrections.
 
-1. Review `Docs/tool-evaluation-v0.2.0.md` and `Docs/releases/v0.2.1.md`; they record the real `v0.2.0` install findings and local `0.2.1` patch candidate checks.
-2. Run full local verification, push only if the user explicitly asks, wait for GitHub Actions, then publish `v0.2.1`.
-3. Do not rewrite `v0.2.0`; it remains the release that exposed the package-version mismatch and screenshot evidence gap.
+Recommended next path:
+
+1. Continue Module 4: Texture Maps and Material Response.
+2. Pick exactly one next material slice: metallic value comparison, normal-map export behavior, or better roughness screenshot readability.
+3. Keep screenshot evidence required before marking any visual asset imported.
 4. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
 5. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
-6. After `v0.2.1`, move to demo GIF/MP4 capture or Module 4: Texture Maps and Material Response.
 
 ## Key Files to Read First
 

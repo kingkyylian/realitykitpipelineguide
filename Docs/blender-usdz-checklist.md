@@ -28,6 +28,10 @@
 - Use simple, readable color regions so missing or flipped UVs are obvious.
 - Name texture files with the asset prefix, for example `target_basic_textured_basecolor.png`.
 - Keep roughness/metallic as material values for now; do not add extra texture maps until base color import is verified.
+- Roughness map'e yalnızca base color import doğrulandıktan sonra geç.
+- Roughness value ile roughness map'i aynı ışık ve aynı kamera altında karşılaştır.
+- Roughness map dosya adı asset prefix'i taşımalı: `<asset_id>_roughness.png`.
+- Roughness farkı simulator screenshot'ta okunmuyorsa önce ışık/surface açısını düzelt; normal/metallic map ekleme.
 - For USD export, match the shader UV Map node's `uv_map` field to the UV primvar name. The active Blender UV layer alone is not enough.
 - If the source USDZ uses the `st` primvar, write the corrected UVs back to `st` before export.
 

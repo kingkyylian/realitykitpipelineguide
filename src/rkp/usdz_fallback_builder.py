@@ -11,7 +11,7 @@ import tempfile
 import zlib
 from pathlib import Path
 
-from rkp.asset_manifest import asset_usdz_path, basecolor_texture_name, load_asset
+from rkp.asset_manifest import asset_usdz_path, expected_texture_name, load_asset, texture_map_names
 from rkp.prompt_asset import infer_palette
 from rkp.rkp_project import load_project
 
@@ -72,7 +72,7 @@ def make_texture(asset: dict, path: Path) -> None:
                     color = white
                 if 0.11 < radius < 0.19:
                     color = primary_rgba
-            elif archetype == "target" or asset_type == "gameplay_target":
+            elif archetype == "target" or asset_type in {"gameplay_target", "material_response_showcase"}:
                 ring = int(radius * 18)
                 color = primary_rgba if ring % 2 == 0 else secondary_rgba
                 if radius < 0.08:
@@ -86,6 +86,27 @@ def make_texture(asset: dict, path: Path) -> None:
 
     path.parent.mkdir(parents=True, exist_ok=True)
     write_png(path, 512, 512, pixels)
+
+
+def make_roughness_texture(path: Path) -> None:
+    pixels: list[tuple[int, int, int, int]] = []
+    for y in range(512):
+        for x in range(512):
+            u = (x + 0.5) / 512
+            band = int(u * 10) % 2 == 0
+            value = 46 if band else 224
+            if 220 < y < 292:
+                value = 28 if band else 238
+            pixels.append((value, value, value, 255))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_png(path, 512, 512, pixels)
+
+
+def make_texture_map(asset: dict, map_name: str, path: Path) -> None:
+    if map_name == "roughness":
+        make_roughness_texture(path)
+        return
+    make_texture(asset, path)
 
 
 class MeshBuilder:
@@ -162,9 +183,24 @@ def target_mesh() -> MeshBuilder:
     return mesh
 
 
-def write_usda(asset: dict, texture_name: str, output: Path) -> None:
-    archetype = asset.get("archetype")
-    mesh = drone_mesh() if archetype == "drone" else target_mesh()
+def material_response_meshes() -> list[tuple[str, MeshBuilder, str]]:
+    meshes: list[tuple[str, MeshBuilder, str]] = []
+    for name, x_offset, material_name in [
+        ("matte_value_panel", -0.62, "mat_matte_value"),
+        ("glossy_value_panel", 0.0, "mat_glossy_value"),
+        ("roughness_map_panel", 0.62, "mat_roughness_map"),
+    ]:
+        mesh = MeshBuilder()
+        mesh.add_cylinder(x_offset, 0, 0, 0.28, 0.035, 48)
+        meshes.append((name, mesh, material_name))
+    return meshes
+
+
+def list_value(values: list[object]) -> str:
+    return "[" + ", ".join(str(value).replace("'", "") for value in values) + "]"
+
+
+def mesh_payload(mesh: MeshBuilder) -> dict[str, str]:
     min_x = min(point[0] for point in mesh.points)
     max_x = max(point[0] for point in mesh.points)
     min_y = min(point[1] for point in mesh.points)
@@ -175,15 +211,135 @@ def write_usda(asset: dict, texture_name: str, output: Path) -> None:
     span_y = max(max_y - min_y, 0.001)
     st_values = [((point[0] - min_x) / span_x, (point[1] - min_y) / span_y) for point in mesh.points]
     indices = [index for triangle in mesh.triangles for index in triangle]
+    return {
+        "points": list_value(mesh.points),
+        "counts": list_value([3] * len(mesh.triangles)),
+        "face_indices": list_value(indices),
+        "st": list_value(st_values),
+        "extent": list_value([(min_x, min_y, min_z), (max_x, max_y, max_z)]),
+    }
 
-    def list_value(values: list[object]) -> str:
-        return "[" + ", ".join(str(value).replace("'", "") for value in values) + "]"
 
-    points = list_value(mesh.points)
-    counts = list_value([3] * len(mesh.triangles))
-    face_indices = list_value(indices)
-    st = list_value(st_values)
-    extent = list_value([(min_x, min_y, min_z), (max_x, max_y, max_z)])
+def mesh_block(name: str, mesh: MeshBuilder, material_name: str) -> str:
+    payload = mesh_payload(mesh)
+    return f'''        def Mesh "{name}" (
+            active = true
+            prepend apiSchemas = ["MaterialBindingAPI"]
+        )
+        {{
+            uniform bool doubleSided = 1
+            float3[] extent = {payload["extent"]}
+            int[] faceVertexCounts = {payload["counts"]}
+            int[] faceVertexIndices = {payload["face_indices"]}
+            rel material:binding = </root/_materials/{material_name}>
+            point3f[] points = {payload["points"]}
+            texCoord2f[] primvars:st = {payload["st"]} (
+                interpolation = "faceVarying"
+            )
+            int[] primvars:st:indices = {payload["face_indices"]}
+            uniform token subdivisionScheme = "none"
+        }}'''
+
+
+def material_block(name: str, basecolor_texture: str, roughness_value: float, roughness_texture: str | None = None) -> str:
+    roughness_input = (
+        f"float inputs:roughness.connect = </root/_materials/{name}/Roughness_Texture.outputs:r>"
+        if roughness_texture
+        else f"float inputs:roughness = {roughness_value}"
+    )
+    roughness_shader = ""
+    if roughness_texture:
+        roughness_shader = f'''
+
+            def Shader "Roughness_Texture"
+            {{
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/{roughness_texture}@
+                token inputs:sourceColorSpace = "raw"
+                float2 inputs:st.connect = </root/_materials/{name}/uvmap.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                float outputs:r
+            }}'''
+    return f'''        def Material "{name}"
+        {{
+            token outputs:surface.connect = </root/_materials/{name}/Preview.outputs:surface>
+
+            def Shader "Preview"
+            {{
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor.connect = </root/_materials/{name}/Image_Texture.outputs:rgb>
+                float inputs:metallic = 0
+                {roughness_input}
+                token outputs:surface
+            }}
+
+            def Shader "Image_Texture"
+            {{
+                uniform token info:id = "UsdUVTexture"
+                asset inputs:file = @./textures/{basecolor_texture}@
+                token inputs:sourceColorSpace = "sRGB"
+                float2 inputs:st.connect = </root/_materials/{name}/uvmap.outputs:result>
+                token inputs:wrapS = "repeat"
+                token inputs:wrapT = "repeat"
+                float3 outputs:rgb
+            }}{roughness_shader}
+
+            def Shader "uvmap"
+            {{
+                uniform token info:id = "UsdPrimvarReader_float2"
+                string inputs:varname = "st"
+                float2 outputs:result
+            }}
+        }}'''
+
+
+def write_material_response_usda(asset: dict, texture_names: dict[str, str], output: Path) -> None:
+    basecolor = texture_names["baseColor"]
+    roughness = texture_names.get("roughness")
+    meshes = "\n\n".join(mesh_block(name, mesh, material_name) for name, mesh, material_name in material_response_meshes())
+    materials = "\n\n".join(
+        [
+            material_block("mat_matte_value", basecolor, 0.88),
+            material_block("mat_glossy_value", basecolor, 0.18),
+            material_block("mat_roughness_map", basecolor, 0.50, roughness),
+        ]
+    )
+    output.write_text(
+        f'''#usda 1.0
+(
+    defaultPrim = "root"
+    doc = "RKP direct USDZ material response fallback builder"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "root"
+{{
+    def Xform "{asset["id"]}"
+    {{
+{meshes}
+    }}
+
+    def Scope "_materials"
+    {{
+{materials}
+    }}
+}}
+''',
+        encoding="utf-8",
+    )
+
+
+def write_usda(asset: dict, texture_names: dict[str, str], output: Path) -> None:
+    if asset.get("type") == "material_response_showcase":
+        write_material_response_usda(asset, texture_names, output)
+        return
+
+    archetype = asset.get("archetype")
+    mesh = drone_mesh() if archetype == "drone" else target_mesh()
+    payload = mesh_payload(mesh)
+    texture_name = texture_names["baseColor"]
 
     output.write_text(
         f'''#usda 1.0
@@ -204,15 +360,15 @@ def Xform "root"
         )
         {{
             uniform bool doubleSided = 1
-            float3[] extent = {extent}
-            int[] faceVertexCounts = {counts}
-            int[] faceVertexIndices = {face_indices}
+            float3[] extent = {payload["extent"]}
+            int[] faceVertexCounts = {payload["counts"]}
+            int[] faceVertexIndices = {payload["face_indices"]}
             rel material:binding = </root/_materials/mat_textured>
-            point3f[] points = {points}
-            texCoord2f[] primvars:st = {st} (
+            point3f[] points = {payload["points"]}
+            texCoord2f[] primvars:st = {payload["st"]} (
                 interpolation = "faceVarying"
             )
-            int[] primvars:st:indices = {face_indices}
+            int[] primvars:st:indices = {payload["face_indices"]}
             uniform token subdivisionScheme = "none"
         }}
     }}
@@ -273,13 +429,24 @@ def main() -> int:
         return 127
 
     output_path = asset_usdz_path(asset, PROJECT)
-    texture_name = basecolor_texture_name(str(asset["id"]))
+    texture_names = {
+        map_name: expected_name
+        for map_name in texture_map_names(asset)
+        if (expected_name := expected_texture_name(asset, map_name)) is not None
+    }
+    if "baseColor" not in texture_names:
+        print("error: direct USDZ fallback requires a baseColor texture map", file=sys.stderr)
+        return 1
     with tempfile.TemporaryDirectory(prefix=f"rkp_{asset['id']}_") as temp_dir_name:
         temp_dir = Path(temp_dir_name)
         usda_path = temp_dir / f"{asset['id']}.usda"
-        texture_path = temp_dir / "textures" / texture_name
-        make_texture(asset, texture_path)
-        write_usda(asset, texture_name, usda_path)
+        for map_name, texture_name in texture_names.items():
+            texture_path = temp_dir / "textures" / texture_name
+            make_texture_map(asset, map_name, texture_path)
+            project_texture_path = PROJECT.textures_dir / texture_name
+            project_texture_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(texture_path, project_texture_path)
+        write_usda(asset, texture_names, usda_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         command = [usdzip, "--arkitAsset", str(usda_path), str(output_path)]
         print("running:", " ".join(command), flush=True)

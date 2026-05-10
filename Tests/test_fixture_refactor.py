@@ -30,6 +30,19 @@ class FixtureRefactorTests(unittest.TestCase):
         basic_index = target_factory.index('"target_basic"')
         self.assertLess(textured_index, basic_index)
 
+    def test_material_response_showcase_is_opt_in(self) -> None:
+        showcase = SOURCE_DIR / "MaterialResponseShowcase.swift"
+        game_ar_view = (SOURCE_DIR / "GameARView.swift").read_text(encoding="utf-8")
+        target_factory = (SOURCE_DIR / "TargetFactory.swift").read_text(encoding="utf-8")
+
+        self.assertTrue(showcase.exists())
+        text = showcase.read_text(encoding="utf-8")
+        self.assertIn('"material_response_targets"', text)
+        self.assertIn("ImportedAssetLoader.loadModel", text)
+        self.assertIn('"--material-response-mode"', game_ar_view)
+        self.assertIn("MaterialResponseShowcase.add", game_ar_view)
+        self.assertNotIn('"material_response_targets"', target_factory)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-- No unreleased changes yet.
+### Added
+
+- Started Module 4 material response with `material_response_targets`, an opt-in RealityKit showcase mode, and simulator screenshot evidence.
+- Added configured material-map reporting to `rkp inspect-usdz --json` while keeping `baseColorTexture` as a compatibility alias.
+
+### Changed
+
+- Extended the direct USDZ fallback builder so supported teaching drafts can package manifest-configured baseColor and roughness maps when Blender background export crashes.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

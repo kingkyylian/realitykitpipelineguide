@@ -49,6 +49,19 @@
       "notes": "Prompt-backed drone teaching asset generated from the red bullseye drone target brief. Direct USDZ fallback produced a compact imported asset with base color texture, archetype=drone, and simulator evidence. Accepted with screenshot Docs/screenshots/enemy_drone_imported.jpg.",
       "prompt": "red bullseye drone target",
       "archetype": "drone"
+    },
+    {
+      "id": "material_response_targets",
+      "file": "material_response_targets.usdz",
+      "type": "material_response_showcase",
+      "status": "imported",
+      "maxTriangles": 1800,
+      "maxTextureSize": 1024,
+      "textureMaps": [
+        "baseColor",
+        "roughness"
+      ],
+      "notes": "Module 4 comparison asset for roughness value versus roughness map behavior. Three small target panels should show matte value, glossy value, and roughness-map variation under the same RealityKit lighting. Accept only after simulator screenshot evidence is captured. Accepted with screenshot Docs/screenshots/material_response_targets.png."
     }
   ]
 }

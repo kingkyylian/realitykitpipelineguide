@@ -9,6 +9,13 @@ from rkp.rkp_project import ProjectPaths, load_project
 JsonDict = dict[str, Any]
 Asset = dict[str, Any]
 
+TEXTURE_MAP_SUFFIXES = {
+    "baseColor": "basecolor",
+    "roughness": "roughness",
+    "metallic": "metallic",
+    "normal": "normal",
+}
+
 
 def _project(project: ProjectPaths | None = None) -> ProjectPaths:
     return project or load_project()
@@ -68,11 +75,24 @@ def basecolor_texture_name(asset_id: str) -> str:
     return f"{asset_id}_basecolor.png"
 
 
-def expected_basecolor_name(asset: Asset) -> str | None:
+def texture_map_names(asset: Asset) -> list[str]:
     texture_maps = asset.get("textureMaps")
-    if texture_maps is not None and "baseColor" not in texture_maps:
+    if isinstance(texture_maps, list):
+        return [str(name) for name in texture_maps]
+    return ["baseColor"]
+
+
+def expected_texture_name(asset: Asset, map_name: str) -> str | None:
+    suffix = TEXTURE_MAP_SUFFIXES.get(map_name)
+    if suffix is None:
         return None
-    return basecolor_texture_name(str(asset["id"]))
+    if map_name not in texture_map_names(asset):
+        return None
+    return f"{asset['id']}_{suffix}.png"
+
+
+def expected_basecolor_name(asset: Asset) -> str | None:
+    return expected_texture_name(asset, "baseColor")
 
 
 def expected_basecolor_texture(asset: Asset, project: ProjectPaths | None = None) -> Path | None:

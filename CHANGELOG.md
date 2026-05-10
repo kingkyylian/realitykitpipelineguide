@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-### Added
+### RKP Product Surface
+
+- Clarified the public product boundary: RKP is the active toolkit surface, RKG is experimental labs, and the included app is a verification fixture.
+- Added Makefile `bootstrap-dev` and `verify-local` targets for local contributor setup and lint/test/doctor verification.
+- Aligned Ruff configuration with test/tool bootstrap imports, cleaned current lint debt, and kept `pipeline doctor` from scanning local `.venv` metadata.
+- Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
+
+### RKG Experimental Labs
 
 - `rkg` RealityKit game-factory CLI surface for idea scoring, archetype discovery, spec validation, game planning, screenshot QA planning, project scaffolding, generated game verification, and store-pack checklist generation.
 - Archetype registry for `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, and `wave_defense_lite`.
@@ -14,13 +21,6 @@
 - `rkg verify-screenshots` command for checking generated screenshot evidence files against a `qa-plan --json` payload or generated project `GameSpec.json`.
 - Minimal playable generated loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`.
 - RealityKit state-to-scene binding for the generated `target_shooter`, `lane_dodger`, `toss_physics`, `wave_defense_lite`, and `stack_puzzle` archetypes.
-
-### Changed
-
-- Clarified the public product boundary: RKP is the active toolkit surface, RKG is experimental, and the included app is a verification fixture.
-- Added Makefile `bootstrap-dev` and `verify-local` targets for local contributor setup and lint/test/doctor verification.
-- Aligned Ruff configuration with test/tool bootstrap imports, cleaned current lint debt, and kept `pipeline doctor` from scanning local `.venv` metadata.
-- Split the RealityKit fixture view into focused arena, target factory, hit-effect, and material helpers while preserving target fallback order.
 - Split growing RKG Swift string emitters out of `src/rkg/scaffold.py` into focused runtime/content-view generation modules.
 - Renamed the shared state-bound generated `GameView` helper away from lane-dodger-specific terminology.
 - Extracted shared generated scene entity load/reference wiring for state-bound RKG archetypes.
@@ -29,13 +29,16 @@
 - Routed generated last-event display text through the shared `FeedbackState.message` helper.
 - Routed generated primary/reset button labels through the shared `InputIntent` helper.
 - Wired generated `ResultView` into playable archetype overlays when `state.phase == .result`.
-- Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
+
+### Fixture and Teaching
+
+- Split the RealityKit fixture view into focused arena, target factory, hit-effect, and material helpers while preserving target fallback order.
 - Clarified the multi-archetype RKG scope so target shooter remains one fixture, not the whole product.
 
 ### Verified
 
-- `/opt/homebrew/bin/python3.12 Tools/rkp.py release-check`
-- `/opt/homebrew/bin/python3.12 -m unittest discover -s Tests`
+- `rtk make verify-local`
+- `rtk .venv/bin/python Tools/rkp.py release-check`
 - manifest validation
 - XcodeGen project generation
 - iOS simulator generic build

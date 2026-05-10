@@ -8,6 +8,8 @@ Current state: public Git repo on `main`: `https://github.com/kingkyylian/realit
 
 The project is a command-first RealityKit pipeline toolkit. `Tools/rkp.py`, the installable Codex skill, and the slash commands are the main product; the SwiftUI + RealityKit target-shooting app is a verification fixture for proving imported assets in Xcode/RealityKit.
 
+Default decision rule: default to `rkp` asset-pipeline work unless the user explicitly asks for `rkg`, game factory, generated games, archetypes, store packs, or screenshot QA for generated projects; only work on `rkg` when that experimental labs route is explicitly requested or when maintaining existing RKG tests/docs.
+
 ## What This Project Is
 
 RealityKitPipelineDemo is a small RealityKit asset-pipeline toolkit. It teaches and automates a complete asset and texture pipeline:
@@ -17,6 +19,30 @@ Blender / asset generation -> USDZ -> XcodeGen resource bundle -> RealityKit imp
 ```
 
 It is not a game-first repository. Treat the fixture app as a test harness for the CLI/skill workflow, not as the product architecture.
+
+## Product Surface
+
+The stable product surface is the RKP pipeline:
+
+- `Tools/rkp.py`
+- `src/rkp`
+- `Tools/asset_manifest.json`
+- `Assets/Imported`
+- `Docs/cli-tool.md`
+- `Docs/guide.md`
+- `Skills/realitykit-pipeline-guide`
+
+## Experimental Labs Surface
+
+RKG is useful but secondary:
+
+- `Tools/rkg.py`
+- `src/rkg`
+- `Docs/game-factory.md`
+- `Docs/rkg-architecture.md`
+- `Tests/test_rkg_*.py`
+
+Do not expand RKG while doing product-focus cleanup unless a test or doc boundary requires it.
 
 ## Completed Learning Modules
 
@@ -49,34 +75,17 @@ Recommended order:
 
 MCP status: no standalone MCP server ships yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for current automation and future MCP-style wrapping.
 
-Portability status: config decoupling and packaging are in place. `pyproject.toml` exposes `rkp = "rkp.cli:main"` and `rkg = "rkg.cli:main"`, implementation modules live under `src/rkp` and `src/rkg`, and repo-local `Tools/*.py` files are wrappers. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. `init`, `status`, `doctor`, `doctor --blender`, `new-asset`, `prompt-asset`, `build-asset`, `inspect-usdz`, `verify-asset`, `accept-asset`, direct USDZ fallback, Meshy USDZ draft generation, and `release-check` are config-aware. `inspect-usdz` checks package existence, expected base color texture, PNG/JPEG dimensions against `maxTextureSize`, text USDA `primvars:st`, and known triangle budget status before screenshot acceptance. `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release-check, stopping at the first failed gate. `release-check --assets` inspects all imported manifest assets before the optional Xcode build. `prompt-asset` remains deterministic by default; Claude script generation requires explicit `--generator claude` and the optional AI dependency. `rkp init` bootstraps a minimal external project and refuses to overwrite existing config unless `--force` is passed. If `xcode_project` is omitted, `release-check` skips the Xcode gate after doctor/tests/manifest validation. `rkg score-idea` evaluates first-wave scope before scaffolding; `rkg list-archetypes` and `rkg describe-archetype` expose the seed archetype registry; `rkg plan-game --json` exposes selected `screenshot_proofs`; `rkg qa-plan --json` exposes ordered screenshot capture steps; `rkg verify-screenshots` checks captured JPEG/PNG evidence against either generated `GameSpec.json` or a `qa-plan --json` payload; `rkg init-game` generates a minimal fixed-camera SwiftUI + RealityKit project with planned RKP manifest assets, shared `SessionControl` helpers for playing/reset/result transitions and result overlay visibility, shared `FeedbackState` last-event display text, shared `InputIntent` primary/reset button labels, typed `ScreenshotState` cases, result overlays, procedural runtime fallback, store screenshot proof cues, and screenshot QA runbooks. Current generated playable coverage: `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle` have playable SwiftUI loops, result-state overlays, and SwiftUI-to-RealityKit scene binding. Fresh external project walkthrough is verified from GitHub install through fallback USDZ build; see `Docs/WORKLOG.md` Sprint 40.
+Portability status: `rkp` is installable, config-aware, and usable from external RealityKit projects. `rkp.json` marks the project root and configures manifest/assets/docs/blender/textures/source/tests/Xcode paths. The stable machine-readable surfaces are `rkp status --json` and `rkp doctor --json`. `rkg` also ships as an entry point, but it remains experimental labs work.
 
 ## Current Recommended Next Task
 
-If the user asks to make the repository look professional on GitHub, do this next:
+Product focus cleanup:
 
-1. Review and publish the local commits that are ahead of `origin/main`; do not rewrite the existing `v0.1.0` tag.
-2. Create the next release/tag from the `CHANGELOG.md` `Unreleased` section after the release notes are reviewed.
-3. Document the supported Blender version matrix or add a first-class `rkp build-asset --fallback-only` path. `rkp doctor --blender` diagnostic already exists.
-4. Add README badges if they are not already present.
-5. Set or verify GitHub repo description/topics from `Docs/github-showcase.md`.
-6. Add a first-good-issue list for learners.
-7. Decide whether to keep all `Tools/*.py` wrappers long-term now that `rkp` is installable.
-
-If the user asks to continue education content, do this next:
-
-1. Start Module 4: Texture Maps and Material Response.
-2. Define a roughness/material value comparison asset.
-3. Keep base color pipeline intact.
-4. Add screenshot-based comparison.
-
-If the user asks to continue the game factory route, do this next:
-
-1. Keep RKG framed as an experimental multi-archetype RealityKit game factory, not a target-shooter generator or finished app factory.
-2. Continue defining reusable generated Swift modules for core action and fail/miss behavior.
-3. Add simulator-driving capture automation that writes the `Docs/screenshots/<state>.jpg` files consumed by `rkg verify-screenshots`.
-4. Consider extracting common state-update formula helpers only if another archetype repeats the same movement pattern.
-5. Add richer store-pack checklist expansion from `release.screenshots`.
+1. Keep `rkp` as the first-screen product in README and docs.
+2. Keep `rkg` under explicit experimental labs framing.
+3. Preserve all current verification gates.
+4. Avoid changing fixture app behavior.
+5. After cleanup, run `rtk make verify-local`, manifest validation, and `rtk .venv/bin/python Tools/rkp.py release-check`.
 
 ## Key Files to Read First
 

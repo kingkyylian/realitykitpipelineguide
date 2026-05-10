@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 100: Product Focus Cleanup
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Projeyi tek ana ürün omurgasına geri oturtmak: `rkp` aktif RealityKit asset pipeline tool'u, `rkg` ise açıkça experimental labs katmanı.
+
+**Plan:**
+
+- Mevcut RKG screenshot evidence işini ayrı checkpoint olarak kapat.
+- README ilk ekranını `rkp` happy path'e indir.
+- `Docs/ai-handoff.md` içine default-to-RKP karar kuralı ekle.
+- `Docs/cli-tool.md` içinde normal kullanıcı yolunu beş komutluk RKP akışına sadeleştir.
+- `Docs/game-factory.md` ve `Docs/rkg-architecture.md` dosyalarını experimental labs olarak işaretle.
+- `CHANGELOG.md` içinde RKP product surface ve RKG experimental labs ayrımını görünür yap.
+- Product boundary doc testleri ekle.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_product_boundary_docs.py: ok, 4 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 141 tests
+rtk make verify-local: ok, compileall + Ruff + 141 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+Ürün vitrini `rkp` olacak. `rkg` korunacak, test edilecek ve dokümante edilecek; ancak README/CLI/handoff ana akışında experimental labs olarak kalacak.
+
 ### Sprint 99: RKG Screenshot Evidence Gate
 
 **Durum:** Tamamlandı

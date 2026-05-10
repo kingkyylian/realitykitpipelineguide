@@ -1,8 +1,8 @@
 # RealityKit Pipeline Toolkit
 
-A command-first RealityKit asset pipeline toolkit: CLI, installable Codex skill, agent slash commands, and reusable contracts for Blender-authored USDZ assets.
+A command-first RealityKit asset pipeline toolkit for taking a gameplay asset from brief to Blender/USDZ output, RealityKit verification, simulator evidence, and release checks.
 
-This is a developer tool first. The included target-shooting app is a verification fixture used to prove the workflow: scaffold an asset, build it with Blender, accept it with simulator evidence, and ship it through Xcode.
+`rkp` is the product. The included SwiftUI + RealityKit target-shooting app is a verification fixture used to prove that generated or imported assets actually load in RealityKit. `rkg` is experimental labs work on top of the same pipeline; it is not the main user path.
 
 Most RealityKit tutorials stop at code. This repo treats asset production as part of the game loop: each Blender/USDZ asset has a manifest entry, mobile budget, loader contract, screenshot, and learning note.
 
@@ -10,12 +10,17 @@ Most RealityKit tutorials stop at code. This repo treats asset production as par
 
 ## What This Is
 
-- `rkp`: the installable CLI for asset status, validation, scaffolding, Blender builds, screenshot-based acceptance, tests, and release checks.
-- `rkg`: an experimental game-factory CLI for scoring ideas, validating specs, scaffolding small RealityKit projects, and generating QA/store-pack docs. Treat it as active research on top of RKP, not as a finished commercial game generator.
+Primary product:
+
+- `rkp`: the installable CLI for asset status, validation, scaffolding, Blender builds, USDZ inspection, screenshot-based acceptance, tests, and release checks.
 - `Skills/realitykit-pipeline-guide`: an installable Codex skill that points agents at the same asset, build, and documentation contracts.
 - `.claude/commands`: slash commands such as `/rkp`, `/rkp-asset`, and `/rkp-status` for agent-style usage.
 - `Sources/RealityKitPipelineDemo`: a small playable RealityKit verification fixture that proves pipeline output inside an iOS app.
 - `Docs`: the teaching, production, and AI-agent handoff layer around the same pipeline.
+
+Experimental labs:
+
+- `rkg`: a game-factory research CLI for scoring ideas, validating specs, scaffolding small RealityKit projects, and generating QA/store-pack docs. Treat it as active research on top of RKP, not as a finished commercial game generator.
 
 Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy or load them in your own RealityKit game when needed; the fixture app is only a verification harness and does not automatically switch its default gameplay target to every newly generated asset.
 
@@ -25,8 +30,8 @@ Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy
 | --- | --- | --- | --- |
 | `rkp` asset pipeline | Preview, actively usable | Asset contracts, Blender/USDZ drafts, manifest health, screenshot acceptance, and release gates. | Fully automatic text-to-3D, automatic Xcode project edits, or asset acceptance without screenshot evidence. |
 | RealityKit fixture app | Verification harness | Proving imported USDZ files load and behave inside RealityKit. | A production game architecture or the default destination for every generated asset. |
-| `rkg` game factory | Experimental | GameSpec validation, small generated project scaffolds, archetype exploration, QA/store-pack planning. | A finished commercial game factory or automated App Store submission system. |
 | Codex skill and docs | Teaching/handoff layer | Keeping agents and contributors on the same commands, contracts, and verification gates. | A standalone MCP server; JSON CLI output is the current automation surface. |
+| `rkg` game factory | Experimental labs | GameSpec validation, small generated project scaffolds, archetype exploration, QA/store-pack planning. | A finished commercial game factory or automated App Store submission system. |
 
 ## What You Learn
 
@@ -43,6 +48,24 @@ Generated assets are tool outputs first. Keep them in `Assets/Imported` and copy
 | ![Ring scoring inner hit](Docs/screenshots/ring_scoring_inner_hit.jpg) | ![Imported arena floor](Docs/screenshots/arena_floor_imported.jpg) |
 
 The fixture app starts with procedural RealityKit fallbacks so it can compile before any custom art exists. The asset pipeline then replaces placeholders with USDZ files exported from Blender into `Assets/Imported`.
+
+## The Normal RKP Path
+
+```bash
+rkp init --project-name MyGame
+rkp make-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
+rkp inspect-usdz enemy_drone
+rkp verify-asset enemy_drone --build
+rkp release-check
+```
+
+When simulator evidence is available, accept the asset:
+
+```bash
+rkp accept-asset enemy_drone --screenshot Docs/screenshots/enemy_drone_imported.jpg
+```
+
+This is the product loop. Everything else in the repository exists to teach, verify, or extend that loop.
 
 ## Quick Start
 

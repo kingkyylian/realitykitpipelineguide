@@ -1,8 +1,12 @@
 # RKG Architecture
 
+> **Experimental labs architecture:** This document is for maintaining RKG internals. It should not be used as the main product overview. The main product overview is the RKP path in `README.md` and `Docs/cli-tool.md`.
+
 RKG is the game-factory layer above RKP. RKP owns asset truth; RKG owns game planning, template selection, project generation, and store/QA orchestration.
 
 The architecture goal is to support many small RealityKit game shapes without letting one reference game become the product. Target shooter is a fixture, not the center.
+
+RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot evidence.
 
 ## Boundaries
 

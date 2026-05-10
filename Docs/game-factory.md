@@ -1,12 +1,14 @@
 # RealityKit Game Factory
 
+> **Experimental labs:** RKG explores game-factory workflows on top of the RKP asset pipeline. It is not the main product, not a finished app factory, and not the default path for contributors. Use RKP first unless the task explicitly asks for generated games, archetypes, store packs, or RKG screenshot QA.
+
 This document defines how to turn the asset pipeline into a repeatable commercial game workflow.
 
 For executable architecture details, use `Docs/rkg-architecture.md`. This page stays high-level; the architecture doc owns registry, role, runtime module, CLI, verification, and store-pack contracts.
 
 ## Principle
 
-RKP remains the RealityKit asset pipeline. RKG is the game factory layer above it.
+RKP remains the stable RealityKit asset pipeline. RKG is the experimental labs layer above it.
 
 RKP owns:
 

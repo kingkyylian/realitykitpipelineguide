@@ -14,15 +14,20 @@ class ReleaseDocsTests(unittest.TestCase):
         changelog = read("CHANGELOG.md")
 
         self.assertIn("## Unreleased", changelog)
+        self.assertIn("## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)", changelog)
         self.assertIn("## v0.2.0 - RKP product path and RKG labs preview (2026-05-10)", changelog)
         self.assertIn("## v0.1.0 - Public pipeline toolkit preview", changelog)
-        self.assertLess(changelog.index("## Unreleased"), changelog.index("## v0.2.0"))
+        self.assertLess(changelog.index("## Unreleased"), changelog.index("## v0.2.1"))
+        self.assertLess(changelog.index("## v0.2.1"), changelog.index("## v0.2.0"))
         self.assertLess(changelog.index("## v0.2.0"), changelog.index("## v0.1.0"))
 
-        unreleased = changelog.split("## Unreleased", 1)[1].split("## v0.2.0", 1)[0]
-        self.assertIn("### Fixed", unreleased)
-        self.assertIn("0.2.1", unreleased)
-        self.assertIn("screenshot evidence must be a PNG or JPEG image", unreleased)
+        unreleased = changelog.split("## Unreleased", 1)[1].split("## v0.2.1", 1)[0]
+        self.assertIn("No unreleased changes yet", unreleased)
+
+        v021 = changelog.split("## v0.2.1", 1)[1].split("## v0.2.0", 1)[0]
+        self.assertIn("### Fixed", v021)
+        self.assertIn("0.2.1", v021)
+        self.assertIn("screenshot evidence must be a PNG or JPEG image", v021)
 
         v020 = changelog.split("## v0.2.0", 1)[1].split("## v0.1.0", 1)[0]
         for expected in (
@@ -69,8 +74,9 @@ class ReleaseDocsTests(unittest.TestCase):
     def test_v021_patch_release_notes_cover_tool_evaluation_fixes(self) -> None:
         release = read("Docs/releases/v0.2.1.md")
 
-        self.assertIn("Status: Draft patch release notes", release)
+        self.assertIn("Status: Final release notes for `v0.2.1`.", release)
         self.assertIn("Target tag: `v0.2.1`", release)
         self.assertIn("rkp --version", release)
         self.assertIn("screenshot evidence must be a PNG or JPEG image", release)
-        self.assertIn("GitHub Actions", release)
+        self.assertNotIn("Draft patch release notes", release)
+        self.assertNotIn("Publish Checklist", release)

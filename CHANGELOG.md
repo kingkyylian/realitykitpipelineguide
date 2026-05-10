@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes yet.
+
+## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
+
 ### Fixed
 
 - Bumped package/runtime version metadata to `0.2.1` after `v0.2.0` exposed a tag/package version mismatch.

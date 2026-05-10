@@ -320,7 +320,7 @@ rkp make-asset enemy_drone \
 - `release-check` skips Xcode unless `xcode_project` and `xcode_scheme` are configured in `rkp.json`.
 - Blender background export can fail on some machines. The USDZ fallback keeps the procedural prompt loop alive when `usdzip` exists, and `rkp build-asset --fallback-only` can run that path explicitly, but it does not replace visual acceptance.
 - No standalone MCP server ships yet. Use `status --json` and `doctor --json` as the current automation surface.
-- The published package version is `0.1.0`; pin to a tag once release tags exist.
+- The published package version is `0.2.1`; pin to a tag for reproducible tool behavior.
 
 `rkg` is documented separately in `Docs/game-factory.md` because it is experimental labs work, not the normal RKP asset pipeline.
 

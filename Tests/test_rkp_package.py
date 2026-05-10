@@ -1,6 +1,7 @@
 import json
 import sys
 import tempfile
+import tomllib
 import unittest
 import zipfile
 from argparse import Namespace
@@ -17,6 +18,13 @@ if str(SRC) not in sys.path:
 
 
 class RkpPackageTests(unittest.TestCase):
+    def test_package_metadata_and_runtime_version_match_patch_release(self) -> None:
+        pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        init_text = (ROOT / "src" / "rkp" / "__init__.py").read_text(encoding="utf-8")
+
+        self.assertEqual(pyproject["project"]["version"], "0.2.1")
+        self.assertIn('__version__ = "0.2.1"', init_text)
+
     def test_runtime_helpers_expose_package_subprocess_contract(self) -> None:
         from rkp import runtime
 

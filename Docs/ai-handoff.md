@@ -79,14 +79,14 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 ## Current Recommended Next Task
 
-Public polish follow-up: `v0.2.0` publication review. If `v0.2.0` is already published, move to demo GIF/MP4 capture or Module 4: Texture Maps and Material Response.
+Patch release follow-up: finish and publish `v0.2.1` before Module 4.
 
-1. Review local commits ahead of `origin/main`; push only if the user explicitly asks.
-2. Review `CHANGELOG.md` and `Docs/releases/v0.2.0.md` before any tag or GitHub Release.
-3. Use `Docs/github-showcase.md` for GitHub description/topics and release copy.
+1. Review `Docs/tool-evaluation-v0.2.0.md` and `Docs/releases/v0.2.1.md`; they record the real `v0.2.0` install findings and local `0.2.1` patch candidate checks.
+2. Run full local verification, push only if the user explicitly asks, wait for GitHub Actions, then publish `v0.2.1`.
+3. Do not rewrite `v0.2.0`; it remains the release that exposed the package-version mismatch and screenshot evidence gap.
 4. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
 5. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
-6. If continuing education content, start Module 4: Texture Maps and Material Response.
+6. After `v0.2.1`, move to demo GIF/MP4 capture or Module 4: Texture Maps and Material Response.
 
 ## Key Files to Read First
 

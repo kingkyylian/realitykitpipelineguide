@@ -2,7 +2,7 @@
 
 Use this before pushing a public branch or creating a release.
 
-Latest prepared release notes: `Docs/releases/v0.2.0.md`
+Latest prepared release notes: `Docs/releases/v0.2.1.md`
 
 For a future release, copy the latest release note file to `Docs/releases/<version>.md`, update `CHANGELOG.md`, and update this checklist before tagging.
 

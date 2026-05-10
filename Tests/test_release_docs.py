@@ -20,7 +20,9 @@ class ReleaseDocsTests(unittest.TestCase):
         self.assertLess(changelog.index("## v0.2.0"), changelog.index("## v0.1.0"))
 
         unreleased = changelog.split("## Unreleased", 1)[1].split("## v0.2.0", 1)[0]
-        self.assertIn("No unreleased changes yet", unreleased)
+        self.assertIn("### Fixed", unreleased)
+        self.assertIn("0.2.1", unreleased)
+        self.assertIn("screenshot evidence must be a PNG or JPEG image", unreleased)
 
         v020 = changelog.split("## v0.2.0", 1)[1].split("## v0.1.0", 1)[0]
         for expected in (
@@ -58,8 +60,17 @@ class ReleaseDocsTests(unittest.TestCase):
     def test_release_checklist_points_to_prepared_release_notes(self) -> None:
         checklist = read("Docs/repo-release-checklist.md")
 
-        self.assertIn("Latest prepared release notes: `Docs/releases/v0.2.0.md`", checklist)
+        self.assertIn("Latest prepared release notes: `Docs/releases/v0.2.1.md`", checklist)
         self.assertIn("Docs/releases/*.md", checklist)
         self.assertIn("Do not push, tag, or publish without explicit user approval", checklist)
         self.assertIn("Create the release from the matching `Docs/releases/<version>.md` file", checklist)
         self.assertNotIn("Create `v0.1.0` release", checklist)
+
+    def test_v021_patch_release_notes_cover_tool_evaluation_fixes(self) -> None:
+        release = read("Docs/releases/v0.2.1.md")
+
+        self.assertIn("Status: Draft patch release notes", release)
+        self.assertIn("Target tag: `v0.2.1`", release)
+        self.assertIn("rkp --version", release)
+        self.assertIn("screenshot evidence must be a PNG or JPEG image", release)
+        self.assertIn("GitHub Actions", release)

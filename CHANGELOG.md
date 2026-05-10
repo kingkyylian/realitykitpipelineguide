@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- No unreleased changes yet.
+### Fixed
+
+- Bumped package/runtime version metadata to `0.2.1` after `v0.2.0` exposed a tag/package version mismatch.
+- Hardened `rkp accept-asset` so screenshot evidence must be a PNG or JPEG image, not just any existing file.
 
 ## v0.2.0 - RKP product path and RKG labs preview (2026-05-10)
 

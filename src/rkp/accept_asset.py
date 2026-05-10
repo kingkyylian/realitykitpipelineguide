@@ -26,9 +26,19 @@ def resolve_input_path(path: Path, project: ProjectPaths = PROJECT) -> Path:
     return project.root / expanded
 
 
+def validate_screenshot(path: Path) -> None:
+    data = path.read_bytes()
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return
+    if data.startswith(b"\xff\xd8") and data.endswith(b"\xff\xd9"):
+        return
+    raise ValueError(f"screenshot file is not a valid PNG or JPEG image: {path}")
+
+
 def copy_screenshot(asset_id: str, screenshot: Path, project: ProjectPaths = PROJECT) -> Path:
     if not screenshot.exists() or not screenshot.is_file():
         raise ValueError(f"screenshot file does not exist: {screenshot}")
+    validate_screenshot(screenshot)
 
     project.screenshots_dir.mkdir(parents=True, exist_ok=True)
     if screenshot.resolve().is_relative_to(project.screenshots_dir.resolve()):

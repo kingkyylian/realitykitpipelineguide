@@ -102,7 +102,7 @@ class RkpCliTests(unittest.TestCase):
         result = self.run_rkp("--version")
 
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout.strip(), "rkp 0.1.0")
+        self.assertEqual(result.stdout.strip(), "rkp 0.2.1")
 
 
 if __name__ == "__main__":

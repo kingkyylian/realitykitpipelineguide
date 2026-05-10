@@ -363,7 +363,7 @@ def Mesh "Mesh"
             self.add_built_asset(root, "portable_accept")
             screenshot = root / "Docs" / "screenshots" / "portable_accept.jpg"
             screenshot.parent.mkdir(parents=True)
-            screenshot.write_bytes(b"jpg")
+            screenshot.write_bytes(b"\xff\xd8portable screenshot evidence\xff\xd9")
 
             result = subprocess.run(
                 [
@@ -394,7 +394,7 @@ def Mesh "Mesh"
             nested = self.make_external_project(root)
             self.add_built_asset(root, "portable_absolute")
             outside = root / "outside.jpg"
-            outside.write_bytes(b"jpg")
+            outside.write_bytes(b"\xff\xd8portable screenshot evidence\xff\xd9")
 
             result = subprocess.run(
                 [
@@ -415,6 +415,34 @@ def Mesh "Mesh"
             self.assertTrue(copied.exists())
             manifest = json.loads((root / "Pipeline" / "manifest.json").read_text(encoding="utf-8"))
             self.assertIn("Docs/screenshots/portable_absolute_accepted.jpg", manifest["assets"][0]["notes"])
+
+    def test_accept_asset_rejects_non_image_screenshot_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_built_asset(root, "portable_invalid_screenshot")
+            screenshot = root / "Docs" / "screenshots" / "not_an_image.jpg"
+            screenshot.parent.mkdir(parents=True)
+            screenshot.write_text('{"not": "an image"}', encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "accept-asset",
+                    "portable_invalid_screenshot",
+                    "--screenshot",
+                    "Docs/screenshots/not_an_image.jpg",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("not a valid PNG or JPEG image", result.stderr)
+            manifest = json.loads((root / "Pipeline" / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["assets"][0]["status"], "planned")
 
     def test_build_asset_uses_external_config_and_fails_gracefully_without_blender(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

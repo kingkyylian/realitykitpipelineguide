@@ -151,7 +151,7 @@ Current completed learning modules include first USDZ import, scale/orientation 
 - The fallback builder is for prompt-backed procedural drafts. Visual acceptance still requires loading the USDZ in RealityKit and providing screenshot evidence.
 - RKG is experimental. It can scaffold and verify small fixed-camera RealityKit projects, but generated games still need human product review, visual QA, screenshots, and App Store preparation.
 - No standalone MCP server ships yet. `rkp status --json` and `rkp doctor --json` are the stable machine-readable surfaces.
-- The package version is currently `0.1.0`. Until release tags are cut, GitHub installs track the default branch.
+- The package version is currently `0.2.1`. Pin GitHub installs to a tag for reproducible tool behavior.
 
 ## GitHub Metadata
 

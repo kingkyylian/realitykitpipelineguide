@@ -12,6 +12,48 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 107: RKP Tool Evaluation Before Module 4
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Module 4'e geçmeden önce RKP tool'unu yayınlanmış `v0.2.0` haliyle ve yerel patch adayıyla gerçekçi dış kullanıcı akışlarında test etmek.
+
+**Bulgular:**
+
+- `v0.2.0` GitHub tag install çalışıyor ama package metadata `0.1.0`; `rkp --version` yanlış release kimliği gösteriyor.
+- `v0.2.0` `accept-asset` yalnızca dosya varlığını kontrol ettiği için JSON içerikli `.jpg` dosyasını screenshot evidence olarak kabul ediyor.
+- Temiz dış proje bootstrap, prompt asset, `--fallback-only` USDZ build, inspect, verify, valid screenshot accept ve `release-check --assets` akışı çalışıyor.
+- Minimal dış projede `release-check` test/Xcode yoksa skip edip OK veriyor; bu portability için iyi ama production readiness olarak okunmamalı.
+
+**Yapılanlar:**
+
+- `Docs/tool-evaluation-v0.2.0.md` raporu eklendi.
+- `Docs/releases/v0.2.1.md` patch release taslağı eklendi.
+- `accept-asset` PNG/JPEG header doğrulamasıyla sertleştirildi.
+- Package/runtime metadata `0.2.1` patch adayına yükseltildi.
+- Regression testleri eklendi/güncellendi.
+
+**Verification:**
+
+```text
+/private/tmp/rkp-install-v020-a/bin/rkp --version: rkp 0.1.0, confirms published v0.2.0 mismatch
+/private/tmp/rkp-install-local-021-a/bin/rkp --version: rkp 0.2.1
+/private/tmp/rkp-install-local-021-a/bin/rkp accept-asset patch_drone --screenshot Docs/screenshots/not_an_image.jpg: rejected as not a valid PNG or JPEG image
+/private/tmp/rkp-install-local-021-a/bin/rkp release-check --assets: ok in external project
+rtk .venv/bin/python -m unittest Tests/test_release_docs.py Tests/test_rkp_cli.py Tests/test_rkp_package.py Tests/test_rkp_project.py: ok, 50 tests
+rtk .venv/bin/python -m unittest Tests/test_tool_evaluation_docs.py Tests/test_release_docs.py Tests/test_public_polish_docs.py Tests/test_product_boundary_docs.py: ok, 14 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 155 tests
+rtk make verify-local: ok, compileall + Ruff + 155 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check --assets: release-check ok; imported assets inspected; CoreSimulator sandbox warnings only
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+`v0.2.0` release geri yazılmayacak. Düzeltmeler `0.2.1` patch adayı olarak kalacak; push/tag/release için önce kullanıcı onayı ve GitHub Actions bekleme gerekecek.
+
 ### Sprint 104: v0.2.0 Release Candidate Notes
 
 **Durum:** Tamamlandı

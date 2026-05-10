@@ -50,9 +50,20 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn('next = SessionControl.markResult(next, event: "landed")', rules)
         self.assertIn('next = SessionControl.markResult(next, event: "attempts spent")', rules)
 
+    def test_target_shooter_runtime_contract_is_exposed_outside_scaffold(self) -> None:
+        fields = archetype_state_fields("target_shooter")
+        rules = "\n".join(archetype_rule_members("target_shooter"))
+
+        self.assertIn("var targetsHit: Int = 0", fields)
+        self.assertIn("var perfectHits: Int = 0", fields)
+        self.assertIn("static func startTargetShooterSession(sessionSeconds: Int) -> GameSessionState", rules)
+        self.assertIn("static func recordTargetHit(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func finishTargetShooterSession(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn('SessionControl.markResult(next, event: "session complete")', rules)
+
     def test_unknown_archetype_uses_empty_runtime_contract(self) -> None:
-        self.assertEqual(archetype_state_fields("target_shooter"), [])
-        self.assertEqual(archetype_rule_members("target_shooter"), [])
+        self.assertEqual(archetype_state_fields("unknown"), [])
+        self.assertEqual(archetype_rule_members("unknown"), [])
 
     def test_indent_swift_block_indents_multiline_members(self) -> None:
         text = "static func sample() {\n    1\n}"

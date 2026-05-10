@@ -2,6 +2,11 @@ from __future__ import annotations
 
 
 def archetype_state_fields(archetype_id: str) -> list[str]:
+    if archetype_id == "target_shooter":
+        return [
+            "var targetsHit: Int = 0",
+            "var perfectHits: Int = 0",
+        ]
     if archetype_id == "lane_dodger":
         return [
             "var currentLane: Int = 1",
@@ -34,6 +39,37 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
 
 
 def archetype_rule_members(archetype_id: str) -> list[str]:
+    if archetype_id == "target_shooter":
+        return [
+            """static func startTargetShooterSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.lastEvent = "started"
+    return state
+}""",
+            """static func recordTargetHit(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startTargetShooterSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.targetsHit += 1
+    let perfect = next.targetsHit % 3 == 0
+    if perfect {
+        next.perfectHits += 1
+    }
+    next.score += scoreForHit(isPerfect: perfect)
+    next.lastEvent = perfect ? "perfect hit" : "hit"
+    return next
+}""",
+            """static func finishTargetShooterSession(_ state: GameSessionState) -> GameSessionState {
+    let next = state
+    if next.phase == .result {
+        return next
+    }
+    return SessionControl.markResult(next, event: "session complete")
+}""",
+        ]
     if archetype_id == "lane_dodger":
         return [
             "static let laneCount = 3",

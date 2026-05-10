@@ -11,8 +11,9 @@
 - Archetype screenshot proof cues exposed through `plan-game --json` and generated store screenshot checklists.
 - Generated store screenshot QA runbooks that sequence capture states from `screenshot_proofs`.
 - `rkg qa-plan` command for machine-readable and text screenshot capture plans.
-- Minimal playable generated loops for `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`.
-- RealityKit state-to-scene binding for the generated `lane_dodger`, `toss_physics`, `wave_defense_lite`, and `stack_puzzle` archetypes.
+- `rkg verify-screenshots` command for checking generated screenshot evidence files against a `qa-plan --json` payload or generated project `GameSpec.json`.
+- Minimal playable generated loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`.
+- RealityKit state-to-scene binding for the generated `target_shooter`, `lane_dodger`, `toss_physics`, `wave_defense_lite`, and `stack_puzzle` archetypes.
 
 ### Changed
 

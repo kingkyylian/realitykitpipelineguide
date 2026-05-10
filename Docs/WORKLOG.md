@@ -12,6 +12,81 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 99: RKG Screenshot Evidence Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-09 18:46 +03
+**Amaç:** `rkg qa-plan --json` çıktısını tüketen ve generated projedeki screenshot evidence dosyalarını doğrulayan ilk komut kapısını eklemek.
+
+**Yapılanlar:**
+
+- `src/rkg/screenshot_status.py` eklendi.
+- `rkg verify-screenshots <generated-project> [--plan qa-plan.json] [--json]` komutu eklendi.
+- Komut `--plan` verilirse doğrudan `rkg qa-plan --json` payload'unu tüketiyor.
+- `--plan` verilmezse generated projenin `GameSpec.json` dosyasından QA planını tekrar üretiyor.
+- Her screenshot state için `capture_path`, dosya varlığı, dosya boyutu ve JPEG/PNG header kontrolü yapılıyor.
+- JSON çıktı `ok`, `game_id`, `display_name`, `archetype` ve state bazlı `checks` listesi veriyor.
+- Generated `Docs/store/screenshot-qa.md` artık capture öncesi `rkg verify-game`, capture sonrası `rkg verify-screenshots .` komutunu söylüyor.
+- `Docs/game-factory.md`, `Docs/rkg-architecture.md`, `Docs/ai-handoff.md` ve `CHANGELOG.md` yeni evidence gate ile güncellendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_rkg_screenshot_status.py: first run failed as expected; rkg.screenshot_status module was missing
+rtk .venv/bin/python -m unittest Tests/test_rkg_screenshot_status.py: ok, 4 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_store_pack.StorePackTests.test_screenshot_qa_runbook_sequences_generated_proof_cues: first run failed as expected; generated runbook did not mention verify-screenshots
+rtk .venv/bin/python -m unittest Tests.test_rkg_store_pack.StorePackTests.test_screenshot_qa_runbook_sequences_generated_proof_cues Tests/test_rkg_screenshot_status.py: ok, 5 tests
+rtk .venv/bin/python -m unittest Tests/test_rkg_screenshot_status.py Tests/test_rkg_qa_plan.py Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py: ok, 34 tests
+rtk .venv/bin/python -c "<generate target_shooter temp project, write JPEG screenshot stubs, rkg verify-screenshots --json>": screenshot evidence ok for gameplay_start, mid_session, results
+rtk .venv/bin/python -m compileall -q src Tools Tests: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk make verify-local: ok, compileall + Ruff + 137 tests + pipeline doctor
+rtk make validate: manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Screenshot automation için önce dosya contract'ı doğrulanmalı. Bu sprint simülatörü sürmüyor; onun yerine gelecekteki capture aracının yazacağı `Docs/screenshots/<state>.jpg` dosyalarını aynı QA planına göre denetleyen küçük ama net bir kapı ekliyor.
+
+### Sprint 98: RKG Target Shooter Shared State Loop
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-09 18:45 +03
+**Amaç:** `target_shooter` generated app'ini eski local `score/isPlaying` overlay'inden çıkarıp diğer RKG archetype'larıyla aynı shared state, result ve RealityKit scene binding contract'ına taşımak.
+
+**Yapılanlar:**
+
+- `target_shooter` generated `GameState.swift` artık `targetsHit` ve `perfectHits` alanlarını üretiyor.
+- `GameRules.swift` target shooter için `startTargetShooterSession`, `recordTargetHit` ve `finishTargetShooterSession` pure rule helper'larını üretiyor.
+- Target shooter `ContentView.swift` artık `GameSessionState`, `SessionControl.isPlaying`, `FeedbackState.message`, `InputIntent.primaryButtonTitle`, `ResultView` ve `SessionControl.reset` kullanıyor.
+- Primary action label'ı target shooter için `Hit` oldu; `Finish` button'u result state'e geçişi `SessionControl.markResult` üzerinden yapıyor.
+- Generated `GameView.swift` target shooter için de state-bound hale geldi.
+- Generated `GameSceneController.swift` target entity referansını state'e bağlayıp hit sayısına göre target pozisyonunu, perfect hit sonrası scale feedback'ini güncelliyor.
+- Runtime/content/scaffold testleri target shooter'ın shared contract'a geçtiğini ve bilinmeyen archetype generic fallback'inin hâlâ durduğunu kanıtlayacak şekilde güncellendi.
+- `Docs/rkg-architecture.md`, `Docs/game-factory.md`, `Docs/ai-handoff.md` ve `CHANGELOG.md` yeni coverage ile güncellendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_target_shooter_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_target_shooter_state_to_realitykit_scene: first run failed as expected; target_shooter still used local score/isPlaying and GameView()
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_target_shooter_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_target_shooter_state_to_realitykit_scene: ok, 2 tests
+rtk .venv/bin/python -m unittest Tests/test_rkg_content_views.py Tests/test_rkg_scaffold_generators.py Tests/test_rkg_init_game.py Tests/test_rkg_plan_game.py: ok, 36 tests
+rtk .venv/bin/python -c "<generate target_shooter temp project, rkg verify-game>": target-shooter generated verify ok; release-check ok; CoreSimulator sandbox warnings only
+rtk .venv/bin/python -m compileall -q src Tools Tests: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 133 tests
+rtk make verify-local: ok, compileall + Ruff + 133 tests + pipeline doctor
+rtk make validate: manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Öğrenme notu:**
+
+Target shooter RKG'nin ürünü değil ama seed archetype olduğu için eski local state yolunda kalmamalıydı. Artık beş seed archetype da aynı generated state/result/scene-binding yüzeyinden ilerliyor; sonraki RKG işi screenshot automation veya daha zengin store-pack checklist tarafına kayabilir.
+
 ### Sprint 97: GameARView Fixture Refactor
 
 **Durum:** Tamamlandı

@@ -118,9 +118,19 @@ python3 Tools/rkg.py plan-game GameSpec.yaml
 python3 Tools/rkg.py qa-plan GameSpec.yaml
 ```
 
-`plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives, `FeedbackState.swift` for last-event display text, `InputIntent.swift` for primary/reset button labels, and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation. Archetype rules should use `SessionControl.markResult` for result/fail transitions after setting their own gameplay-specific flags.
+`plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives, `FeedbackState.swift` for last-event display text, `InputIntent.swift` for primary/reset button labels, and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation. The seed archetypes, including `target_shooter`, use the same shared state/result surface before adding deeper mechanics. Archetype rules should use `SessionControl.markResult` for result/fail transitions after setting their own gameplay-specific flags.
 
 `qa-plan` is the dry-run screenshot capture plan. It sequences `release.screenshots` with the generated proof cue, visible roles, Swift screenshot state case, and target evidence path. Use `--json` when another tool or future simulator automation needs to consume the plan.
+
+After capture, verify the generated screenshot evidence:
+
+```bash
+python3 Tools/rkg.py verify-screenshots GeneratedGame
+python3 Tools/rkg.py qa-plan GameSpec.yaml --json > qa-plan.json
+python3 Tools/rkg.py verify-screenshots GeneratedGame --plan qa-plan.json --json
+```
+
+`verify-screenshots` checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image header. It does not drive the simulator yet; it is the evidence gate that future capture automation should satisfy.
 
 ### 2. Vertical Slice
 
@@ -175,7 +185,7 @@ Docs/store/screenshot-qa.md
 Docs/store/monetization.md
 ```
 
-Metadata must describe the real game. Screenshots must show actual gameplay, not only title art. Generated screenshot checklists include a proof cue for each state, such as the button sequence or `GameSessionState` value that should be true before capture. The generated screenshot QA runbook sequences those cues into capture order with expected visible roles and evidence paths.
+Metadata must describe the real game. Screenshots must show actual gameplay, not only title art. Generated screenshot checklists include a proof cue for each state, such as the button sequence or `GameSessionState` value that should be true before capture. The generated screenshot QA runbook sequences those cues into capture order with expected visible roles and evidence paths, then points QA to `rkg verify-screenshots .` after capture.
 
 ## Seed Archetypes
 

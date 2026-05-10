@@ -11,6 +11,8 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
     title = _swift_string_literal(display_name)
     subtitle = _swift_string_literal(f"{game['archetype']} / {game['session_seconds']}s")
     player_action = _swift_string_literal(loop["player_action"])
+    if str(game["archetype"]) == "target_shooter":
+        return _target_shooter_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "lane_dodger":
         return _lane_dodger_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "wave_defense_lite":
@@ -68,6 +70,89 @@ struct ContentView: View {{
 
 def _swift_string_literal(value: object) -> str:
     return json.dumps(str(value), ensure_ascii=True)
+
+
+def _target_shooter_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameSessionState()
+
+    private var isPlaying: Bool {{
+        SessionControl.isPlaying(state)
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView(state: state)
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Hits \\(state.targetsHit)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Perfect \\(state.perfectHits)")
+                        .font(.caption.monospacedDigit())
+                    Text(FeedbackState.message(for: state))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
+                        hitTarget()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button("Finish") {{
+                        state = GameRules.finishTargetShooterSession(state)
+                    }}
+                    .buttonStyle(.bordered)
+                    Button(InputIntent.resetTitle) {{
+                        state = SessionControl.reset()
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+
+                if SessionControl.isResult(state) {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+        }}
+    }}
+
+    private func hitTarget() {{
+        if !isPlaying {{
+            state = GameRules.startTargetShooterSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.recordTargetHit(state)
+    }}
+}}
+"""
 
 
 def _stack_puzzle_content_view_swift(title: str, subtitle: str, player_action: str) -> str:

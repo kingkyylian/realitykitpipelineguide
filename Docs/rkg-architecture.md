@@ -24,6 +24,7 @@ idea.json
 -> generated SwiftUI + RealityKit project
 -> rkp build/inspect/accept assets
 -> rkg verify-game
+-> rkg verify-screenshots
 -> store pack
 ```
 
@@ -155,7 +156,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `target_shooter` has a playable SwiftUI overlay loop and RealityKit state binding for start, hit scoring, perfect-hit feedback, finish/result, reset, target movement, result overlay, and scoring. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring.
 
 The state-bound scene generators share one entity setup helper for the repeated `AssetLoader.loadPrimaryEntity`, initial position, anchor attachment, and first matching role-to-entity-reference binding. Archetype-specific scene controllers now own only their state update formulas and entity reference names.
 
@@ -168,8 +169,9 @@ The state-bound scene generators share one entity setup helper for the repeated 
 | `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; does not write files. |
+| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, and JPEG/PNG header; does not drive simulator yet. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
-| `rkg verify-game <dir>` | Run generated project tests, RKP doctor/release gate, and optional screenshot checks. | Implemented with command-only verification. |
+| `rkg verify-game <dir>` | Run generated project tests and RKP doctor/release gate. | Implemented with command-only project verification. |
 
 Current `verify-game` behavior:
 
@@ -178,6 +180,16 @@ Current `verify-game` behavior:
 - Runs `rkp doctor`.
 - Runs `rkp release-check`.
 - Stops at the first failing command.
+
+Current `verify-screenshots` behavior:
+
+- Accepts `rkg verify-screenshots <generated-project>`.
+- If `--plan qa-plan.json` is passed, consumes the machine-readable `rkg qa-plan --json` payload directly.
+- If no plan is passed, reads `<generated-project>/GameSpec.json` and rebuilds the QA plan.
+- Checks each `capture_path` under the generated project.
+- Reports `missing`, `not_file`, `empty`, `invalid_image`, or `ok`.
+- Accepts JPEG and PNG image headers.
+- Exits nonzero when any planned screenshot evidence is missing or invalid.
 
 Current `plan-game --json` shape:
 
@@ -247,6 +259,26 @@ Current `qa-plan --json` shape:
 }
 ```
 
+Current `verify-screenshots --json` shape:
+
+```json
+{
+  "game_id": "lane_dash",
+  "display_name": "Lane Dash",
+  "archetype": "lane_dodger",
+  "ok": false,
+  "checks": [
+    {
+      "order": 1,
+      "state": "gameplay_start",
+      "capture_path": "Docs/screenshots/gameplay_start.jpg",
+      "status": "missing",
+      "bytes": 0
+    }
+  ]
+}
+```
+
 ## Verification Matrix
 
 Every new RKG feature should prove the smallest useful behavior.
@@ -258,8 +290,9 @@ Every new RKG feature should prove the smallest useful behavior.
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, screenshot states become typed Swift cases, every declared asset role gets a generated load attempt with fallback. |
-| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
+| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
+| Screenshot evidence | `verify-screenshots` reports missing/empty/invalid evidence and accepts captured JPEG/PNG files at planned paths. |
 
 ## Store Pack Contract
 
@@ -286,9 +319,9 @@ Required screenshot rows:
 | `required_asset_roles` | Roles that must be visible or explained. |
 | `evidence_path` | `Docs/screenshots/<state>.jpg` once captured. |
 
-`Docs/store/screenshot-qa.md` sequences the same states in capture order, with the generated interaction cue, expected visible roles, and final screenshot path for each row.
+`Docs/store/screenshot-qa.md` sequences the same states in capture order, with the generated interaction cue, expected visible roles, and final screenshot path for each row. It tells QA to run `rkg verify-game` before capture and `rkg verify-screenshots .` after capture.
 
-Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files and filtered `screenshot_proofs` in its dry-run output, so store scope and QA proof cues are visible before the project is generated.
+Current `init-game` writes all required store files through `src/rkg/store_pack.py`. `plan-game` includes those files and filtered `screenshot_proofs` in its dry-run output, so store scope and QA proof cues are visible before the project is generated. `verify-screenshots` is the current post-capture evidence gate; simulator-driving automation should write files that satisfy this command.
 
 ## Decision Rules
 

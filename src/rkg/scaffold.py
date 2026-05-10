@@ -297,6 +297,7 @@ enum InputIntent {{
 
 def _primary_action_title(archetype_id: str) -> str:
     return {
+        "target_shooter": "Hit",
         "lane_dodger": "Dodge",
         "toss_physics": "Throw",
         "stack_puzzle": "Place",
@@ -384,6 +385,8 @@ enum FallbackFactory {
 
 
 def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    if str(spec["game"]["archetype"]) == "target_shooter":
+        return _target_shooter_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "lane_dodger":
         return _lane_dodger_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "toss_physics":
@@ -429,6 +432,39 @@ def _scene_entity_setup_lines(spec: Mapping[str, Any], bindings: list[tuple[str,
                 lines.append(f"        {property_name} = {entity['variable']}")
                 bound_properties.add(property_name)
     return "\n\n".join(lines)
+
+
+def _target_shooter_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("targetEntity", {"target"}),
+        ],
+    )
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var targetEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        targetEntity?.position = targetPosition(targetsHit: state.targetsHit)
+        targetEntity?.scale = state.perfectHits > 0 ? [1.15, 1.15, 1.15] : [1, 1, 1]
+    }}
+
+    private func targetPosition(targetsHit: Int) -> SIMD3<Float> {{
+        let lane = Float((targetsHit % 3) - 1)
+        let depth = Float(targetsHit % 2) * 0.18
+        return [lane * 0.35, 0, -1.10 - depth]
+    }}
+}}
+"""
 
 
 def _lane_dodger_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
@@ -585,7 +621,13 @@ final class GameSceneController {{
 
 
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
-    if str(spec["game"]["archetype"]) in {"lane_dodger", "toss_physics", "wave_defense_lite", "stack_puzzle"}:
+    if str(spec["game"]["archetype"]) in {
+        "target_shooter",
+        "lane_dodger",
+        "toss_physics",
+        "wave_defense_lite",
+        "stack_puzzle",
+    }:
         return _state_bound_game_view_swift()
     return """import RealityKit
 import SwiftUI

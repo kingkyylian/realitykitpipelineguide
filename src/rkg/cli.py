@@ -10,6 +10,7 @@ from rkg.idea_score import load_idea, score_game_idea
 from rkg.plan import build_game_plan
 from rkg.qa_plan import build_qa_plan
 from rkg.scaffold import init_game
+from rkg.screenshot_status import build_screenshot_status, build_screenshot_status_for_project, load_qa_plan
 from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
 from rkg.verify import verify_game
 
@@ -48,6 +49,11 @@ def main() -> int:
     qa_plan = subparsers.add_parser("qa-plan", help="Print screenshot capture QA steps without writing output")
     qa_plan.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
     qa_plan.add_argument("--json", action="store_true", help="Print machine-readable screenshot QA plan")
+
+    verify_screenshots = subparsers.add_parser("verify-screenshots", help="Verify generated screenshot evidence files")
+    verify_screenshots.add_argument("project", help="Path to generated game directory")
+    verify_screenshots.add_argument("--plan", help="Path to qa-plan JSON from `rkg qa-plan --json`")
+    verify_screenshots.add_argument("--json", action="store_true", help="Print machine-readable screenshot status")
 
     verify = subparsers.add_parser("verify-game", help="Run verification gates for a generated RKG project")
     verify.add_argument("project", help="Path to generated game directory")
@@ -165,6 +171,24 @@ def main() -> int:
                 print(f"   drive: {step['drive']}")
                 print(f"   evidence: {step['expected_evidence']}")
         return 0
+
+    if args.command == "verify-screenshots":
+        try:
+            project = Path(args.project)
+            if args.plan:
+                payload = build_screenshot_status(project, load_qa_plan(Path(args.plan)))
+            else:
+                payload = build_screenshot_status_for_project(project)
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"screenshot status: {payload['display_name']} ({payload['game_id']})")
+            for check in payload["checks"]:
+                print(f"{check['order']}. {check['state']}: {check['status']} -> {check['capture_path']}")
+        return 0 if payload["ok"] else 1
 
     if args.command == "verify-game":
         return verify_game(Path(args.project))

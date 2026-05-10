@@ -312,6 +312,65 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('loadPrimaryEntity(assetId: "lane_floor", role: "arena")', scene_controller)
             self.assertNotIn('FallbackFactory.makeFallback(role: "arena")', scene_controller)
 
+    def test_init_game_generates_playable_target_shooter_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "RingDash" / "ContentView.swift").read_text(encoding="utf-8")
+            input_intent = (output / "Sources" / "RingDash" / "InputIntent.swift").read_text(encoding="utf-8")
+            state = (output / "Sources" / "RingDash" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "RingDash" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameSessionState()", content)
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn('Text("Score \\(state.score)")', content)
+            self.assertIn('Text("Hits \\(state.targetsHit)")', content)
+            self.assertIn('Text("Perfect \\(state.perfectHits)")', content)
+            self.assertIn("FeedbackState.message(for: state)", content)
+            self.assertIn("SessionControl.isPlaying(state)", content)
+            self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
+            self.assertIn('Button("Finish")', content)
+            self.assertIn("Button(InputIntent.resetTitle)", content)
+            self.assertIn("if SessionControl.isResult(state)", content)
+            self.assertIn("ResultView(state: state)", content)
+            self.assertIn("state = SessionControl.reset()", content)
+            self.assertIn("state = GameRules.startTargetShooterSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.recordTargetHit(state)", content)
+            self.assertIn("state = GameRules.finishTargetShooterSession(state)", content)
+            self.assertIn('static let primaryActionTitle = "Hit"', input_intent)
+            self.assertIn("var targetsHit: Int = 0", state)
+            self.assertIn("var perfectHits: Int = 0", state)
+            self.assertIn("static func startTargetShooterSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func recordTargetHit(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func finishTargetShooterSession(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn('SessionControl.markResult(next, event: "session complete")', rules)
+
+    def test_init_game_binds_target_shooter_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "RingDash" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "RingDash" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "RingDash" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var targetEntity: Entity?", scene_controller)
+            self.assertIn("targetEntity = targetBasic", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("targetEntity?.position = targetPosition(targetsHit: state.targetsHit)", scene_controller)
+            self.assertIn("targetEntity?.scale = state.perfectHits > 0 ? [1.15, 1.15, 1.15] : [1, 1, 1]", scene_controller)
+            self.assertIn("private func targetPosition(targetsHit: Int) -> SIMD3<Float>", scene_controller)
+
     def test_init_game_generates_wave_defense_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

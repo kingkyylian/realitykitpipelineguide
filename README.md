@@ -337,7 +337,7 @@ The manifest format is intentionally simple JSON and can travel to another repo.
 
 - Blender background USDZ export is still machine-sensitive. On the current reference machine, Blender 4.5.8 crashed during the fresh-project walkthrough, and RKP recovered by building a fallback USDZ through `/usr/bin/usdzip`.
 - The fallback builder is for prompt-backed procedural drafts. It is enough to keep the asset loop moving, but visual acceptance still requires loading the USDZ in RealityKit and providing screenshot evidence.
-- RKG is experimental. It can scaffold and verify small fixed-camera RealityKit projects, but generated games still need human product review, visual QA, screenshots, and App Store preparation.
+- RKG is experimental. It can scaffold and verify small fixed-camera RealityKit projects, including screenshot evidence checks with `rkg verify-screenshots`, but generated games still need human product review, visual QA, screenshots, and App Store preparation.
 - RKP does not automatically edit arbitrary Xcode projects. Add `Assets/Imported` to your app bundle yourself, or set `xcode_project` and `xcode_scheme` in `rkp.json` when you want `release-check` to run the Xcode build gate.
 - There is no standalone MCP server yet. `status --json` and `doctor --json` are the stable machine-readable surfaces for agents and future MCP wrappers.
 - The package version is currently `0.1.0`. Until release tags are cut, GitHub installs track the default branch.

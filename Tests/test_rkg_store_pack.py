@@ -106,6 +106,8 @@ class StorePackTests(unittest.TestCase):
         pack = build_store_pack(lane_dodger_spec())
 
         runbook = pack["Docs/store/screenshot-qa.md"]
+        self.assertIn("Run `rkg verify-game` before capture.", runbook)
+        self.assertIn("Run `rkg verify-screenshots .` after capture.", runbook)
         self.assertIn("| Order | State | Drive the game to this state | Expected evidence | Capture path |", runbook)
         self.assertIn("| 1 | gameplay_start | Tap Start; state.phase == .playing;", runbook)
         self.assertIn("| 3 | near_miss | Swipe next to the obstacle, then tap Dodge; state.nearMisses > 0.", runbook)

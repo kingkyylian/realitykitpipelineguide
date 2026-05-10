@@ -57,8 +57,8 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("stablePlacement = true", content)
         self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
 
-    def test_generic_content_view_contract_remains_available(self) -> None:
-        content = content_view_swift('Ring "Dash"', spec_for("target_shooter"))
+    def test_generic_content_view_contract_remains_available_for_unknown_archetype(self) -> None:
+        content = content_view_swift('Ring "Dash"', spec_for("prototype"))
 
         self.assertIn('Text("Ring \\"Dash\\"")', content)
         self.assertIn("@State private var score = 0", content)

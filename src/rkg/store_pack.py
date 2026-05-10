@@ -98,7 +98,8 @@ def screenshot_qa_runbook(spec: Mapping[str, Any], archetype: Mapping[str, Any])
     return (
         "# Screenshot QA Runbook\n\n"
         "Run `rkg verify-game` before capture. Drive the generated game through these rows in order, "
-        "resetting between rows when the previous state ends the session.\n\n"
+        "resetting between rows when the previous state ends the session. "
+        "Run `rkg verify-screenshots .` after capture.\n\n"
         + "\n".join(rows)
         + "\n"
     )

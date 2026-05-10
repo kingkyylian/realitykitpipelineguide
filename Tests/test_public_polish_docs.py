@@ -21,6 +21,18 @@ class PublicPolishDocsTests(unittest.TestCase):
         self.assertIn("Docs/blender-support.md", readme)
         self.assertIn("Docs/first-good-issues.md", readme)
 
+    def test_readme_is_concise_landing_page_not_full_cli_manual(self) -> None:
+        readme = read("README.md")
+        headings = [line for line in readme.splitlines() if line.startswith("## ")]
+
+        self.assertLessEqual(len(readme.splitlines()), 360)
+        self.assertNotIn("## Common Commands", readme)
+        self.assertNotIn("## Folder Map", readme)
+        self.assertIn("Docs/cli-tool.md", readme)
+        self.assertIn("Docs/production-playbook.md", readme)
+        self.assertIn("Docs/ai-handoff.md", readme)
+        self.assertLessEqual(len(headings), 12)
+
     def test_blender_support_documents_fallback_without_acceptance_shortcut(self) -> None:
         blender_support = read("Docs/blender-support.md")
 

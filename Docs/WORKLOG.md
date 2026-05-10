@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 103: README Landing Refactor
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** README'yi full CLI manual olmaktan çıkarıp public landing sayfası gibi okunacak kısa bir vitrine dönüştürmek.
+
+**Plan:**
+
+- README landing davranışını testle koru: kısa dosya, az ana heading, `Docs/cli-tool.md` ve production/handoff linkleri.
+- Tekrarlanan prompt, asset loop, common commands ve folder map bölümlerini README'den kaldır.
+- Normal RKP path, product boundary, fixture evidence, docs map ve known limits bölümlerini koru.
+- Detaylı CLI kullanımını `Docs/cli-tool.md` altında canonical bırak.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_public_polish_docs.PublicPolishDocsTests.test_readme_is_concise_landing_page_not_full_cli_manual: first run failed as expected; README was 578 lines
+rtk .venv/bin/python -m unittest Tests/test_public_polish_docs.py Tests/test_product_boundary_docs.py: ok, 9 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 147 tests
+rtk make verify-local: ok, compileall + Ruff + 147 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+README hızlı güven ve yönlendirme yüzeyi olacak; command reference `Docs/cli-tool.md`, öğrenme anlatısı `Docs/guide.md`, üretim gate'leri `Docs/production-playbook.md` içinde kalacak.
+
 ### Sprint 102: Explicit Fallback Build Path
 
 **Durum:** Tamamlandı

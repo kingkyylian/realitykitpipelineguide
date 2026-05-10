@@ -66,5 +66,6 @@ Most RealityKit examples focus only on Swift code. This repo teaches the missing
 ## Local Polish Ready
 
 - README badges point at CI, Python 3.10+, MIT license, and the RealityKit fixture scope.
+- README is now a concise public landing page; detailed command usage lives in `Docs/cli-tool.md`.
 - `Docs/blender-support.md` documents Blender 4.x expectations, observed local fallback behavior, and acceptance rules.
 - `Docs/first-good-issues.md` provides learner-sized issue candidates that preserve the RKP-first product boundary.

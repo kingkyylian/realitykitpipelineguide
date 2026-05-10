@@ -10,6 +10,7 @@
 - Hardened RKP release and asset verification gates with USDZ inspection, direct USDZ fallback handling, Blender diagnostics, and safer cleanup support.
 - Added `rkp build-asset --fallback-only` for explicit direct USDZ draft generation when Blender should be skipped.
 - Added public-facing README badges, a Blender support/fallback matrix, and a first-good-issues list for learner-sized contributions.
+- Shortened README into a concise public landing page and moved repeated command details back to `Docs/cli-tool.md`.
 
 ### RKG Experimental Labs
 

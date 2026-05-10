@@ -4,7 +4,7 @@
 
 - No unreleased changes yet.
 
-## v0.2.0 - RKP product path and RKG labs preview (draft, 2026-05-10)
+## v0.2.0 - RKP product path and RKG labs preview (2026-05-10)
 
 ### RKP Product Surface
 

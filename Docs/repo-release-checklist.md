@@ -2,7 +2,9 @@
 
 Use this before pushing a public branch or creating a release.
 
-Next release candidate: `v0.2.0`
+Latest prepared release notes: `Docs/releases/v0.2.0.md`
+
+For a future release, copy the latest release note file to `Docs/releases/<version>.md`, update `CHANGELOG.md`, and update this checklist before tagging.
 
 Do not push, tag, or publish without explicit user approval.
 
@@ -70,8 +72,8 @@ Do not push, tag, or publish without explicit user approval.
 6. Review `Docs/WORKLOG.md` for stale active sprint status.
 7. Review `Docs/ai-handoff.md` for stale current status or next-task guidance.
 8. Set GitHub description and topics from `Docs/github-showcase.md`.
-9. Review `CHANGELOG.md` and `Docs/releases/v0.2.0.md` for stale release notes.
-10. Create `v0.2.0` release from `Docs/releases/v0.2.0.md` after push, CI, and explicit release approval.
+9. Review `CHANGELOG.md` and the matching `Docs/releases/<version>.md` file for stale release notes.
+10. Create the release from the matching `Docs/releases/<version>.md` file after push, CI, and explicit release approval.
 
 ## Current Evidence Set
 

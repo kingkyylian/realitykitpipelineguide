@@ -79,7 +79,7 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 ## Current Recommended Next Task
 
-Public polish follow-up: `v0.2.0` release candidate review.
+Public polish follow-up: `v0.2.0` publication review. If `v0.2.0` is already published, move to demo GIF/MP4 capture or Module 4: Texture Maps and Material Response.
 
 1. Review local commits ahead of `origin/main`; push only if the user explicitly asks.
 2. Review `CHANGELOG.md` and `Docs/releases/v0.2.0.md` before any tag or GitHub Release.

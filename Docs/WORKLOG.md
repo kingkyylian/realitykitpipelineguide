@@ -43,6 +43,35 @@ rtk git diff --check: ok
 
 `v0.1.0` mevcut baseline olarak korunacak. Sıradaki yayın yerelde `v0.2.0` release candidate olarak hazır; push, tag ve GitHub Release sadece kullanıcı açıkça onaylarsa yapılacak.
 
+### Sprint 105: v0.2.0 Publication Prep
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** `v0.2.0` release metnini draft durumundan final release note durumuna getirip push/tag/release sonrası bayat kalmayacak hale getirmek.
+
+**Plan:**
+
+- `CHANGELOG.md` içindeki `v0.2.0` başlığını draft etiketinden çıkar.
+- `Docs/releases/v0.2.0.md` dosyasını GitHub Release body olarak kullanılabilecek final metne dönüştür.
+- GitHub showcase ve release checklist dosyalarını “next draft” yerine yayın kopyası ve generic checklist olarak hizala.
+- Release docs testlerini bu final metinle güncelle.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_release_docs.py: ok, 4 tests
+rtk .venv/bin/python -m unittest Tests/test_public_polish_docs.py Tests/test_product_boundary_docs.py Tests/test_release_docs.py: ok, 13 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 151 tests
+rtk make verify-local: ok, compileall + Ruff + 151 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+`Docs/releases/v0.2.0.md` artık GitHub Release body olarak kullanılabilecek final metin. Yayın sırası: `main` push, GitHub Actions sonucu bekleme, `v0.2.0` tag, GitHub Release.
+
 ### Sprint 103: README Landing Refactor
 
 **Durum:** Tamamlandı

@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 102: Explicit Fallback Build Path
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Blender background export sorunlu olduğunda fallback davranışını sadece otomatik recovery olmaktan çıkarıp bilinçli CLI seçeneği yapmak: `rkp build-asset --fallback-only`.
+
+**Plan:**
+
+- `build-asset --fallback-only` için önce failing test ekle.
+- CLI flag'i `src/rkp/cli.py` ve `src/rkp/build_asset.py` içinde bağla.
+- Blender script ve Blender executable kontrolünü fallback-only modda atla.
+- Makefile `fallback=1` kullanımını ekle.
+- README, CLI docs ve Blender support dokümanını yeni explicit fallback yolu ile güncelle.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_fallback_only_skips_blender_and_script_requirements: first run failed as expected; CLI did not recognize --fallback-only
+rtk .venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_fallback_only_skips_blender_and_script_requirements: ok, 1 test
+rtk .venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_build_asset_uses_external_config_and_fails_gracefully_without_blender Tests.test_rkp_project.RkpProjectTests.test_build_asset_fallback_only_skips_blender_and_script_requirements Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_missing_texture_as_info_after_successful_build Tests.test_rkp_project.RkpProjectTests.test_build_asset_reports_when_texture_exists_but_is_not_packaged_in_usdz Tests.test_rkp_project.RkpProjectTests.test_build_asset_does_not_report_texture_info_when_usdz_contains_texture Tests.test_rkp_project.RkpProjectTests.test_fallback_builder_uses_external_config_and_reports_missing_usdzip Tests.test_public_polish_docs.PublicPolishDocsTests.test_blender_support_documents_fallback_without_acceptance_shortcut: ok, 7 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 146 tests
+rtk make verify-local: ok, compileall + Ruff + 146 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+Fallback-built USDZ hâlâ draft kabul edilecek. `--fallback-only` sadece build yolunu seçer; manifest status değiştirmez ve screenshot acceptance gerekliliğini kaldırmaz.
+
 ### Sprint 101: Public Polish Follow-up
 
 **Durum:** Tamamlandı

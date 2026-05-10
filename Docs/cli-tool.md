@@ -191,6 +191,13 @@ make build-asset id=enemy_drone
 
 If Blender exits before export, `build-asset` reports the crash log and then tries `Tools/usdz_fallback_builder.py` when `usdzip` is available. This keeps prompt-backed procedural assets buildable on machines where Blender background mode is broken, while still leaving screenshot acceptance as a separate gate.
 
+Skip Blender deliberately when you only need the direct USDZ draft:
+
+```bash
+rkp build-asset enemy_drone --fallback-only
+make build-asset id=enemy_drone fallback=1
+```
+
 ## Asset Verification Commands
 
 Inspect the built USDZ before visual acceptance:
@@ -311,7 +318,7 @@ rkp make-asset enemy_drone \
 
 - RKP generates asset contracts, Blender scripts, USDZ drafts, manifest status, and release checks; it does not automatically wire arbitrary Xcode project resources.
 - `release-check` skips Xcode unless `xcode_project` and `xcode_scheme` are configured in `rkp.json`.
-- Blender background export can fail on some machines. The USDZ fallback keeps the procedural prompt loop alive when `usdzip` exists, but it does not replace visual acceptance.
+- Blender background export can fail on some machines. The USDZ fallback keeps the procedural prompt loop alive when `usdzip` exists, and `rkp build-asset --fallback-only` can run that path explicitly, but it does not replace visual acceptance.
 - No standalone MCP server ships yet. Use `status --json` and `doctor --json` as the current automation surface.
 - The published package version is `0.1.0`; pin to a tag once release tags exist.
 
@@ -323,7 +330,7 @@ rkp make-asset enemy_drone \
 - `init` may create `rkp.json`, an empty manifest, and minimal pipeline directories. It refuses to overwrite without `--force`.
 - `prompt-asset` may create the same asset contract plus a prompt-backed procedural Blender generator and optional USDZ build.
 - `make-asset` orchestrates prompt scaffolding, optional USDZ build, optional screenshot acceptance, and optional release check.
-- `build-asset` may create or replace USDZ/source files through Blender, but it does not mark the asset imported.
+- `build-asset` may create or replace USDZ/source files through Blender or explicit direct fallback, but it does not mark the asset imported.
 - `inspect-usdz` reads a built USDZ package and reports texture presence, texture dimensions, UV, and known triangle budget gates without mutating files.
 - `verify-asset` orchestrates optional build, USDZ inspection, optional screenshot acceptance, and optional release check, stopping at the first failed gate.
 - `accept-asset` requires screenshot evidence and records production acceptance.

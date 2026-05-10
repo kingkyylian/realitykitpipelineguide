@@ -26,6 +26,7 @@ class PublicPolishDocsTests(unittest.TestCase):
 
         self.assertIn("Blender 4.x", blender_support)
         self.assertIn("usdzip", blender_support)
+        self.assertIn("rkp build-asset enemy_drone --fallback-only", blender_support)
         self.assertIn("rkp doctor --blender", blender_support)
         self.assertIn("screenshot evidence", blender_support)
         self.assertIn("does not replace visual acceptance", blender_support)

@@ -58,8 +58,8 @@ make-asset:
 	python3 Tools/rkp.py make-asset "$(id)" --type "$(or $(type),prop)" --prompt "$(prompt)" $(if $(build),--build,) $(if $(screenshot),--screenshot "$(screenshot)",) $(if $(release),--release-check,)
 
 build-asset:
-	@test -n "$(id)" || (echo "usage: make build-asset id=enemy_drone" && exit 2)
-	python3 Tools/rkp.py build-asset "$(id)"
+	@test -n "$(id)" || (echo "usage: make build-asset id=enemy_drone [fallback=1]" && exit 2)
+	python3 Tools/rkp.py build-asset "$(id)" $(if $(fallback),--fallback-only,)
 
 inspect-usdz:
 	@test -n "$(id)" || (echo "usage: make inspect-usdz id=enemy_drone" && exit 2)

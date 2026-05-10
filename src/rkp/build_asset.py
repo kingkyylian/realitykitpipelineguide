@@ -23,8 +23,11 @@ def latest_blender_crash_log() -> Path | None:
     return None
 
 
-def run_direct_usdz_fallback(asset_id: str, project: ProjectPaths = PROJECT) -> int:
-    print("warning: Blender failed; trying direct USDZ fallback builder", file=sys.stderr)
+def run_direct_usdz_fallback(asset_id: str, project: ProjectPaths = PROJECT, *, fallback_only: bool = False) -> int:
+    if fallback_only:
+        print("info: --fallback-only requested; skipping Blender and running direct USDZ fallback builder")
+    else:
+        print("warning: Blender failed; trying direct USDZ fallback builder", file=sys.stderr)
     return subprocess.run(
         module_command("rkp.usdz_fallback_builder", "--id", asset_id),
         cwd=project.root,
@@ -44,6 +47,11 @@ def usdz_contains_texture(usdz_path: Path, texture_path: Path) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Blender build script for one asset.")
     parser.add_argument("--id", required=True, help="Asset id from Tools/asset_manifest.json")
+    parser.add_argument(
+        "--fallback-only",
+        action="store_true",
+        help="Skip Blender and build a prompt-backed procedural USDZ draft with the direct fallback builder",
+    )
     args = parser.parse_args()
 
     asset = load_asset(args.id)
@@ -51,42 +59,46 @@ def main() -> int:
         print(f"error: unknown asset id: {args.id}", file=sys.stderr)
         return 1
 
-    script_path = PROJECT.blender_dir / f"create_{args.id}.py"
-    if not script_path.exists():
-        print(f"error: missing Blender script: {PROJECT.rel(script_path)}", file=sys.stderr)
-        return 1
-
-    blender_resolution = resolve_blender()
-    if blender_resolution.path is None:
-        print(f"error: {blender_resolution.error}", file=sys.stderr)
-        return 127
-    blender = str(blender_resolution.path)
-    if not blender_resolution.is_executable:
-        output_path = asset_usdz_path(asset, PROJECT)
-        print(
-            f"error: {blender_resolution.error}. "
-            f"Expected USDZ would be {PROJECT.rel(output_path)}",
-            file=sys.stderr,
-        )
-        return 127
-
     output_path = asset_usdz_path(asset, PROJECT)
-    command = [blender, "--background", "--factory-startup", "--python", str(script_path)]
-    print("running:", " ".join(command), flush=True)
-    result = subprocess.run(command, cwd=PROJECT.root)
-    if result.returncode != 0:
-        print(
-            f"error: Blender build failed before creating {PROJECT.rel(output_path)} "
-            f"(exit {result.returncode})",
-            file=sys.stderr,
-        )
-        print(f"hint: Blender executable: {blender}", file=sys.stderr)
-        crash_log = latest_blender_crash_log()
-        if crash_log:
-            print(f"hint: Blender crash log: {crash_log}", file=sys.stderr)
-        fallback_status = run_direct_usdz_fallback(args.id)
+    if args.fallback_only:
+        fallback_status = run_direct_usdz_fallback(args.id, fallback_only=True)
         if fallback_status != 0:
-            return result.returncode
+            return fallback_status
+    else:
+        script_path = PROJECT.blender_dir / f"create_{args.id}.py"
+        if not script_path.exists():
+            print(f"error: missing Blender script: {PROJECT.rel(script_path)}", file=sys.stderr)
+            return 1
+
+        blender_resolution = resolve_blender()
+        if blender_resolution.path is None:
+            print(f"error: {blender_resolution.error}", file=sys.stderr)
+            return 127
+        blender = str(blender_resolution.path)
+        if not blender_resolution.is_executable:
+            print(
+                f"error: {blender_resolution.error}. "
+                f"Expected USDZ would be {PROJECT.rel(output_path)}",
+                file=sys.stderr,
+            )
+            return 127
+
+        command = [blender, "--background", "--factory-startup", "--python", str(script_path)]
+        print("running:", " ".join(command), flush=True)
+        result = subprocess.run(command, cwd=PROJECT.root)
+        if result.returncode != 0:
+            print(
+                f"error: Blender build failed before creating {PROJECT.rel(output_path)} "
+                f"(exit {result.returncode})",
+                file=sys.stderr,
+            )
+            print(f"hint: Blender executable: {blender}", file=sys.stderr)
+            crash_log = latest_blender_crash_log()
+            if crash_log:
+                print(f"hint: Blender crash log: {crash_log}", file=sys.stderr)
+            fallback_status = run_direct_usdz_fallback(args.id)
+            if fallback_status != 0:
+                return result.returncode
 
     if not output_path.exists():
         print(f"error: expected USDZ was not created: {PROJECT.rel(output_path)}", file=sys.stderr)

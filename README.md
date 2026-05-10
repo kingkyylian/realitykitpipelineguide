@@ -125,7 +125,7 @@ rkp release-check
 
 Expected first doctor result in a new project is `0 error(s)` with only recommended project hygiene warnings such as `README.md`, `LICENSE`, or `Makefile`.
 
-`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. Use `rkp doctor --blender` to diagnose Blender discovery. Run `inspect-usdz` before acceptance to check the package, expected base color texture, texture size budget, `st` UV signal, and known triangle budget status:
+`build-asset` first tries Blender. If Blender is unavailable or crashes in background mode, RKP tries the direct USDZ fallback when `usdzip` exists. Use `rkp build-asset enemy_drone --fallback-only` when you want to skip Blender and create the direct USDZ draft deliberately. Use `rkp doctor --blender` to diagnose Blender discovery. Run `inspect-usdz` before acceptance to check the package, expected base color texture, texture size budget, `st` UV signal, and known triangle budget status:
 
 ```bash
 rkp inspect-usdz enemy_drone
@@ -231,6 +231,12 @@ rkp make-asset enemy_drone \
 ```
 
 If Blender crashes or is unavailable but `usdzip` exists, RKP falls back to a direct USDZ builder for prompt-backed procedural assets. The fallback still creates a real `.usdz`; the asset remains `planned` until simulator screenshot acceptance.
+
+To use the direct USDZ builder on purpose:
+
+```bash
+rkp build-asset enemy_drone --fallback-only
+```
 
 After verifying the result in the simulator and saving a screenshot, run the same command with acceptance:
 
@@ -363,7 +369,7 @@ The manifest format is intentionally simple JSON and can travel to another repo.
 
 ## Known Limits In v0.1
 
-- Blender background USDZ export is still machine-sensitive. On the current reference machine, Blender 4.5.8 crashed during the fresh-project walkthrough, and RKP recovered by building a fallback USDZ through `/usr/bin/usdzip`.
+- Blender background USDZ export is still machine-sensitive. On the current reference machine, Blender 4.5.8 crashed during the fresh-project walkthrough, and RKP recovered by building a fallback USDZ through `/usr/bin/usdzip`. Use `rkp build-asset --fallback-only` when that fallback path is the intended draft output.
 - The fallback builder is for prompt-backed procedural drafts. It is enough to keep the asset loop moving, but visual acceptance still requires loading the USDZ in RealityKit and providing screenshot evidence.
 - RKG is experimental. It can scaffold and verify small fixed-camera RealityKit projects, including screenshot evidence checks with `rkg verify-screenshots`, but generated games still need human product review, visual QA, screenshots, and App Store preparation.
 - RKP does not automatically edit arbitrary Xcode projects. Add `Assets/Imported` to your app bundle yourself, or set `xcode_project` and `xcode_scheme` in `rkp.json` when you want `release-check` to run the Xcode build gate.

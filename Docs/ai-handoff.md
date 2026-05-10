@@ -81,7 +81,7 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 Public polish follow-up:
 
-1. Review the two local commits ahead of `origin/main`; push only if the user explicitly asks.
+1. Review local commits ahead of `origin/main`; push only if the user explicitly asks.
 2. Use `Docs/github-showcase.md` for GitHub description/topics and release copy.
 3. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
 4. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.

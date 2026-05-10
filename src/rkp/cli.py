@@ -408,6 +408,11 @@ def main() -> int:
 
     build_asset = subparsers.add_parser("build-asset", help="Run the Blender build script for one asset")
     build_asset.add_argument("id", help="Asset id from Tools/asset_manifest.json")
+    build_asset.add_argument(
+        "--fallback-only",
+        action="store_true",
+        help="Skip Blender and build a prompt-backed procedural USDZ draft with the direct fallback builder",
+    )
 
     inspect_usdz = subparsers.add_parser("inspect-usdz", help="Inspect a built USDZ against manifest expectations")
     inspect_usdz.add_argument("id", help="Asset id from Tools/asset_manifest.json")
@@ -475,7 +480,10 @@ def main() -> int:
             return run_make_asset_meshy(args)
         return run_make_asset(args)
     if args.command == "build-asset":
-        return run(module_command("rkp.build_asset", "--id", args.id))
+        command = module_command("rkp.build_asset", "--id", args.id)
+        if args.fallback_only:
+            command.append("--fallback-only")
+        return run(command)
     if args.command == "inspect-usdz":
         command = module_command("rkp.inspect_usdz", args.id)
         if args.json:

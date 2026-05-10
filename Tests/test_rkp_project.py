@@ -442,6 +442,50 @@ def Mesh "Mesh"
             self.assertIn("Blender executable", result.stderr)
             self.assertFalse((root / "Tools" / "asset_manifest.json").exists())
 
+    def test_build_asset_fallback_only_skips_blender_and_script_requirements(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_buildable_asset(root, "portable_fallback_only")
+            (root / "Pipeline" / "blender" / "create_portable_fallback_only.py").unlink()
+            fake_usdzip = root / "usdzip"
+            fake_usdzip.write_text(
+                f"""#!{sys.executable}
+from pathlib import Path
+import sys
+
+output = Path(sys.argv[-1])
+output.parent.mkdir(parents=True, exist_ok=True)
+output.write_bytes(b"fallback-usdz")
+""",
+                encoding="utf-8",
+            )
+            fake_usdzip.chmod(0o755)
+            env = os.environ.copy()
+            env["BLENDER"] = "/nonexistent/blender"
+            env["PATH"] = str(root)
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "build-asset",
+                    "portable_fallback_only",
+                    "--fallback-only",
+                ],
+                cwd=nested,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((root / "GameAssets" / "portable_fallback_only.usdz").exists())
+            self.assertIn("fallback asset built: GameAssets/portable_fallback_only.usdz", result.stdout)
+            self.assertIn("next: rkp inspect-usdz portable_fallback_only", result.stdout)
+            self.assertIn("manifest status is unchanged", result.stdout)
+            self.assertNotIn("Blender executable", result.stderr)
+
     def test_build_asset_reports_missing_texture_as_info_after_successful_build(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

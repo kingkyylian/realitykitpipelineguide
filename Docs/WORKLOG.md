@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 109: Roughness Readability Polish
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** `material_response_targets` screenshot'ında roughness farkını teknik doğrulamadan görsel öğretime taşımak.
+
+**Yapılanlar:**
+
+- Direct USDZ fallback mesh'lerine küçük curved specular witness eklendi; triangle bütçesi 1248/1800 olarak kaldı.
+- Matte/glossy roughness değerleri daha ayrık hale getirildi: `0.98` ve `0.04`.
+- Roughness texture daha yüksek kontrastlı üretildi.
+- BaseColor texture içinde dairesel nötr witness patch eklendi; ana hedef ring dili korunurken material response daha net okunuyor.
+- `MaterialResponseShowcase` tek point light yerine grazing + rim point light düzeni kullanacak şekilde güncellendi.
+- Simulator screenshot yenilendi ve asset yeniden accepted edildi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_material_response_fallback_uses_readable_roughness_values Tests.test_rkp_project.RkpProjectTests.test_material_response_fallback_meshes_include_curved_specular_witnesses Tests.test_rkp_project.RkpProjectTests.test_roughness_texture_uses_extreme_map_contrast Tests.test_rkp_project.RkpProjectTests.test_material_response_basecolor_includes_neutral_witness_patch: ok, 4 tests
+rtk .venv/bin/python -m unittest Tests.test_fixture_refactor.FixtureRefactorTests.test_material_response_showcase_uses_grazing_lights_for_roughness_readability: ok
+rtk .venv/bin/python Tools/rkp.py build-asset material_response_targets --fallback-only: ok, 25981-byte USDZ
+rtk .venv/bin/python Tools/rkp.py inspect-usdz material_response_targets --json: ok, 1248 triangles, baseColor 512x512, roughness 512x512, st UV present
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok, CoreSimulator sandbox warnings only
+rtk xcrun simctl launch 1209CEA7-6253-43D7-A6B3-9B755F09BDB1 com.kyylian.RealityKitPipelineDemo --material-response-mode: ok
+rtk xcrun simctl io 1209CEA7-6253-43D7-A6B3-9B755F09BDB1 screenshot /Users/kyylian/Developer/RealityKitPipelineDemo/Docs/screenshots/material_response_targets.png: ok
+rtk .venv/bin/python Tools/rkp.py accept-asset material_response_targets --screenshot Docs/screenshots/material_response_targets.png: ok
+```
+
+**Öğrenme notu:**
+
+Roughness map paketlemek tek başına iyi bir öğretim screenshot'ı üretmez. Düz target yüzeyi yerine küçük curved witness ve grazing light kullanmak, aynı asset kontratını bozmadan material response farkını görünür hale getirir.
+
+**Karar:**
+
+Module 4'ün bir sonraki slice'ında roughness'i tekrar genişletmek yerine metallic value comparison veya normal-map export behavior seçilecek; her seferinde tek material konusu ve screenshot evidence korunacak.
+
 ### Sprint 108: Module 4 Material Response First Slice
 
 **Durum:** Tamamlandı

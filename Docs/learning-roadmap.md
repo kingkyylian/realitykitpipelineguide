@@ -15,6 +15,7 @@ This file is only a quick index so sprint numbering does not drift from `Docs/WO
 | Sprint 4 | Complete | Ring-based scoring and texture-gameplay link |
 | Sprint 5 | Complete | Arena floor environment asset |
 | Sprint 108 | Complete | Module 4 material response first slice: roughness value vs roughness map |
+| Sprint 109 | Complete | Roughness readability polish with curved witness patch and grazing lights |
 
 ## Next Worklog Sprint Candidates
 

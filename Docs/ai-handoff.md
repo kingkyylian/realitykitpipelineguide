@@ -61,7 +61,8 @@ Do not expand RKG while doing product-focus cleanup unless a test or doc boundar
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
-| Material response first slice | Started | `Assets/Imported/material_response_targets.usdz`, `Docs/screenshots/material_response_targets.png`, `rkp inspect-usdz` textureMaps output |
+| Material response first slice | Complete | `Assets/Imported/material_response_targets.usdz`, `Docs/screenshots/material_response_targets.png`, `rkp inspect-usdz` textureMaps output |
+| Roughness readability polish | Complete | Neutral curved witness patch, stronger roughness values, grazing comparison lights |
 
 ## Planned Learning Modules
 
@@ -85,7 +86,7 @@ Post-release state: `v0.2.1` is published and GitHub Actions passed on the relea
 Recommended next path:
 
 1. Continue Module 4: Texture Maps and Material Response.
-2. Pick exactly one next material slice: metallic value comparison, normal-map export behavior, or better roughness screenshot readability.
+2. Pick exactly one next material slice: metallic value comparison or normal-map export behavior.
 3. Keep screenshot evidence required before marking any visual asset imported.
 4. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
 5. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.

@@ -10,6 +10,7 @@
 ### Changed
 
 - Extended the direct USDZ fallback builder so supported teaching drafts can package manifest-configured baseColor and roughness maps when Blender background export crashes.
+- Improved `material_response_targets` roughness readability with high-contrast roughness values, a curved neutral witness patch, and grazing fixture lights.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

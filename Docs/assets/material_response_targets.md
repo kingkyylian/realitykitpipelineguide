@@ -9,8 +9,8 @@ Teach Module 4 material response with one compact comparison asset that can be l
 - Three target-like panels are visible side by side.
 - Left panel: high roughness material value, matte response.
 - Center panel: low roughness material value, glossier response.
-- Right panel: roughness map variation. The first screenshot proves the map is packaged and loaded, but visual roughness separation remains subtle under the current fixture lighting.
-- All panels use the same readable base color ring language as `target_basic_textured`.
+- Right panel: roughness map variation with a mixed response on the neutral witness patch.
+- All panels use the same readable base color ring language as `target_basic_textured`, plus a small neutral curved witness patch so roughness differences are visible in the fixture screenshot.
 - Texture size starts at 512x512.
 
 ## Technical Contract
@@ -31,7 +31,7 @@ Teach Module 4 material response with one compact comparison asset that can be l
 - [x] RealityKit fixture launched with `--material-response-mode`.
 - [x] Simulator screenshot captured at `Docs/screenshots/material_response_targets.png`.
 - [x] `rkp accept-asset material_response_targets --screenshot Docs/screenshots/material_response_targets.png` passes.
-- [x] `Docs/WORKLOG.md` records what was visually readable and what was not.
+- [x] `Docs/WORKLOG.md` records the roughness readability polish and verification evidence.
 
 ## Evidence
 

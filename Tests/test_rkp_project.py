@@ -29,6 +29,38 @@ class RkpProjectTests(unittest.TestCase):
             ]
         )
 
+    def png_rgba_pixels(self, path: Path) -> list[tuple[int, int, int, int]]:
+        data = path.read_bytes()
+        self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"))
+        offset = 8
+        width = height = 0
+        compressed = bytearray()
+        while offset < len(data):
+            length = struct.unpack(">I", data[offset : offset + 4])[0]
+            kind = data[offset + 4 : offset + 8]
+            payload = data[offset + 8 : offset + 8 + length]
+            offset += 12 + length
+            if kind == b"IHDR":
+                width, height = struct.unpack(">II", payload[:8])
+            elif kind == b"IDAT":
+                compressed.extend(payload)
+            elif kind == b"IEND":
+                break
+
+        raw = zlib.decompress(bytes(compressed))
+        pixels: list[tuple[int, int, int, int]] = []
+        stride = width * 4
+        for row in range(height):
+            row_start = row * (stride + 1)
+            self.assertEqual(raw[row_start], 0)
+            row_bytes = raw[row_start + 1 : row_start + 1 + stride]
+            pixels.extend(
+                tuple(row_bytes[index : index + 4])  # type: ignore[arg-type]
+                for index in range(0, len(row_bytes), 4)
+            )
+        self.assertEqual(len(pixels), width * height)
+        return pixels
+
     def make_external_project(self, root: Path) -> Path:
         tools = root / "Pipeline"
         assets = root / "GameAssets"
@@ -833,6 +865,67 @@ with zipfile.ZipFile(output, "w") as zf:
             self.assertEqual(result.returncode, 127)
             self.assertIn("usdzip not found", result.stderr)
             self.assertFalse((root / "GameAssets" / "portable_fallback.usdz").exists())
+
+    def test_material_response_fallback_uses_readable_roughness_values(self) -> None:
+        from Tools import usdz_fallback_builder
+
+        with tempfile.TemporaryDirectory() as tmp:
+            usda_path = Path(tmp) / "material_response_targets.usda"
+            usdz_fallback_builder.write_material_response_usda(
+                {"id": "material_response_targets"},
+                {
+                    "baseColor": "material_response_targets_basecolor.png",
+                    "roughness": "material_response_targets_roughness.png",
+                },
+                usda_path,
+            )
+
+            text = usda_path.read_text(encoding="utf-8")
+
+        self.assertIn("float inputs:roughness = 0.98", text)
+        self.assertIn("float inputs:roughness = 0.04", text)
+        self.assertIn(
+            "float inputs:roughness.connect = </root/_materials/mat_roughness_map/Roughness_Texture.outputs:r>",
+            text,
+        )
+
+    def test_material_response_fallback_meshes_include_curved_specular_witnesses(self) -> None:
+        from Tools import usdz_fallback_builder
+
+        meshes = usdz_fallback_builder.material_response_meshes()
+
+        self.assertEqual(len(meshes), 3)
+        for _, mesh, _ in meshes:
+            self.assertGreaterEqual(len(mesh.triangles), 240)
+
+    def test_roughness_texture_uses_extreme_map_contrast(self) -> None:
+        from Tools import usdz_fallback_builder
+
+        with tempfile.TemporaryDirectory() as tmp:
+            texture_path = Path(tmp) / "roughness.png"
+            usdz_fallback_builder.make_roughness_texture(texture_path)
+            values = [pixel[0] for pixel in self.png_rgba_pixels(texture_path)]
+
+        self.assertLessEqual(min(values), 12)
+        self.assertGreaterEqual(max(values), 244)
+
+    def test_material_response_basecolor_includes_neutral_witness_patch(self) -> None:
+        from Tools import usdz_fallback_builder
+
+        with tempfile.TemporaryDirectory() as tmp:
+            texture_path = Path(tmp) / "basecolor.png"
+            usdz_fallback_builder.make_texture(
+                {
+                    "id": "material_response_targets",
+                    "type": "material_response_showcase",
+                    "prompt": "red target panels",
+                },
+                texture_path,
+            )
+            pixels = self.png_rgba_pixels(texture_path)
+
+        sample = pixels[(512 * 125) + 390]
+        self.assertTrue(all(150 <= channel <= 210 for channel in sample[:3]), sample)
 
     @unittest.skipUnless(shutil.which("usdzip"), "usdzip not installed")
     def test_fallback_builder_packages_configured_material_maps(self) -> None:

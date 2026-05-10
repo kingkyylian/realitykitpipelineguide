@@ -79,6 +79,10 @@ def make_texture(asset: dict, path: Path) -> None:
                     color = white
                 elif radius > 0.48:
                     color = dark
+                witness_u = (u - 0.75) / 0.12
+                witness_v = (v - 0.27) / 0.12
+                if asset_type == "material_response_showcase" and witness_u * witness_u + witness_v * witness_v <= 1.0:
+                    color = (178, 184, 188, 255)
             else:
                 stripe = (x // 48 + y // 48) % 2 == 0
                 color = primary_rgba if stripe else secondary_rgba
@@ -93,10 +97,11 @@ def make_roughness_texture(path: Path) -> None:
     for y in range(512):
         for x in range(512):
             u = (x + 0.5) / 512
-            band = int(u * 10) % 2 == 0
-            value = 46 if band else 224
-            if 220 < y < 292:
-                value = 28 if band else 238
+            v = (y + 0.5) / 512
+            band = int(u * 8) % 2 == 0
+            center_lane = 0.43 <= u <= 0.57
+            upper_witness = 0.60 <= u <= 0.82 and 0.14 <= v <= 0.36
+            value = 8 if band or center_lane or upper_witness else 248
             pixels.append((value, value, value, 255))
     path.parent.mkdir(parents=True, exist_ok=True)
     write_png(path, 512, 512, pixels)
@@ -165,6 +170,51 @@ class MeshBuilder:
             self.triangles.append((bottom[index], bottom[nxt], top[nxt]))
             self.triangles.append((bottom[index], top[nxt], top[index]))
 
+    def add_ellipsoid(
+        self,
+        cx: float,
+        cy: float,
+        cz: float,
+        rx: float,
+        ry: float,
+        rz: float,
+        segments: int = 16,
+        rings: int = 8,
+    ) -> None:
+        top = len(self.points)
+        self.points.append((cx, cy, cz + rz))
+        ring_indices: list[list[int]] = []
+        for ring in range(1, rings):
+            theta = math.pi * ring / rings
+            z = cz + math.cos(theta) * rz
+            radius = math.sin(theta)
+            row: list[int] = []
+            for segment in range(segments):
+                angle = 2 * math.pi * segment / segments
+                row.append(len(self.points))
+                self.points.append((cx + math.cos(angle) * rx * radius, cy + math.sin(angle) * ry * radius, z))
+            ring_indices.append(row)
+        bottom = len(self.points)
+        self.points.append((cx, cy, cz - rz))
+
+        first_ring = ring_indices[0]
+        for segment in range(segments):
+            nxt = (segment + 1) % segments
+            self.triangles.append((top, first_ring[segment], first_ring[nxt]))
+
+        for ring_index in range(len(ring_indices) - 1):
+            current = ring_indices[ring_index]
+            next_ring = ring_indices[ring_index + 1]
+            for segment in range(segments):
+                nxt = (segment + 1) % segments
+                self.triangles.append((current[segment], next_ring[segment], next_ring[nxt]))
+                self.triangles.append((current[segment], next_ring[nxt], current[nxt]))
+
+        last_ring = ring_indices[-1]
+        for segment in range(segments):
+            nxt = (segment + 1) % segments
+            self.triangles.append((bottom, last_ring[nxt], last_ring[segment]))
+
 
 def drone_mesh() -> MeshBuilder:
     mesh = MeshBuilder()
@@ -192,6 +242,7 @@ def material_response_meshes() -> list[tuple[str, MeshBuilder, str]]:
     ]:
         mesh = MeshBuilder()
         mesh.add_cylinder(x_offset, 0, 0, 0.28, 0.035, 48)
+        mesh.add_ellipsoid(x_offset + 0.11, 0.12, 0.045, 0.06, 0.06, 0.04)
         meshes.append((name, mesh, material_name))
     return meshes
 
@@ -300,8 +351,8 @@ def write_material_response_usda(asset: dict, texture_names: dict[str, str], out
     meshes = "\n\n".join(mesh_block(name, mesh, material_name) for name, mesh, material_name in material_response_meshes())
     materials = "\n\n".join(
         [
-            material_block("mat_matte_value", basecolor, 0.88),
-            material_block("mat_glossy_value", basecolor, 0.18),
+            material_block("mat_matte_value", basecolor, 0.98),
+            material_block("mat_glossy_value", basecolor, 0.04),
             material_block("mat_roughness_map", basecolor, 0.50, roughness),
         ]
     )

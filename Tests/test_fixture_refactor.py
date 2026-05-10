@@ -43,6 +43,14 @@ class FixtureRefactorTests(unittest.TestCase):
         self.assertIn("MaterialResponseShowcase.add", game_ar_view)
         self.assertNotIn('"material_response_targets"', target_factory)
 
+    def test_material_response_showcase_uses_grazing_lights_for_roughness_readability(self) -> None:
+        showcase = (SOURCE_DIR / "MaterialResponseShowcase.swift").read_text(encoding="utf-8")
+
+        self.assertIn("addComparisonLights", showcase)
+        self.assertGreaterEqual(showcase.count("PointLight()"), 2)
+        self.assertIn("grazingLight", showcase)
+        self.assertIn("rimLight", showcase)
+
 
 if __name__ == "__main__":
     unittest.main()

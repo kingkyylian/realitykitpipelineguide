@@ -7,7 +7,7 @@ enum MaterialResponseShowcase {
     private static let importedOrientation = simd_quatf(angle: .pi / 2, axis: [1, 0, 0])
 
     static func add(to worldAnchor: Entity) {
-        addComparisonLight(to: worldAnchor)
+        addComparisonLights(to: worldAnchor)
 
         if let model = ImportedAssetLoader.loadModel(named: "material_response_targets") {
             model.name = "material_response_targets"
@@ -23,23 +23,31 @@ enum MaterialResponseShowcase {
         addProceduralFallback(to: worldAnchor)
     }
 
-    private static func addComparisonLight(to worldAnchor: Entity) {
-        let light = PointLight()
-        light.light.intensity = 2800
-        light.position = [0.35, 0.95, -0.95]
-        worldAnchor.addChild(light)
+    private static func addComparisonLights(to worldAnchor: Entity) {
+        let grazingLight = PointLight()
+        grazingLight.light.intensity = 9200
+        grazingLight.position = [-0.72, 1.06, -0.78]
+        worldAnchor.addChild(grazingLight)
+
+        let rimLight = PointLight()
+        rimLight.light.intensity = 5200
+        rimLight.position = [0.84, 0.92, -1.02]
+        worldAnchor.addChild(rimLight)
     }
 
     private static func addProceduralFallback(to worldAnchor: Entity) {
         let panels: [(Float, Float, UIColor)] = [
-            (-0.62, 0.88, UIColor(red: 0.72, green: 0.08, blue: 0.06, alpha: 1)),
-            (0.0, 0.18, UIColor(red: 0.88, green: 0.10, blue: 0.07, alpha: 1)),
+            (-0.62, 0.98, UIColor(red: 0.72, green: 0.08, blue: 0.06, alpha: 1)),
+            (0.0, 0.04, UIColor(red: 0.88, green: 0.10, blue: 0.07, alpha: 1)),
             (0.62, 0.52, UIColor(red: 0.78, green: 0.18, blue: 0.12, alpha: 1))
         ]
 
         for (x, roughness, color) in panels {
             let material = RealityMaterials.pbr(color: color, roughness: roughness, metallic: 0.0)
             let panel = ModelEntity(mesh: .generateBox(size: [0.34, 0.34, 0.035]), materials: [material])
+            let witness = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
+            witness.position = [0.09, 0.09, 0.045]
+            panel.addChild(witness)
             panel.position = showcasePosition + SIMD3<Float>(x, 0, 0)
             worldAnchor.addChild(panel)
         }

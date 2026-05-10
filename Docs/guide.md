@@ -439,7 +439,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | CLI asset draft generation | Complete | `rkp make-asset`, `prompt-asset`, Meshy/Claude flags | Draft üretim yolları ayrıldı. |
 | USDZ inspection gate | Complete | `rkp inspect-usdz`, tests | Texture presence, texture dimension, UV signal ve known triangle budget raporlanıyor. |
 | Asset verification gate | Complete | `rkp verify-asset`, tests | Build, inspect, acceptance ve release kapıları tek akışta birleşti. |
-| Roughness maps | Started | `material_response_targets`, `Docs/screenshots/material_response_targets.png` | Roughness value vs roughness map comparison began in Module 4. |
+| Roughness maps | Started | `material_response_targets`, `Docs/screenshots/material_response_targets.png` | Roughness value vs roughness map comparison is now readable through a neutral curved witness patch. |
 | Metallic maps | Planned | yok | Metallic map gerekliliği ayrı egzersizde değerlendirilecek. |
 | Normal map | Planned | yok | Tangent-space normal ve export davranışı test edilecek. |
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
@@ -468,7 +468,8 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 1. `material_response_targets` asset'i üç panelle roughness value ve roughness map davranışını karşılaştırır.
 2. `rkp inspect-usdz material_response_targets --json` baseColor ve roughness texture varlığını doğrular.
 3. Simulator screenshot `Docs/screenshots/material_response_targets.png` olarak saklanır.
-4. İlk screenshot'ta roughness ayrımı sınırlı okunuyor; bir sonraki adım map sayısını artırmak değil ışık açısı, panel yüzeyi veya kamera düzenini iyileştirmek olmalı.
+4. Roughness farkı düz hedef yüzeyinde zayıf okunur; bu yüzden asset küçük nötr curved witness patch kullanır. Sol panelde matte cevap yumuşak kalır, orta panelde glossy highlight daha keskin görünür, sağ panelde roughness map karışık tepki üretir.
+5. Sonraki Module 4 slice'ı yeni map eklemekse tek konu seçilmeli: metallic value comparison veya normal-map export behavior.
 
 ### Planned Module 5: Performance and Mobile Asset Budget
 

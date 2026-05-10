@@ -12,6 +12,37 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 104: v0.2.0 Release Candidate Notes
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Push/tag yapmadan, yereldeki `v0.2.0` release adayını changelog, GitHub showcase, release checklist, handoff ve ayrı release notes dosyasıyla netleştirmek.
+
+**Plan:**
+
+- Release dokümanlarının `v0.2.0` adayına baktığını testle koru.
+- `CHANGELOG.md` içinde mevcut değişiklikleri `Unreleased` yerine `v0.2.0` draft bölümüne taşı.
+- GitHub showcase ve repo release checklist dosyalarını eski `v0.1.0` publish akışından çıkar.
+- `Docs/releases/v0.2.0.md` altında GitHub Release'e taşınabilir taslak metni hazırla.
+- `Docs/ai-handoff.md` içinde sıradaki işi release candidate review olarak güncelle.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_release_docs.py: first run failed as expected; release draft and v0.2.0 checklist text were missing
+rtk .venv/bin/python -m unittest Tests/test_release_docs.py: ok, 4 tests
+rtk .venv/bin/python -m unittest Tests/test_public_polish_docs.py Tests/test_product_boundary_docs.py Tests/test_release_docs.py: ok, 13 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 151 tests
+rtk make verify-local: ok, compileall + Ruff + 151 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+`v0.1.0` mevcut baseline olarak korunacak. Sıradaki yayın yerelde `v0.2.0` release candidate olarak hazır; push, tag ve GitHub Release sadece kullanıcı açıkça onaylarsa yapılacak.
+
 ### Sprint 103: README Landing Refactor
 
 **Durum:** Tamamlandı

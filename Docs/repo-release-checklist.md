@@ -1,6 +1,10 @@
 # Repo Release Checklist
 
-Use this before creating the public repository or pushing a first clean branch.
+Use this before pushing a public branch or creating a release.
+
+Next release candidate: `v0.2.0`
+
+Do not push, tag, or publish without explicit user approval.
 
 ## Keep
 
@@ -24,6 +28,7 @@ Use this before creating the public repository or pushing a first clean branch.
 - `Docs/pdf/realitykit-pipeline-guide.pdf`
 - `Docs/*checklist*.md`, `Docs/asset-budget.md`, `Docs/learning-roadmap.md`, `Docs/pipeline.md`
 - `Docs/github-showcase.md`
+- `Docs/releases/*.md`
 - `Prompts`
 - `Tools/blender`
 
@@ -35,7 +40,7 @@ Use this before creating the public repository or pushing a first clean branch.
 - `.DS_Store`
 - editor folders
 
-## Before Push
+## Before Push or Release
 
 1. Run `xcodegen generate` or `make generate`.
 2. Run the workspace-local build:
@@ -65,7 +70,8 @@ Use this before creating the public repository or pushing a first clean branch.
 6. Review `Docs/WORKLOG.md` for stale active sprint status.
 7. Review `Docs/ai-handoff.md` for stale current status or next-task guidance.
 8. Set GitHub description and topics from `Docs/github-showcase.md`.
-9. Create `v0.1.0` release from `CHANGELOG.md`.
+9. Review `CHANGELOG.md` and `Docs/releases/v0.2.0.md` for stale release notes.
+10. Create `v0.2.0` release from `Docs/releases/v0.2.0.md` after push, CI, and explicit release approval.
 
 ## Current Evidence Set
 

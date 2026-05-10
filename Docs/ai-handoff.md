@@ -79,13 +79,14 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 ## Current Recommended Next Task
 
-Public polish follow-up:
+Public polish follow-up: `v0.2.0` release candidate review.
 
 1. Review local commits ahead of `origin/main`; push only if the user explicitly asks.
-2. Use `Docs/github-showcase.md` for GitHub description/topics and release copy.
-3. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
-4. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
-5. If continuing education content, start Module 4: Texture Maps and Material Response.
+2. Review `CHANGELOG.md` and `Docs/releases/v0.2.0.md` before any tag or GitHub Release.
+3. Use `Docs/github-showcase.md` for GitHub description/topics and release copy.
+4. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
+5. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
+6. If continuing education content, start Module 4: Texture Maps and Material Response.
 
 ## Key Files to Read First
 

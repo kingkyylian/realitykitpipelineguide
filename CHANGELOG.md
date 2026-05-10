@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes yet.
+
+## v0.2.0 - RKP product path and RKG labs preview (draft, 2026-05-10)
+
 ### RKP Product Surface
 
 - Clarified the public product boundary: RKP is the active toolkit surface, RKG is experimental labs, and the included app is a verification fixture.

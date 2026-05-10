@@ -30,25 +30,31 @@ developer-tools
 asset-pipeline
 ```
 
-## First Release
+## Existing Baseline
+
+Existing baseline tag: `v0.1.0` is the public pipeline toolkit preview baseline. Do not recreate or rewrite that tag.
+
+## Next Release Draft
 
 Tag:
 
 ```bash
-git tag v0.1.0
+git tag v0.2.0
 ```
 
 Release title:
 
 ```text
-v0.1.0 - Public learning pipeline preview
+v0.2.0 - RKP product path and RKG labs preview
 ```
 
 Release summary:
 
 ```text
-First public preview of a teaching-oriented RealityKit asset pipeline toolkit. Includes the `rkp` CLI, installable Codex skill, agent slash commands, CLI smoke tests, imported Blender/USDZ target assets, a SwiftUI + RealityKit verification fixture, asset manifest budgets, simulator screenshot evidence, Blender starter tooling, and a shareable PDF guide.
+Release candidate for the clearer RKP product path: `rkp` is the command-first RealityKit asset pipeline toolkit, `rkg` remains experimental labs, and the SwiftUI + RealityKit app is the verification fixture. Adds explicit fallback asset builds, stronger release/asset checks, concise public onboarding, Blender fallback guidance, first-good-issue material, generated game QA planning, and screenshot evidence checks.
 ```
+
+Release notes file: `Docs/releases/v0.2.0.md`
 
 ## Outreach Angle
 
@@ -60,7 +66,7 @@ Most RealityKit examples focus only on Swift code. This repo teaches the missing
 
 - README demo GIF or short MP4.
 - GitHub repo description and topics set in the web UI.
-- `v0.1.0` tag and GitHub Release.
+- Review `Docs/releases/v0.2.0.md`, push `main` with explicit approval, wait for CI, then create the `v0.2.0` tag and GitHub Release.
 - Optional: one short post showing the pipeline screenshot and guide PDF.
 
 ## Local Polish Ready

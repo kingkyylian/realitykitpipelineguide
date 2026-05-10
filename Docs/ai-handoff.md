@@ -79,13 +79,13 @@ Portability status: `rkp` is installable, config-aware, and usable from external
 
 ## Current Recommended Next Task
 
-Product focus cleanup:
+Public polish follow-up:
 
-1. Keep `rkp` as the first-screen product in README and docs.
-2. Keep `rkg` under explicit experimental labs framing.
-3. Preserve all current verification gates.
-4. Avoid changing fixture app behavior.
-5. After cleanup, run `rtk make verify-local`, manifest validation, and `rtk .venv/bin/python Tools/rkp.py release-check`.
+1. Review the two local commits ahead of `origin/main`; push only if the user explicitly asks.
+2. Use `Docs/github-showcase.md` for GitHub description/topics and release copy.
+3. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
+4. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
+5. If continuing education content, start Module 4: Texture Maps and Material Response.
 
 ## Key Files to Read First
 

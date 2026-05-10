@@ -1,5 +1,10 @@
 # RealityKit Pipeline Toolkit
 
+[![CI](https://github.com/kingkyylian/realitykitpipelineguide/actions/workflows/ci.yml/badge.svg)](https://github.com/kingkyylian/realitykitpipelineguide/actions/workflows/ci.yml)
+![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)
+![RealityKit](https://img.shields.io/badge/RealityKit-iOS%20fixture-black?logo=apple&logoColor=white)
+
 A command-first RealityKit asset pipeline toolkit for taking a gameplay asset from brief to Blender/USDZ output, RealityKit verification, simulator evidence, and release checks.
 
 `rkp` is the product. The included SwiftUI + RealityKit target-shooting app is a verification fixture used to prove that generated or imported assets actually load in RealityKit. `rkg` is experimental labs work on top of the same pipeline; it is not the main user path.
@@ -72,7 +77,7 @@ This is the product loop. Everything else in the repository exists to teach, ver
 ### Prerequisites
 
 - Python 3.10+ and `pipx`.
-- Blender 4.x if you want to build generated Blender assets locally.
+- Blender 4.x if you want to build generated Blender assets locally. See `Docs/blender-support.md` for the support and fallback matrix.
 - macOS with Xcode and XcodeGen only if you want to run the included iOS verification fixture.
 
 ### Use The Pipeline CLI
@@ -386,6 +391,10 @@ For slash-command usage, start from `Docs/slash-commands.md`.
 For the teaching version of the pipeline, use `Docs/guide.md`. It explains the full asset journey from gameplay need to USDZ export, Xcode resource import, RealityKit loading, simulator screenshot, and learning notes. A generated PDF lives at `Docs/pdf/realitykit-pipeline-guide.pdf`.
 
 For reusable production practice, use `Docs/production-playbook.md`. It defines the feature brief, asset/runtime contract, quality gates, review checklist, and definition of done for future RealityKit games.
+
+For Blender compatibility and direct USDZ fallback behavior, use `Docs/blender-support.md`.
+
+For learner-sized contribution ideas, use `Docs/first-good-issues.md`.
 
 For starting a new game from this repo's lessons, use `Docs/new-game-startup.md`.
 

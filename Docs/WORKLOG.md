@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 101: Public Polish Follow-up
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** Product-focus cleanup sonrası public repo vitrini için küçük ama kalıcı onboarding yüzeylerini tamamlamak.
+
+**Plan:**
+
+- README üstüne CI/Python/license/RealityKit badge'leri ekle.
+- Blender sürüm ve direct USDZ fallback davranışını tek dokümanda topla.
+- Learner-friendly first-good-issue listesi ekle.
+- GitHub showcase ve AI handoff dosyalarını yeni public polish yüzeyiyle güncelle.
+- Bu dokümanları küçük Python testleriyle koru.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_public_polish_docs.py: ok, 4 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 145 tests
+rtk make verify-local: ok, compileall + Ruff + 145 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+Push/tag yapılmadan önce yereldeki public polish tamamlanabilir. GitHub web UI işleri, tag ve release işlemleri kullanıcı açıkça istemeden yapılmayacak.
+
 ### Sprint 100: Product Focus Cleanup
 
 **Durum:** Tamamlandı

@@ -62,3 +62,9 @@ Most RealityKit examples focus only on Swift code. This repo teaches the missing
 - GitHub repo description and topics set in the web UI.
 - `v0.1.0` tag and GitHub Release.
 - Optional: one short post showing the pipeline screenshot and guide PDF.
+
+## Local Polish Ready
+
+- README badges point at CI, Python 3.10+, MIT license, and the RealityKit fixture scope.
+- `Docs/blender-support.md` documents Blender 4.x expectations, observed local fallback behavior, and acceptance rules.
+- `Docs/first-good-issues.md` provides learner-sized issue candidates that preserve the RKP-first product boundary.

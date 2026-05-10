@@ -72,6 +72,44 @@ rtk git diff --check: ok
 
 `Docs/releases/v0.2.0.md` artık GitHub Release body olarak kullanılabilecek final metin. Yayın sırası: `main` push, GitHub Actions sonucu bekleme, `v0.2.0` tag, GitHub Release.
 
+### Sprint 106: GitHub Actions PEP 668 Fix
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** `v0.2.0` push sonrası GitHub Actions macOS runner'ında Homebrew-managed Python nedeniyle düşen dependency install adımını düzeltmek.
+
+**Bulgu:**
+
+```text
+GitHub Actions run 25632680710 failed at "Install Python dev dependencies".
+Root cause: python3 -m pip install -e ".[dev]" hit externally-managed-environment / PEP 668 on the macOS runner.
+```
+
+**Plan:**
+
+- CI workflow içinde `.venv` oluştur.
+- Dev install, Ruff ve unittest adımlarını `.venv/bin/python` üzerinden çalıştır.
+- `pipeline doctor` CI kontrolünü virtualenv-backed test komutunu kabul edecek şekilde güncelle.
+- Workflow metnini küçük bir testle koru.
+- Release notes/changelog içine CI fix bilgisini dahil et.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests/test_ci_workflow.py Tests/test_release_docs.py: ok, 5 tests
+rtk .venv/bin/python -m unittest Tests/test_ci_workflow.py Tests/test_rkp_cli.py Tests/test_release_docs.py: ok, 14 tests
+rtk .venv/bin/python Tools/rkp.py doctor --json: ok, errors 0
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 152 tests
+rtk make verify-local: ok, compileall + Ruff + 152 tests + pipeline doctor
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk .venv/bin/python Tools/rkp.py release-check: release-check ok; CoreSimulator sandbox warnings only
+rtk git diff --check: ok
+```
+
+**Karar:**
+
+CI sistem Python ortamına paket kurmayacak. GitHub Actions `.venv` kullanacak; `rkp doctor` hem eski `python3 -m unittest ...` hem yeni `.venv/bin/python -m unittest ...` test komutunu geçerli kabul edecek.
+
 ### Sprint 103: README Landing Refactor
 
 **Durum:** Tamamlandı

@@ -236,9 +236,15 @@ class Doctor:
         if not ci.exists():
             return
         text = ci.read_text(encoding="utf-8")
-        for required in ("xcodegen generate", "Tools/asset_manifest.json", "python3 -m unittest discover -s Tests", "xcodebuild"):
-            if required not in text:
-                self.error(f"CI is missing required step content: {required}", ".github/workflows/ci.yml")
+        required_steps = (
+            ("xcodegen generate",),
+            ("Tools/asset_manifest.json",),
+            ("python3 -m unittest discover -s Tests", ".venv/bin/python -m unittest discover -s Tests"),
+            ("xcodebuild",),
+        )
+        for alternatives in required_steps:
+            if not any(required in text for required in alternatives):
+                self.error(f"CI is missing required step content: {alternatives[0]}", ".github/workflows/ci.yml")
         if "actions/checkout@v4" in text:
             self.warning("actions/checkout@v4 currently emits Node 20 deprecation warnings", ".github/workflows/ci.yml")
 

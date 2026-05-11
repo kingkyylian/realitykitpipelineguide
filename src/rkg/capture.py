@@ -72,7 +72,7 @@ def execute_capture_plan(
     plan: Mapping[str, Any],
     *,
     runner: CommandRunner | None = None,
-    sleep_seconds: float = 1.0,
+    sleep_seconds: float = 2.0,
 ) -> JsonDict:
     project = Path(str(plan["project"]))
     run = runner or _run_command

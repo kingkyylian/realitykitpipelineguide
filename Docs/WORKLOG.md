@@ -12,6 +12,52 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 122: RKG Shard Volley Dogfood
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** RKG'nin kapsamlı tool olma yolunda eksiklerini varsayım yerine gerçek kullanım üzerinden görmek; sıfırdan bir projectile/shooting/score oyun fikrini idea score'dan simulator screenshot evidence'a kadar dogfood etmek.
+
+**Yapılanlar:**
+
+- `Shard Volley` fikri `score-idea` ile değerlendirildi; skor `100`, verdict `pass`.
+- `rkg list-adapters`, `new-game`, `validate-spec`, `plan-game`, `qa-plan`, `init-game`, `verify-game`, `capture-screenshots`, ve `verify-screenshots` sırasıyla çalıştırıldı.
+- Generated `ShardVolley` projesi `Build/rkg-dogfood-shard-volley/ShardVolley` altında üretildi ve build/release gate geçti.
+- Dört screenshot state'i simulator'da capture edildi: `gameplay_start`, `mid_action`, `fail_or_hit`, `results`.
+- Screenshot evidence root docs alanına kopyalandı: `Docs/screenshots/rkg_shard_volley_*.jpg`.
+- Dogfood raporu `Docs/rkg-shard-volley-dogfood.md` olarak eklendi.
+- Dogfood sırasında iki bug bulundu ve düzeltildi:
+  - `score` sistemi collector adapter UI'ını tek başına aktive ediyordu; projectile+score oyununda collector controls görünüyordu. Collector condition artık `hasCollect || hasTimer`.
+  - Capture ilk state'i çok erken yakalayabiliyordu. `capture-screenshots` default launch wait 2 saniyeye çıkarıldı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python Tools/rkg.py score-idea Build/rkg-dogfood-shard-volley/idea.json --json: ok, score 100, verdict pass
+rtk ./.venv/bin/python Tools/rkg.py list-adapters: ok
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Shard Volley" --camera third_person --input drag --systems projectile,shooting,score --output Build/rkg-dogfood-shard-volley/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-dogfood-shard-volley/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py plan-game Build/rkg-dogfood-shard-volley/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py qa-plan Build/rkg-dogfood-shard-volley/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-dogfood-shard-volley/GameSpec.json --output Build/rkg-dogfood-shard-volley/ShardVolley --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-dogfood-shard-volley/ShardVolley: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-dogfood-shard-volley/ShardVolley --device booted: ok, 4 simulator screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-dogfood-shard-volley/ShardVolley --json: ok, 4 screenshots
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_custom_realitykit_runtime.RkgCustomRealityKitRuntimeTests.test_score_system_does_not_activate_collector_adapter_by_itself Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_waits_long_enough_after_launch_by_default: expected red before fixes; then ok
+rtk git diff --check: ok
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 207 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+RKG'nin command path'i artık gerçek bir sıfırdan oyun iskeleti çıkarabiliyor, build alabiliyor ve screenshot evidence üretebiliyor. Fakat kapsamlı tool olmak için sadece generator değil, dogfood edilen visual QA gerekiyor: generic `qa-plan` metni projectile için yeterince spesifik değil, screenshot verifier görsel kaliteyi anlamıyor, generated UI mobilde fazla büyük, ve idea->spec seçimi hâlâ manuel.
+
+**Karar:**
+
+Bir sonraki RKG işi yeni adapter eklemek değil; `CustomRealityKitRuntimeAdapter` içine screenshot proof/cue alanları eklemek, `qa-plan` çıktısını adapter-specific yapmak ve screenshot verification'a blank/wrong-app/basic-content kontrolleri eklemek.
+
 ### Sprint 121: RKG Projectile Adapter and Capability Matrix
 
 **Durum:** Tamamlandı

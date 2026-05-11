@@ -16,6 +16,7 @@
 - Added a `custom_realitykit` collector/score/timer system adapter with pickup state, combo scoring, timer proof, controls, RealityKit pickup/timer binding, and simulator screenshot evidence.
 - Added a `custom_realitykit` projectile/shooting/score system adapter with charge, launch, travel, hit state, weapon/projectile/target binding, and generated Swift build verification.
 - Added `rkg list-adapters` and `rkg list-adapters --json` to expose the custom RealityKit adapter capability matrix.
+- Added the Shard Volley RKG dogfood walkthrough with end-to-end idea scoring, project generation, build verification, screenshot capture, and simulator evidence.
 
 ### Changed
 
@@ -29,6 +30,8 @@
 - Expanded generated FPS/shooter skeletons from generic placeholders into state-to-scene RealityKit binding for player, weapon, enemy, and cover roles.
 - Expanded collector-style generated skeletons with pickup and timer proof roles when `collect,score,timer` is selected.
 - Split projectile/shooting systems from weapon/hitscan routing so projectile-only skeletons do not fall through the FPS/shooter adapter.
+- Split shared `score` away from collector adapter activation so projectile scoring does not show collector UI controls.
+- Increased generated screenshot capture launch settle time to reduce first-state blank or previous-app captures.
 - Routed generated `procedural_rings` fallback ids to the explicit ring/guard placeholder instead of the role-default sphere.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.
 - Introduced a `CustomRealityKitRuntimeAdapter` registry so `custom_realitykit` system adapters declare their systems, state fields, rules, UI sections, and scene bindings in one composable place.

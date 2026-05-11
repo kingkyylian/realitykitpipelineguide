@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,6 +119,42 @@ class RkgCaptureTests(unittest.TestCase):
             calls[3][0],
             ["xcrun", "simctl", "io", "booted", "screenshot", "/tmp/Generated/Docs/screenshots/round_start.jpg"],
         )
+
+    def test_capture_execution_waits_long_enough_after_launch_by_default(self) -> None:
+        from rkg.capture import execute_capture_plan
+
+        plan = {
+            "project": "/tmp/Generated",
+            "device": "booted",
+            "build": ["xcodebuild", "build"],
+            "install": ["xcrun", "simctl", "install", "booted", "App.app"],
+            "steps": [
+                {
+                    "order": 1,
+                    "state": "gameplay_start",
+                    "launch": [
+                        "xcrun",
+                        "simctl",
+                        "launch",
+                        "--terminate-running-process",
+                        "booted",
+                        "com.example.game",
+                        "--rkg-screenshot-state",
+                        "gameplay_start",
+                    ],
+                    "screenshot": "/tmp/Generated/Docs/screenshots/gameplay_start.jpg",
+                }
+            ],
+        }
+
+        def fake_runner(command: list[str], cwd: Path) -> int:
+            return 0
+
+        with patch("rkg.capture.time.sleep") as sleep:
+            result = execute_capture_plan(plan, runner=fake_runner)
+
+        self.assertTrue(result["ok"])
+        sleep.assert_called_once_with(2.0)
 
 
 if __name__ == "__main__":

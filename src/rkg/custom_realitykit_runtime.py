@@ -788,7 +788,7 @@ def _collector_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
     }
 }""",
         ),
-        content_section="""                if SystemFlags.hasCollect || SystemFlags.hasScore || SystemFlags.hasTimer {
+        content_section="""                if SystemFlags.hasCollect || SystemFlags.hasTimer {
                     HStack(spacing: 12) {
                         Text("Items \\(state.collectedItems)/\\(GameRules.startingCollectibleCount)")
                             .font(.caption.monospacedDigit())
@@ -825,7 +825,7 @@ def _collector_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
             ("pickupEntity", frozenset({"pickup"})),
             ("timerEntity", frozenset({"ui_prop", "timer"})),
         ),
-        system_flags_condition="SystemFlags.hasCollect || SystemFlags.hasScore || SystemFlags.hasTimer",
+        system_flags_condition="SystemFlags.hasCollect || SystemFlags.hasTimer",
         scene_update_call="updateCollector(state: state)",
         start_session_call="startCollectorSession(sessionSeconds: sessionSeconds)",
         advance_session_call="advanceCollectorFrame(state)",

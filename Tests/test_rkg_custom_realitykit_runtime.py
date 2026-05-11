@@ -191,6 +191,14 @@ class RkgCustomRealityKitRuntimeTests(unittest.TestCase):
         self.assertIn("projectile", by_id["projectile"]["scene_roles"])
         self.assertIn("target", by_id["projectile"]["scene_roles"])
 
+    def test_score_system_does_not_activate_collector_adapter_by_itself(self) -> None:
+        adapters = custom_realitykit_runtime_adapters()
+        collector = {adapter.id: adapter for adapter in adapters}["collector"]
+
+        self.assertEqual("SystemFlags.hasCollect || SystemFlags.hasTimer", collector.system_flags_condition)
+        self.assertIn("if SystemFlags.hasCollect || SystemFlags.hasTimer", collector.content_section)
+        self.assertNotIn("SystemFlags.hasScore || SystemFlags.hasTimer", collector.content_section)
+
     def test_custom_runtime_module_owns_state_rules_content_and_scene_strings(self) -> None:
         fields = custom_realitykit_state_fields()
         rules = "\n".join(custom_realitykit_rule_members())

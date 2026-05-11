@@ -24,6 +24,7 @@
 - Routed `custom_realitykit` generated apps through state-bound overlays and screenshot-state seeding for `gameplay_start`, `mid_action`, `fail_or_hit`, and `results`.
 - Expanded generated racing skeletons from generic placeholders into state-to-scene RealityKit binding for vehicle, track, obstacle, and checkpoint roles.
 - Expanded generated FPS/shooter skeletons from generic placeholders into state-to-scene RealityKit binding for player, weapon, enemy, and cover roles.
+- Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

@@ -12,6 +12,50 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 118: RKG Custom Runtime Adapter Module Split
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Racing ve FPS/shooter adapter'ları çalışır haldeyken üçüncü adapter eklemeden önce `custom_realitykit` generator ownership sınırını temizlemek; state/rules/UI/scene stringleri `archetype_runtime.py`, `content_views.py`, ve `scaffold.py` içinde büyümeye devam etmemeli.
+
+**Yapılanlar:**
+
+- Yeni `src/rkg/custom_realitykit_runtime.py` modülü eklendi.
+- `custom_realitykit` state field listesi, racing/shooter rule member listesi, adapter UI content sections ve custom RealityKit scene controller üretimi bu modüle taşındı.
+- `archetype_runtime.py` artık custom state/rules için sadece `custom_realitykit_state_fields()` ve `custom_realitykit_rule_members()` çağırıyor.
+- `content_views.py` generic custom ContentView içinde adapter UI bloklarını `custom_realitykit_adapter_content_sections()` ile alıyor.
+- `scaffold.py` custom scene controller üretimini `custom_realitykit_game_scene_controller_swift(spec)` fonksiyonuna devrediyor.
+- Yeni modül sınırını korumak için `Tests/test_rkg_custom_realitykit_runtime.py` eklendi; test önce import hatasıyla kırıldı, modül taşınması sonrası geçti.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_custom_realitykit_runtime: expected red before module; then ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_racing_runtime_adapter_for_custom_realitykit Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_shooter_runtime_adapter_for_custom_realitykit: ok, 3 tests
+rtk .venv/bin/python -m ruff check src/rkg/custom_realitykit_runtime.py src/rkg/archetype_runtime.py src/rkg/content_views.py src/rkg/scaffold.py Tests/test_rkg_custom_realitykit_runtime.py Tests/test_rkg_init_game.py: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-refactor-racing/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-refactor-racing/GameSpec.json --output Build/rkg-refactor-racing/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-refactor-racing/DesertChase: ok
+rtk .venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-refactor-racing/DesertChase --device booted: ok after sandbox escalation, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-refactor-racing/DesertChase: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-refactor-shooter/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-refactor-shooter/GameSpec.json --output Build/rkg-refactor-shooter/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-refactor-shooter/RoomBreach: ok
+rtk .venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-refactor-shooter/RoomBreach --device booted: ok after sandbox escalation, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-refactor-shooter/RoomBreach: ok, 4 screenshots
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 196 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Racing ve shooter adapter'ları çalışır haldeyken refactor yapmak, yeni davranış eklerken generator'ı büyütmekten daha güvenli oldu. Artık native archetype generator dosyaları custom systems adapter ayrıntılarıyla şişmiyor; RKG'nin sonraki system adapter'ı daha net bir ownership sınırından eklenebilir.
+
+**Karar:**
+
+Bir sonraki RKG davranış işi için iki yol var: aynı modül içinde üçüncü küçük adapter (`collect,score,timer` veya `projectile`) ya da `custom_realitykit_runtime.py` içindeki racing/shooter bölümlerini alt adapter listesine ayırmak. Yeni büyük adapterdan önce ikinci seçenek daha sağlıklı.
+
 ### Sprint 117: RKG FPS/Shooter Runtime Adapter
 
 **Durum:** Tamamlandı

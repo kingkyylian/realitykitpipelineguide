@@ -4,6 +4,8 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
+from rkg.custom_realitykit_runtime import custom_realitykit_adapter_content_sections
+
 
 def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
     game = spec["game"]
@@ -29,6 +31,7 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
 
 
 def _custom_realitykit_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    adapter_sections = custom_realitykit_adapter_content_sections()
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -85,61 +88,7 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
-                if SystemFlags.hasRacing {{
-                    HStack(spacing: 12) {{
-                        Text("Lap \\(state.currentLap)")
-                            .font(.caption.monospacedDigit())
-                        Text("Distance \\(state.raceDistance)")
-                            .font(.caption.monospacedDigit())
-                        Text("Checkpoint \\(state.checkpointIndex + 1)/\\(GameRules.checkpointCount)")
-                            .font(.caption.monospacedDigit())
-                        Text("Lane \\(state.vehicleLane + 1)")
-                            .font(.caption.monospacedDigit())
-                        Spacer()
-                    }}
-
-                    HStack {{
-                        Button("Left") {{
-                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: -1)
-                        }}
-                        .buttonStyle(.bordered)
-                        Button("Right") {{
-                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: 1)
-                        }}
-                        .buttonStyle(.bordered)
-                        Spacer()
-                    }}
-                }}
-
-                if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {{
-                    HStack(spacing: 12) {{
-                        Text("Health \\(state.shooterHealth)")
-                            .font(.caption.monospacedDigit())
-                        Text("Enemies \\(state.enemiesRemaining)")
-                            .font(.caption.monospacedDigit())
-                        Text("Shots \\(state.shotsFired)")
-                            .font(.caption.monospacedDigit())
-                        Text("Aim \\(state.aimLane + 1)")
-                            .font(.caption.monospacedDigit())
-                        Spacer()
-                    }}
-
-                    HStack {{
-                        Button("Aim Left") {{
-                            state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: -1)
-                        }}
-                        .buttonStyle(.bordered)
-                        Button("Aim Right") {{
-                            state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: 1)
-                        }}
-                        .buttonStyle(.bordered)
-                        Button("Cover") {{
-                            state = GameRules.toggleShooterCover(state)
-                        }}
-                        .buttonStyle(.bordered)
-                        Spacer()
-                    }}
-                }}
+{adapter_sections}
 
                 if SessionControl.isResult(state) {{
                     ResultView(state: state) {{

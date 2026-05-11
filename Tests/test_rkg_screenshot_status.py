@@ -97,12 +97,39 @@ class RkgScreenshotStatusTests(unittest.TestCase):
                     "expected_evidence": "Declared roles available: target, arena",
                     "automation": "manual_capture",
                     "screenshot": f"Docs/screenshots/{state}.jpg",
+                    "scene_snapshot": f"Docs/screenshots/{state}.scene.json",
                 },
                 indent=2,
             )
             + "\n",
             encoding="utf-8",
         )
+
+    def write_scene_snapshot(
+        self,
+        path: Path,
+        *,
+        state: str = "gameplay_start",
+        roles: list[str] | None = None,
+    ) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        role_values = roles or ["target", "arena"]
+        payload = {
+            "schema_version": 1,
+            "state": state,
+            "roles": [
+                {
+                    "asset_id": f"{role}_proxy",
+                    "role": role,
+                    "fallback": "procedural_proxy",
+                    "entity_name": f"rkg|asset={role}_proxy|role={role}|fallback=procedural_proxy",
+                    "is_enabled": True,
+                    "position": {"x": 0.0, "y": 0.0, "z": -0.85},
+                }
+                for role in role_values
+            ],
+        }
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     def write_jpeg_rgb(self, path: Path, rows: list[list[tuple[int, int, int]]]) -> None:
         if shutil.which("sips") is None:
@@ -190,6 +217,7 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             ]
             self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
             self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
             plan = build_qa_plan(target_spec())
 
             payload = build_screenshot_status(project, plan)
@@ -238,6 +266,39 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             self.assertFalse(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "missing_sidecar")
 
+    def test_verify_screenshots_requires_runtime_scene_snapshot_for_valid_sidecar(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "missing_scene_snapshot")
+
+    def test_verify_screenshots_rejects_runtime_scene_snapshot_role_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json", roles=["target"])
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "scene_role_mismatch")
+
     def test_verify_screenshots_rejects_sidecar_role_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "RingDash"
@@ -275,8 +336,10 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             ]
             self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
             self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
             self.write_jpeg_rgb(project / "Docs" / "screenshots" / "results.jpg", rows)
             self.write_sidecar(project / "Docs" / "screenshots" / "results.json", state="results")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "results.scene.json", state="results")
             plan = build_qa_plan(target_spec(["gameplay_start", "results"]))
 
             payload = build_screenshot_status(project, plan)
@@ -320,6 +383,7 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             ]
             self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
             self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
             plan = build_qa_plan(target_spec())
             plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
 
@@ -354,6 +418,7 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             ]
             self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
             self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
 
             result = self.run_rkg(root, "verify-screenshots", str(project), "--json")
 

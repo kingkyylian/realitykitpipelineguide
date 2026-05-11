@@ -36,6 +36,7 @@
 - Added a `blank_or_solid` screenshot status for valid-dimensional PNG captures that do not contain visual variation.
 - Extended `verify-screenshots` visual QA to sampled JPEG captures, malformed dimension-bearing JPEG files, and duplicate visual evidence across release states.
 - Added screenshot evidence sidecars from `capture-screenshots` and made `verify-screenshots` require matching state/role metadata sidecars.
+- Added generated runtime scene snapshot evidence so `capture-screenshots` copies `Docs/screenshots/<state>.scene.json` and `verify-screenshots` checks the expected roles were actually bound in the running RealityKit scene.
 - Reduced generated `custom_realitykit` overlay spacing, padding, and control size so screenshot evidence exposes more of the RealityKit scene.
 - Routed generated `procedural_rings` fallback ids to the explicit ring/guard placeholder instead of the role-default sphere.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.

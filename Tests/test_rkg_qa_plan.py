@@ -166,6 +166,7 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["steps"][2]["visible_roles"], ["player", "obstacle", "arena"])
         self.assertEqual(payload["steps"][2]["capture_path"], "Docs/screenshots/near_miss.jpg")
         self.assertEqual(payload["steps"][2]["sidecar_path"], "Docs/screenshots/near_miss.json")
+        self.assertEqual(payload["steps"][2]["scene_snapshot_path"], "Docs/screenshots/near_miss.scene.json")
         self.assertEqual(payload["steps"][2]["automation"], "manual_capture")
 
     def test_fighter_qa_plan_exposes_launch_state_automation(self) -> None:

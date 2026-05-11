@@ -537,6 +537,25 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertNotIn("cameraTransform =", scene_controller)
             self.assertIn("makeFallback(role: String)", fallback_factory)
 
+    def test_init_game_generates_runtime_scene_snapshot_evidence_writer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, valid_spec())
+            output = root / "RingDash"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "RingDash"
+            snapshot = (source / "RuntimeSceneSnapshot.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("enum RuntimeSceneSnapshotWriter", snapshot)
+            self.assertIn('"rkg-scene-snapshot-\\(state.rawValue).json"', snapshot)
+            self.assertIn('"schema_version": 1', snapshot)
+            self.assertIn('"roles": collectRoles(from: anchor)', snapshot)
+            self.assertIn('targetBasic.name = "rkg|asset=target_basic|role=target|fallback=procedural_rings"', scene_controller)
+            self.assertIn("RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)", scene_controller)
+
     def test_init_game_passes_declared_fallbacks_to_runtime_loader(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

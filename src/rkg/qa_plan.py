@@ -42,6 +42,7 @@ def qa_steps_for(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> list[
                 "expected_evidence": "Declared roles available: " + ", ".join(roles),
                 "capture_path": f"Docs/screenshots/{state_name}.jpg",
                 "sidecar_path": f"Docs/screenshots/{state_name}.json",
+                "scene_snapshot_path": f"Docs/screenshots/{state_name}.scene.json",
                 "automation": _capture_automation(str(spec["game"]["archetype"]), state_name),
             }
         )

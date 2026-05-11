@@ -24,6 +24,7 @@ GENERATED_SOURCE_MODULES = [
     "GameView.swift",
     "AssetLoader.swift",
     "FallbackFactory.swift",
+    "RuntimeSceneSnapshot.swift",
     "ResultView.swift",
 ]
 GENERATED_STORE_FILES = [

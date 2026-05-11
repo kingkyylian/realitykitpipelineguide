@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 126: RKG Runtime Scene Snapshot Evidence
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Screenshot sidecar'ın ötesine geçip generated app runtime'ından scene-role kanıtı almak; capture sadece plan metadata'sı yazmasın, çalışan RealityKit scene içinde hangi asset role'lerinin bound olduğunu da doğrulasın.
+
+**Yapılanlar:**
+
+- Generated projelere `RuntimeSceneSnapshot.swift` eklendi.
+- `GameSceneController` artık role-bound entity'leri `rkg|asset=...|role=...|fallback=...` metadata ismiyle işaretliyor.
+- Screenshot-state launch sırasında generated app simulator Documents klasörüne `rkg-scene-snapshot-<state>.json` yazıyor.
+- `capture-screenshots` bu runtime dosyasını app data container'dan alıp proje içinde `Docs/screenshots/<state>.scene.json` olarak kopyalıyor.
+- Screenshot sidecar artık `scene_snapshot` path'ini de taşıyor.
+- `verify-screenshots` sidecar'dan sonra runtime scene snapshot'ı zorunlu doğruluyor; eksik dosya `missing_scene_snapshot`, bozuk dosya `invalid_scene_snapshot`, rol uyuşmazlığı `scene_role_mismatch` oluyor.
+- Snapshot Volley adlı yeni projectile/shooting/score skeleton gerçek simulator üzerinde capture edildi; dört screenshot, dört sidecar ve dört scene snapshot birlikte doğrulandı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_runtime_scene_snapshot_evidence_writer: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_screenshots_dry_run_lists_fighter_launch_commands Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_copies_runtime_scene_snapshot_after_successful_screenshot: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_requires_runtime_scene_snapshot_for_valid_sidecar Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_role_mismatch: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 222 tests
+rtk xcodegen generate: ok for Build/rkg-runtime-snapshot/SnapshotVolley
+rtk xcodebuild -quiet -project SnapshotVolley.xcodeproj -scheme SnapshotVolley -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-runtime-snapshot/SnapshotVolley --device booted: ok, 4 JPEG screenshots + 4 sidecars + 4 scene snapshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-runtime-snapshot/SnapshotVolley --json: ok, 4 runtime-scene-backed screenshots
+```
+
+**Öğrenme notu:**
+
+Bu hâlâ pixel-level OCR veya text-overlap kontrolü değil. Ama artık verifier sadece "script planı böyleydi" demiyor; çalışan app'in RealityKit scene graph'ında player/arena/weapon/projectile/target gibi beklenen role binding'lerinin oluştuğunu da kanıtlıyor.
+
+**Karar:**
+
+Bir sonraki RKG QA seviyesi ya UI/text overlap için screenshot analizi, ya da idea-to-project orchestrator olmalı. Role-binding snapshot açığı kapandı; asset brief -> RKP asset-command köprüsü hâlâ ayrı eksik.
+
 ### Sprint 125: RKG Screenshot Evidence Sidecars
 
 **Durum:** Tamamlandı

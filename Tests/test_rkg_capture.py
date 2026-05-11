@@ -78,6 +78,8 @@ class RkgCaptureTests(unittest.TestCase):
             self.assertIn("--rkg-screenshot-state", payload["steps"][1]["launch"])
             self.assertTrue(payload["steps"][1]["screenshot"].endswith("Docs/screenshots/mid_combo.jpg"))
             self.assertTrue(payload["steps"][1]["sidecar"].endswith("Docs/screenshots/mid_combo.json"))
+            self.assertTrue(payload["steps"][1]["scene_snapshot"].endswith("Docs/screenshots/mid_combo.scene.json"))
+            self.assertEqual(payload["steps"][1]["runtime_scene_snapshot"], "Documents/rkg-scene-snapshot-mid_combo.json")
             self.assertEqual(payload["steps"][1]["visible_roles"], ["player", "opponent", "arena"])
             self.assertIn("state.comboCount", payload["steps"][1]["drive"])
 
@@ -175,6 +177,69 @@ class RkgCaptureTests(unittest.TestCase):
             self.assertEqual(payload["drive"], "Launch with round_start; state.phase == .playing.")
             self.assertEqual(payload["visible_roles"], ["player", "opponent", "arena"])
             self.assertEqual(payload["automation"], "launch_arg --rkg-screenshot-state round_start")
+
+    def test_capture_execution_copies_runtime_scene_snapshot_after_successful_screenshot(self) -> None:
+        from rkg.capture import execute_capture_plan
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "Generated"
+            container = root / "AppData"
+            project.mkdir()
+            runtime_snapshot = container / "Documents" / "rkg-scene-snapshot-round_start.json"
+            runtime_snapshot.parent.mkdir(parents=True)
+            runtime_snapshot.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "state": "round_start",
+                        "roles": [{"asset_id": "fighter_player", "role": "player", "is_enabled": True}],
+                    },
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            scene_snapshot = project / "Docs" / "screenshots" / "round_start.scene.json"
+            plan = {
+                "project": str(project),
+                "device": "booted",
+                "bundle_id": "com.example.game",
+                "build": ["xcodebuild", "build"],
+                "install": ["xcrun", "simctl", "install", "booted", "App.app"],
+                "steps": [
+                    {
+                        "order": 1,
+                        "state": "round_start",
+                        "launch": [
+                            "xcrun",
+                            "simctl",
+                            "launch",
+                            "booted",
+                            "com.example.game",
+                            "--rkg-screenshot-state",
+                            "round_start",
+                        ],
+                        "screenshot": str(project / "Docs" / "screenshots" / "round_start.jpg"),
+                        "sidecar": str(project / "Docs" / "screenshots" / "round_start.json"),
+                        "scene_snapshot": str(scene_snapshot),
+                        "runtime_scene_snapshot": "Documents/rkg-scene-snapshot-round_start.json",
+                    }
+                ],
+            }
+
+            def fake_runner(command: list[str], cwd: Path) -> int:
+                return 0
+
+            result = execute_capture_plan(
+                plan,
+                runner=fake_runner,
+                sleep_seconds=0,
+                app_container_resolver=lambda device, bundle_id, cwd: container,
+            )
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(json.loads(scene_snapshot.read_text(encoding="utf-8"))["state"], "round_start")
 
     def test_capture_execution_waits_long_enough_after_launch_by_default(self) -> None:
         from rkg.capture import execute_capture_plan

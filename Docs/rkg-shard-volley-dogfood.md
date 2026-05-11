@@ -65,11 +65,12 @@ The follow-up QA slice closed three of the gaps from this run:
 - `verify-screenshots` rejects valid-dimensional PNG evidence that is visually blank or near-solid via `blank_or_solid`, and generated custom overlays use smaller controls/padding for screenshot readability.
 - `verify-screenshots` also samples JPEG evidence through `sips`, rejects malformed dimension-bearing JPEG files as `invalid_image`, rejects blank/solid JPEG captures, and rejects duplicate visual evidence across release states as `duplicate_visual_evidence`.
 - `capture-screenshots` now writes screenshot sidecars, and `verify-screenshots` requires those sidecars to match the planned game id, state, automation hint, and visible roles.
+- Generated apps now write runtime scene-role snapshots during screenshot launches; `capture-screenshots` copies them as `Docs/screenshots/<state>.scene.json`, and `verify-screenshots` requires the expected roles to appear in that running RealityKit scene metadata.
 
 ## Remaining Gaps For A Comprehensive Tool
 
 1. `score-idea` and `new-game` are still separate manual commands. A comprehensive flow needs an orchestrator that can turn an accepted idea into a suggested camera/input/systems set and a generated project path.
-2. Screenshot verification still needs runtime or visual semantic QA. It now catches blank/solid PNG/JPEG evidence, duplicate state captures, missing/mismatched sidecars, and declared-role metadata mismatches, but it still does not prove via pixels that each declared mesh is visible or that overlay text does not overlap.
+2. Screenshot verification still needs visual semantic QA. It now catches blank/solid PNG/JPEG evidence, duplicate state captures, missing/mismatched sidecars, declared-role metadata mismatches, and missing/mismatched runtime scene-role snapshots, but it still does not prove via pixels that each declared mesh is visible or that overlay text does not overlap.
 3. Generated UI is functional but not product-polished. The custom overlay is more compact now, but it still needs simulator screenshot review across iPhone/iPad before any shipping claim.
 4. Generated fallback art is useful for proof, but not enough for production. The next bridge should turn each asset brief into `rkp make-asset` / `build-asset` / `accept-asset` tasks.
 5. Adapter conflict rules need more coverage. `score` overlapping with collector was one example; future shared systems like `physics`, `timer`, `health`, or `enemy_ai` need explicit ownership rules.
@@ -83,5 +84,5 @@ The follow-up QA slice closed three of the gaps from this run:
 The next highest-value RKG slice is orchestration plus stronger visual QA:
 
 - Add an idea-to-project orchestrator that can score an idea, choose camera/input/systems, write a GameSpec, and generate the project in one reviewed flow.
-- Extend screenshot QA from capture-contract sidecars toward runtime scene-role visibility evidence and text-overlap checks.
+- Extend screenshot QA from runtime scene-role evidence toward text-overlap checks and stronger visual review.
 - Bridge generated asset briefs into RKP asset commands so a zero-to-first-playable path includes at least one accepted USDZ asset with screenshot evidence.

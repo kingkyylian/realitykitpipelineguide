@@ -13,6 +13,7 @@ from rkg.spec import load_game_spec
 
 JsonDict = dict[str, Any]
 CommandRunner = Callable[[list[str], Path], int]
+AppContainerResolver = Callable[[str, str, Path], Path]
 
 
 def build_capture_plan(project: Path, *, device: str) -> JsonDict:
@@ -30,6 +31,7 @@ def build_capture_plan(project: Path, *, device: str) -> JsonDict:
         state = str(step["state"])
         capture_path = project / str(step["capture_path"])
         sidecar_path = project / str(step["sidecar_path"])
+        scene_snapshot_path = project / str(step["scene_snapshot_path"])
         steps.append(
             {
                 "order": step["order"],
@@ -51,6 +53,8 @@ def build_capture_plan(project: Path, *, device: str) -> JsonDict:
                 ],
                 "screenshot": str(capture_path),
                 "sidecar": str(sidecar_path),
+                "scene_snapshot": str(scene_snapshot_path),
+                "runtime_scene_snapshot": f"Documents/rkg-scene-snapshot-{state}.json",
             }
         )
     return {
@@ -59,6 +63,7 @@ def build_capture_plan(project: Path, *, device: str) -> JsonDict:
         "game_id": game_id,
         "display_name": display_name,
         "archetype": archetype,
+        "bundle_id": bundle_id,
         "build": [
             "xcodebuild",
             "-quiet",
@@ -85,6 +90,7 @@ def execute_capture_plan(
     plan: Mapping[str, Any],
     *,
     runner: CommandRunner | None = None,
+    app_container_resolver: AppContainerResolver | None = None,
     sleep_seconds: float = 2.0,
 ) -> JsonDict:
     project = Path(str(plan["project"]))
@@ -109,6 +115,13 @@ def execute_capture_plan(
         exit_code = run(screenshot, project)
         completed.append({"command": screenshot, "exit_code": exit_code})
         if exit_code != 0:
+            return {"ok": False, "completed": completed}
+
+        try:
+            _copy_runtime_scene_snapshot(plan, step, project, app_container_resolver)
+        except OSError as exc:
+            command = ["copy-scene-snapshot", str(step.get("scene_snapshot", ""))]
+            completed.append({"command": command, "exit_code": 1, "error": str(exc)})
             return {"ok": False, "completed": completed}
 
         try:
@@ -139,7 +152,52 @@ def _write_capture_sidecar(plan: Mapping[str, Any], step: Mapping[str, Any], pro
         "automation": str(step.get("automation", "")),
         "screenshot": _project_relative_path(project, Path(str(step.get("screenshot", "")))),
     }
+    scene_snapshot_value = step.get("scene_snapshot")
+    if isinstance(scene_snapshot_value, str) and scene_snapshot_value:
+        payload["scene_snapshot"] = _project_relative_path(project, Path(scene_snapshot_value))
     sidecar.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _copy_runtime_scene_snapshot(
+    plan: Mapping[str, Any],
+    step: Mapping[str, Any],
+    project: Path,
+    resolver: AppContainerResolver | None,
+) -> None:
+    scene_snapshot_value = step.get("scene_snapshot")
+    runtime_snapshot_value = step.get("runtime_scene_snapshot")
+    if not isinstance(scene_snapshot_value, str) or not scene_snapshot_value:
+        return
+    if not isinstance(runtime_snapshot_value, str) or not runtime_snapshot_value:
+        return
+
+    device = str(plan.get("device", ""))
+    bundle_id = str(plan.get("bundle_id", ""))
+    if not device or not bundle_id:
+        raise OSError("capture plan is missing device or bundle id for runtime scene snapshot")
+
+    app_container = (resolver or _resolve_app_data_container)(device, bundle_id, project)
+    source = app_container / runtime_snapshot_value
+    if not source.is_file():
+        raise OSError(f"runtime scene snapshot not found: {source}")
+
+    destination = Path(scene_snapshot_value)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+
+
+def _resolve_app_data_container(device: str, bundle_id: str, project: Path) -> Path:
+    command = ["xcrun", "simctl", "get_app_container", device, bundle_id, "data"]
+    if shutil.which("rtk") is not None:
+        command = ["rtk", *command]
+    result = subprocess.run(command, cwd=project, text=True, capture_output=True)
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        raise OSError(stderr or "failed to resolve app data container")
+    path = result.stdout.strip()
+    if not path:
+        raise OSError("empty app data container path")
+    return Path(path)
 
 
 def _project_relative_path(project: Path, path: Path) -> str:

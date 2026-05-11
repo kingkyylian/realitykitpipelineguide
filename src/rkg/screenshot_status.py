@@ -100,7 +100,7 @@ def _sidecar_status(project: Path, qa_plan: Mapping[str, Any], step: Mapping[str
     actual_roles = payload.get("visible_roles")
     if not isinstance(actual_roles, list) or {str(role) for role in actual_roles} != expected_roles:
         return "role_evidence_mismatch"
-    return "ok"
+    return _scene_snapshot_status(project, step, payload, expected_roles)
 
 
 def _sidecar_path(project: Path, step: Mapping[str, Any], capture_path: Path) -> Path:
@@ -108,6 +108,45 @@ def _sidecar_path(project: Path, step: Mapping[str, Any], capture_path: Path) ->
     if isinstance(sidecar_path, str) and sidecar_path:
         return project / sidecar_path
     return capture_path.with_suffix(".json")
+
+
+def _scene_snapshot_status(
+    project: Path,
+    step: Mapping[str, Any],
+    sidecar: Mapping[str, Any],
+    expected_roles: set[str],
+) -> str:
+    scene_snapshot_path = sidecar.get("scene_snapshot") or step.get("scene_snapshot_path")
+    if not isinstance(scene_snapshot_path, str) or not scene_snapshot_path:
+        return "invalid_sidecar"
+    snapshot = project / scene_snapshot_path
+    if not snapshot.exists():
+        return "missing_scene_snapshot"
+    if not snapshot.is_file():
+        return "invalid_scene_snapshot"
+    try:
+        payload = json.loads(snapshot.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return "invalid_scene_snapshot"
+    if not isinstance(payload, Mapping):
+        return "invalid_scene_snapshot"
+    if payload.get("schema_version") != 1:
+        return "invalid_scene_snapshot"
+    if str(payload.get("state", "")) != str(step.get("state", "")):
+        return "invalid_scene_snapshot"
+    roles = payload.get("roles")
+    if not isinstance(roles, list):
+        return "invalid_scene_snapshot"
+    actual_roles: set[str] = set()
+    for role_record in roles:
+        if not isinstance(role_record, Mapping):
+            return "invalid_scene_snapshot"
+        role = role_record.get("role")
+        if isinstance(role, str) and role:
+            actual_roles.add(role)
+    if not expected_roles.issubset(actual_roles):
+        return "scene_role_mismatch"
+    return "ok"
 
 
 def _mark_duplicate_visual_evidence(checks: list[JsonDict]) -> None:

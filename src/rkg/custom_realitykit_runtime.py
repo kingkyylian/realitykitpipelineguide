@@ -112,6 +112,7 @@ def custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> st
     update_dispatch = "\n".join(
         f"""        if {adapter.system_flags_condition} {{
             {adapter.scene_update_call}
+            RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
             return
         }}"""
         for adapter in adapters
@@ -132,6 +133,7 @@ final class GameSceneController {{
         cameraRigEntity = cameraRig
         anchor.addChild(cameraRig)
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
@@ -139,6 +141,7 @@ final class GameSceneController {{
         cameraRigEntity?.transform = CameraRig.transform
         anchor.position.z = 0
         anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
 {adapter_methods}
@@ -968,8 +971,12 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
     asset_id = _swift_string_literal(entity["asset_id"])
     role = _swift_string_literal(entity["role"])
     fallback = _swift_string_literal(entity["fallback"])
+    snapshot_name = _swift_string_literal(
+        f"rkg|asset={entity['asset_id']}|role={entity['role']}|fallback={entity['fallback']}"
+    )
     position = entity["position"]
     return f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role}, fallback: {fallback})
+        {variable}.name = {snapshot_name}
         {variable}.position = {position}
         anchor.addChild({variable})"""
 

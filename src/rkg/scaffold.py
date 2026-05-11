@@ -51,6 +51,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
+    _write_text(output / "Sources" / swift_name / "RuntimeSceneSnapshot.swift", _runtime_scene_snapshot_swift())
     _write_text(output / "Sources" / swift_name / "GameSceneController.swift", _game_scene_controller_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameView.swift", _game_view_swift(spec))
     _write_text(output / "Sources" / swift_name / "ResultView.swift", _result_view_swift())
@@ -507,6 +508,68 @@ enum FallbackFactory {
 """
 
 
+def _runtime_scene_snapshot_swift() -> str:
+    return """import Foundation
+import RealityKit
+
+enum RuntimeSceneSnapshotWriter {
+    static func write(state: ScreenshotState?, anchor: AnchorEntity) {
+        guard let state else {
+            return
+        }
+        let payload: [String: Any] = [
+            "schema_version": 1,
+            "state": state.rawValue,
+            "roles": collectRoles(from: anchor),
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]),
+              let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return
+        }
+        let url = documents.appendingPathComponent("rkg-scene-snapshot-\\(state.rawValue).json")
+        try? data.write(to: url, options: [.atomic])
+    }
+
+    private static func collectRoles(from anchor: AnchorEntity) -> [[String: Any]] {
+        anchor.children.compactMap { child -> [String: Any]? in
+            guard let metadata = parseMetadata(child.name) else {
+                return nil
+            }
+            let position = child.position
+            return [
+                "asset_id": metadata["asset"] ?? "",
+                "role": metadata["role"] ?? "",
+                "fallback": metadata["fallback"] ?? "",
+                "entity_name": child.name,
+                "is_enabled": child.isEnabled,
+                "position": [
+                    "x": Double(position.x),
+                    "y": Double(position.y),
+                    "z": Double(position.z),
+                ],
+            ]
+        }
+    }
+
+    private static func parseMetadata(_ name: String) -> [String: String]? {
+        let parts = name.split(separator: "|").map(String.init)
+        guard parts.first == "rkg" else {
+            return nil
+        }
+        var metadata: [String: String] = [:]
+        for part in parts.dropFirst() {
+            let pair = part.split(separator: "=", maxSplits: 1).map(String.init)
+            if pair.count == 2 {
+                metadata[pair[0]] = pair[1]
+            }
+        }
+        return metadata
+    }
+}
+"""
+
+
 def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
     if str(spec["game"]["archetype"]) == "target_shooter":
         return _target_shooter_game_scene_controller_swift(spec)
@@ -532,11 +595,13 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
         anchor.position.z = SystemFlags.hasRacing ? -Float(state.primaryActions % 5) * 0.02 : 0
         anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 }}
 """
@@ -547,8 +612,12 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
     asset_id = _swift_string_literal(entity["asset_id"])
     role = _swift_string_literal(entity["role"])
     fallback = _swift_string_literal(entity["fallback"])
+    snapshot_name = _swift_string_literal(
+        f"rkg|asset={entity['asset_id']}|role={entity['role']}|fallback={entity['fallback']}"
+    )
     position = entity["position"]
     return f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role}, fallback: {fallback})
+        {variable}.name = {snapshot_name}
         {variable}.position = {position}
         anchor.addChild({variable})"""
 
@@ -584,11 +653,13 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
         targetEntity?.position = targetPosition(targetsHit: state.targetsHit)
         targetEntity?.scale = state.perfectHits > 0 ? [1.15, 1.15, 1.15] : [1, 1, 1]
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func targetPosition(targetsHit: Int) -> SIMD3<Float> {{
@@ -619,12 +690,14 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
         playerEntity?.position.x = xPosition(forLane: state.currentLane)
         obstacleEntity?.position.x = xPosition(forLane: state.obstacleLane)
         obstacleEntity?.position.z = -1.35 - Float(state.distance % 4) * 0.15
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func xPosition(forLane lane: Int) -> Float {{
@@ -653,6 +726,7 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
@@ -663,6 +737,7 @@ final class GameSceneController {{
         )
         projectileEntity?.scale = state.landedInZone ? [1.25, 1.25, 1.25] : [1, 1, 1]
         targetEntity?.position.y = state.landedInZone ? 0.05 : 0
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func projectilePosition(power: Double, landed: Bool, attemptsRemaining: Int) -> SIMD3<Float> {{
@@ -698,6 +773,7 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
@@ -705,6 +781,7 @@ final class GameSceneController {{
         threatEntity?.scale = state.threatsRemaining == 0 ? [0.75, 0.75, 0.75] : [1, 1, 1]
         defenderEntity?.scale = state.isDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]
         defenderEntity?.position.y = state.health <= 1 ? -0.05 : 0
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func threatPosition(wave: Int, threatsRemaining: Int) -> SIMD3<Float> {{
@@ -735,6 +812,7 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
@@ -742,6 +820,7 @@ final class GameSceneController {{
         pieceEntity?.scale = state.collapsed ? [0.80, 0.80, 0.80] : [1, 1, 1]
         obstacleEntity?.position.y = state.collapsed ? 0.18 : 0
         obstacleEntity?.scale = state.collapsed ? [1.20, 1.20, 1.20] : [1, 1, 1]
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func piecePosition(piecesPlaced: Int, stablePieces: Int) -> SIMD3<Float> {{
@@ -776,6 +855,7 @@ final class GameSceneController {{
 {entity_lines}
 
         view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     func update(state: GameSessionState) {{
@@ -790,6 +870,7 @@ final class GameSceneController {{
         hitVfxEntity?.scale = [hitScale, hitScale, hitScale]
         guardCueEntity?.isEnabled = state.guardMeter > 0
         guardCueEntity?.position = state.isDodging ? [-0.50, 0.24, -0.85] : [-0.35, 0.24, -0.85]
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
     private func opponentPosition(opponentHealth: Int, comboCount: Int) -> SIMD3<Float> {{

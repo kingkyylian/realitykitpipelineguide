@@ -417,6 +417,36 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('case "procedural_vehicle":', fallback_factory)
             self.assertIn('case "procedural_track", "procedural_lane", "procedural_grid", "procedural_arena":', fallback_factory)
 
+    def test_init_game_generates_generic_runtime_core_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_racing_spec())
+            output = root / "DesertChase"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "DesertChase"
+            self.assertTrue((source / "CameraRig.swift").exists())
+            self.assertTrue((source / "InputController.swift").exists())
+            self.assertTrue((source / "SystemFlags.swift").exists())
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (source / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("GameRules.customRealityKitScreenshotSession(", content)
+            self.assertIn("InputController.primaryActionLabel", content)
+            self.assertIn("SystemFlags.summary", content)
+            self.assertIn("CameraRig.configure(view)", game_view)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("var primaryActions: Int = 0", state)
+            self.assertIn("var isFailureProofVisible: Bool = false", state)
+            self.assertIn("static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?", rules)
+
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

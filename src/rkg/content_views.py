@@ -23,6 +23,91 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
         return _stack_puzzle_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "fighter_2_5d":
         return _fighter_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "custom_realitykit":
+        return _custom_realitykit_content_view_swift(title, subtitle, player_action)
+    return _generic_content_view_swift(title, subtitle, player_action)
+
+
+def _custom_realitykit_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameRules.customRealityKitScreenshotSession(
+        for: ScreenshotState.requested,
+        fallback: GameSessionState()
+    )
+
+    private var isPlaying: Bool {{
+        SessionControl.isPlaying(state)
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView(state: state)
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    Text("Score \\(state.score)")
+                        .font(.headline.monospacedDigit())
+                }}
+
+                HStack(spacing: 12) {{
+                    Text(InputController.controlSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(SystemFlags.summary)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }}
+
+                HStack {{
+                    Text({player_action})
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(isPlaying ? InputController.primaryActionLabel : InputIntent.startTitle) {{
+                        advanceSkeleton()
+                    }}
+                    .buttonStyle(.borderedProminent)
+                    Button(InputIntent.resetTitle) {{
+                        state = SessionControl.reset()
+                    }}
+                    .buttonStyle(.bordered)
+                }}
+
+                if SessionControl.isResult(state) {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+        }}
+    }}
+
+    private func advanceSkeleton() {{
+        if !isPlaying {{
+            state = GameRules.startCustomRealityKitSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.advanceCustomRealityKitSession(state)
+    }}
+}}
+"""
+
+
+def _generic_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
     return f"""import SwiftUI
 
 struct ContentView: View {{

@@ -90,6 +90,6 @@ shooting, enemies, enemy_ai, health, cover, collect, score, timer, physics
 
 ## Current Boundary
 
-`custom_realitykit` is the first generic skeleton slice. It gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, and `verify-game`/`verify-screenshots` gates.
+`custom_realitykit` now gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, `CameraRig.swift`, `InputController.swift`, `SystemFlags.swift`, and `verify-game`/`verify-screenshots` gates. The generic overlay is state-bound, so launch screenshot states can seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` instead of capturing four identical idle launches.
 
-The next runtime slice should add generated modules such as `CameraRig.swift`, `InputController.swift`, and system adapters for vehicle movement, first-person aiming, projectile/hitscan, and health. Until that lands, racing and FPS skeletons are scaffolded RealityKit projects with composable roles, not genre-complete gameplay.
+The next runtime slice should connect those core modules to genre adapters for vehicle movement, first-person aiming, projectile/hitscan, health, and collision. Until that lands, racing and FPS skeletons are scaffolded RealityKit projects with composable roles and generic state, not genre-complete gameplay.

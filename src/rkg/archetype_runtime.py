@@ -44,6 +44,11 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
             "var isDodging: Bool = false",
             "var isKnockout: Bool = false",
         ]
+    if archetype_id == "custom_realitykit":
+        return [
+            "var primaryActions: Int = 0",
+            "var isFailureProofVisible: Bool = false",
+        ]
     return []
 
 
@@ -366,6 +371,52 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             state = recordFighterAttack(state)
         }
         return state
+    default:
+        return fallback
+    }
+}""",
+        ]
+    if archetype_id == "custom_realitykit":
+        return [
+            """static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.lastEvent = "started"
+    return state
+}""",
+            """static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startCustomRealityKitSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    next.score += scoreForHit(isPerfect: SystemFlags.has("lap_timer"))
+    next.lastEvent = InputController.primaryActionLabel
+    if SystemFlags.hasCollision && next.primaryActions >= 2 {
+        next.isFailureProofVisible = true
+        next = SessionControl.markResult(next, event: "collision proof")
+    }
+    return next
+}""",
+            """static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        return state
+    case "fail_or_hit":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        state = advanceCustomRealityKitSession(state)
+        return state
+    case "results":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        return SessionControl.markResult(state, event: "results proof")
     default:
         return fallback
     }

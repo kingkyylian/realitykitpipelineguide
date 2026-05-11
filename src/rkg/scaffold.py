@@ -10,6 +10,7 @@ from rkg.archetype_runtime import archetype_rule_members, archetype_state_fields
 from rkg.asset_briefs import asset_brief
 from rkg.content_views import content_view_swift
 from rkg.plan import runtime_entities_for, swift_identifier_for, swift_name_for
+from rkg.runtime_core import camera_rig_swift, input_controller_swift, system_flags_swift
 from rkg.spec import assert_valid_game_spec
 from rkg.store_pack import build_store_pack
 
@@ -43,6 +44,9 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "FeedbackState.swift", _feedback_state_swift())
     _write_text(output / "Sources" / swift_name / "InputIntent.swift", _input_intent_swift(spec))
     _write_text(output / "Sources" / swift_name / "ScreenshotState.swift", _screenshot_state_swift(spec))
+    _write_text(output / "Sources" / swift_name / "CameraRig.swift", camera_rig_swift(spec))
+    _write_text(output / "Sources" / swift_name / "InputController.swift", input_controller_swift(spec))
+    _write_text(output / "Sources" / swift_name / "SystemFlags.swift", system_flags_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
@@ -526,6 +530,11 @@ final class GameSceneController {{
 
         view.scene.addAnchor(anchor)
     }}
+
+    func update(state: GameSessionState) {{
+        anchor.position.z = SystemFlags.hasRacing ? -Float(state.primaryActions % 5) * 0.02 : 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
 }}
 """
 
@@ -797,6 +806,7 @@ def _game_view_swift(spec: Mapping[str, Any]) -> str:
         "wave_defense_lite",
         "stack_puzzle",
         "fighter_2_5d",
+        "custom_realitykit",
     }:
         return _state_bound_game_view_swift()
     return """import RealityKit
@@ -829,6 +839,7 @@ struct GameView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> ARView {
         let view = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false)
+        CameraRig.configure(view)
         context.coordinator.controller.install(into: view)
         context.coordinator.controller.update(state: state)
         return view

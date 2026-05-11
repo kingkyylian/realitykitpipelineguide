@@ -12,6 +12,47 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 115: RKG Generic Runtime Core
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit` çıktısını yalnızca metadata ve placeholder role üretmekten çıkarıp generated Swift tarafında camera/input/system core dosyaları, state-bound UI, ve screenshot-state seeding ile doğrulanabilir runtime iskeletine taşımak.
+
+**Yapılanlar:**
+
+- Generated projelere `CameraRig.swift`, `InputController.swift`, ve `SystemFlags.swift` eklendi.
+- `CameraRig` seçilen camera id'si için compile-safe `Transform` sözleşmesi üretiyor; `ARView.cameraTransform` setter kullanılmadı çünkü API get-only.
+- `InputController` seçilen input modelinden `supportsDrag`, `supportsTilt`, `primaryActionLabel`, ve `controlSummary` üretiyor.
+- `SystemFlags` selected systems set'ini Swift'e taşıyor ve racing/lap/collision/weapon/enemy/health/cover boolean'ları üretiyor.
+- `custom_realitykit` artık `GameView(state: state)` kullanıyor; generic `ContentView` state-bound overlay, score, input summary, system summary ve reset/result yüzeyi gösteriyor.
+- `custom_realitykit` state/rules eklendi: `primaryActions`, `isFailureProofVisible`, `startCustomRealityKitSession`, `advanceCustomRealityKitSession`, ve `customRealityKitScreenshotSession`.
+- `capture-screenshots` ile gelen `--rkg-screenshot-state` generic skeleton state'ini artık `gameplay_start`, `mid_action`, `fail_or_hit`, ve `results` için seed ediyor.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_runtime_core Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_generic_runtime_core_modules Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_files_roles_and_screenshots: expected red before runtime core implementation; then ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_runtime_core Tests.test_rkg_new_game Tests.test_rkg_init_game Tests.test_rkg_plan_game Tests.test_rkg_scaffold_generators: ok, 48 tests
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-runtime-core-racing/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-runtime-core-racing/GameSpec.json --output Build/rkg-runtime-core-racing/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-runtime-core-racing/DesertChase: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-runtime-core-racing/DesertChase --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-runtime-core-racing/DesertChase: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health --output Build/rkg-runtime-core-fps/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-runtime-core-fps/GameSpec.json --output Build/rkg-runtime-core-fps/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-runtime-core-fps/RoomBreach: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-runtime-core-fps/RoomBreach --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-runtime-core-fps/RoomBreach: ok, 4 screenshots
+```
+
+**Öğrenme notu:**
+
+RealityKit non-AR camera tarafında `ARView.cameraTransform` assignment get-only olduğu için generic `CameraRig` bu sprintte transform contract'ını üretip `GameView` içinde compile-safe configure hook'u sağlıyor. Sonraki doğru adım bu contract üstüne gerçek camera entity/anchor bağlamak; önce generated project compile ve screenshot gates'i kırmamak gerekiyor.
+
+**Karar:**
+
+Sprint 116 racing runtime'a geçebilir ama önce `CameraRig`/`InputController`/`SystemFlags` bu shared core olarak kalacak. Genre-specific behavior `scaffold.py` içine büyütülmeden system adapter katmanına taşınmalı.
+
 ### Sprint 114: Generic RealityKit Skeleton Generator
 
 **Durum:** Tamamlandı

@@ -195,6 +195,52 @@ def custom_racing_spec() -> dict:
     return spec
 
 
+def custom_shooter_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "room_breach"
+    spec["game"]["display_name"] = "Room Breach"
+    spec["game"]["archetype"] = "custom_realitykit"
+    spec["game"]["camera"] = "first_person"
+    spec["game"]["input"] = "dual_stick"
+    spec["game"]["systems"] = ["weapon", "hitscan", "enemies", "health", "cover"]
+    spec["loop"]["player_action"] = "move, aim, and fire while managing health and cover"
+    spec["loop"]["fail_condition"] = "health reaches zero or enemies overrun the arena"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "arena_space": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+        "weapon_proxy": {
+            "type": "weapon_proxy",
+            "role": "weapon",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_weapon",
+        },
+        "enemy_proxy": {
+            "type": "enemy_proxy",
+            "role": "enemy",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_enemy",
+        },
+        "cover_block": {
+            "type": "cover",
+            "role": "cover",
+            "budget": "800 tris / 512 texture",
+            "fallback": "procedural_cover",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
+    return spec
+
+
 def toss_physics_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "toss_arc"
@@ -494,6 +540,45 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("private var checkpointEntity: Entity?", scene_controller)
             self.assertIn("CameraRig.transform", scene_controller)
             self.assertIn("func updateRacing(state: GameSessionState)", scene_controller)
+
+    def test_init_game_generates_shooter_runtime_adapter_for_custom_realitykit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_shooter_spec())
+            output = root / "RoomBreach"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "RoomBreach"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var shooterHealth: Int = GameRules.shooterMaxHealth", state)
+            self.assertIn("var enemiesRemaining: Int = GameRules.startingEnemyCount", state)
+            self.assertIn("var shotsFired: Int = 0", state)
+            self.assertIn("var aimLane: Int = 1", state)
+            self.assertIn("var enemyLane: Int = 1", state)
+            self.assertIn("var isTakingCover: Bool = false", state)
+            self.assertIn("var isShooterDefeated: Bool = false", state)
+            self.assertIn("static let shooterMaxHealth = 3", rules)
+            self.assertIn("static let startingEnemyCount = 3", rules)
+            self.assertIn("static func aimLaneAfterMove(currentLane: Int, direction: Int) -> Int", rules)
+            self.assertIn("static func fireShooterWeapon(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func shooterScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn("Text(\"Health \\(state.shooterHealth)\")", content)
+            self.assertIn("Text(\"Enemies \\(state.enemiesRemaining)\")", content)
+            self.assertIn("Button(\"Aim Left\")", content)
+            self.assertIn("Button(\"Aim Right\")", content)
+            self.assertIn("Button(\"Cover\")", content)
+            self.assertIn("state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: -1)", content)
+            self.assertIn("state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: 1)", content)
+            self.assertIn("state = GameRules.toggleShooterCover(state)", content)
+            self.assertIn("private var weaponEntity: Entity?", scene_controller)
+            self.assertIn("private var enemyEntity: Entity?", scene_controller)
+            self.assertIn("private var coverEntity: Entity?", scene_controller)
+            self.assertIn("func updateShooter(state: GameSessionState)", scene_controller)
 
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

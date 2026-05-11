@@ -54,6 +54,14 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
             "var vehicleLane: Int = 1",
             "var obstacleLane: Int = 0",
             "var isRaceCollision: Bool = false",
+            "var shooterHealth: Int = GameRules.shooterMaxHealth",
+            "var enemiesRemaining: Int = GameRules.startingEnemyCount",
+            "var shotsFired: Int = 0",
+            "var aimLane: Int = 1",
+            "var enemyLane: Int = 1",
+            "var isTakingCover: Bool = false",
+            "var isShooterDefeated: Bool = false",
+            "var lastShotHit: Bool = false",
         ]
     return []
 
@@ -441,9 +449,91 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     }
     return next
 }""",
+            "static let shooterLaneCount = 3",
+            "static let shooterMaxHealth = 3",
+            "static let startingEnemyCount = 3",
+            """static func clampedShooterLane(_ lane: Int) -> Int {
+    min(max(lane, 0), shooterLaneCount - 1)
+}""",
+            """static func aimLaneAfterMove(currentLane: Int, direction: Int) -> Int {
+    clampedShooterLane(currentLane + direction)
+}""",
+            """static func nextShooterEnemyLane(after shotsFired: Int) -> Int {
+    (shotsFired + 1) % shooterLaneCount
+}""",
+            """static func startShooterSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.shooterHealth = shooterMaxHealth
+    state.enemiesRemaining = startingEnemyCount
+    state.aimLane = 1
+    state.enemyLane = 1
+    state.lastEvent = "breach started"
+    return state
+}""",
+            """static func toggleShooterCover(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return next
+    }
+    next.isTakingCover.toggle()
+    next.lastEvent = next.isTakingCover ? "in cover" : "leaving cover"
+    return next
+}""",
+            """static func applyShooterDamage(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return next
+    }
+    if next.isTakingCover {
+        next.lastEvent = "covered"
+        return next
+    }
+    next.shooterHealth = max(0, next.shooterHealth - 1)
+    if next.shooterHealth <= 0 {
+        next.isShooterDefeated = true
+        next.isFailureProofVisible = true
+        next = SessionControl.markResult(next, event: "health depleted")
+    } else {
+        next.lastEvent = "took damage"
+    }
+    return next
+}""",
+            """static func fireShooterWeapon(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startShooterSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    next.shotsFired += 1
+    let hit = SystemFlags.hasWeapon && next.enemiesRemaining > 0 && next.aimLane == next.enemyLane
+    next.lastShotHit = hit
+    if hit {
+        next.enemiesRemaining = max(0, next.enemiesRemaining - 1)
+        next.score += scoreForHit(isPerfect: next.shotsFired % 3 == 0)
+        next.lastEvent = "hit"
+    } else if next.enemiesRemaining > 0 {
+        next = applyShooterDamage(next)
+    } else {
+        next.lastEvent = "clear"
+    }
+    if next.enemiesRemaining <= 0 {
+        return SessionControl.markResult(next, event: "room clear")
+    }
+    next.enemyLane = nextShooterEnemyLane(after: next.shotsFired)
+    return next
+}""",
+            """static func advanceShooterFrame(_ state: GameSessionState) -> GameSessionState {
+    fireShooterWeapon(state)
+}""",
             """static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState {
     if SystemFlags.hasRacing {
         return startRacingSession(sessionSeconds: sessionSeconds)
+    }
+    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
+        return startShooterSession(sessionSeconds: sessionSeconds)
     }
     var state = GameSessionState()
     state.phase = .playing
@@ -454,6 +544,9 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             """static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState {
     if SystemFlags.hasRacing {
         return advanceRacingFrame(state)
+    }
+    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
+        return advanceShooterFrame(state)
     }
     var next = state
     if next.phase != .playing {
@@ -492,9 +585,38 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
         return fallback
     }
 }""",
+            """static func shooterScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startShooterSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startShooterSession(sessionSeconds: fallback.sessionSeconds)
+        state = fireShooterWeapon(state)
+        return state
+    case "fail_or_hit":
+        var state = startShooterSession(sessionSeconds: fallback.sessionSeconds)
+        state.aimLane = 0
+        state = fireShooterWeapon(state)
+        state = fireShooterWeapon(state)
+        return state
+    case "results":
+        var state = startShooterSession(sessionSeconds: fallback.sessionSeconds)
+        state = fireShooterWeapon(state)
+        state.aimLane = state.enemyLane
+        state = fireShooterWeapon(state)
+        state.aimLane = state.enemyLane
+        state = fireShooterWeapon(state)
+        return state
+    default:
+        return fallback
+    }
+}""",
             """static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
     if SystemFlags.hasRacing {
         return racingScreenshotSession(for: screenshotState, fallback: fallback)
+    }
+    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
+        return shooterScreenshotSession(for: screenshotState, fallback: fallback)
     }
     switch screenshotState?.rawValue {
     case "gameplay_start":

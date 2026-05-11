@@ -12,6 +12,48 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 117: RKG FPS/Shooter Runtime Adapter
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit` generic runtime core üstüne ikinci system-specific adapter'ı eklemek: `weapon,hitscan,enemies,health,cover` seçen bir kullanıcı sıfırdan aim/fire/health/cover state'i olan, screenshot state'leri farklı görünen, derlenebilir RealityKit FPS/shooter iskeleti üretebilmeli.
+
+**Yapılanlar:**
+
+- `custom_realitykit` state'ine shooter alanları eklendi: `shooterHealth`, `enemiesRemaining`, `shotsFired`, `aimLane`, `enemyLane`, `isTakingCover`, `isShooterDefeated`, ve `lastShotHit`.
+- `GameRules.swift` artık weapon/enemy/health/cover seçildiğinde `startShooterSession`, `aimLaneAfterMove`, `fireShooterWeapon`, `toggleShooterCover`, `applyShooterDamage`, `advanceShooterFrame`, ve `shooterScreenshotSession` üretiyor.
+- `ContentView.swift` shooter seçildiğinde health/enemies/shots/aim HUD satırı, Aim Left/Aim Right ve Cover kontrolleri üretiyor.
+- `GameSceneController.swift` custom path'i shooter adapter'a genişledi: player/weapon/enemy/cover entity referansları bağlanıyor; aim lane, enemy lane, hit, cover ve defeated state'i RealityKit pozisyon/scale/enabled değişikliklerine yansıyor.
+- Racing adapter regresyonu korundu; `racing` seçildiğinde racing branch hâlâ öncelikli.
+- Test önce `shooterHealth` eksikliğinden kırıldı, sonra shooter adapter generated Swift yüzeyi yeşile alındı.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_shooter_runtime_adapter_for_custom_realitykit: expected red before adapter; then ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game Tests.test_rkg_runtime_core Tests.test_rkg_new_game: ok, 38 tests
+rtk .venv/bin/python -m ruff check src/rkg/archetype_runtime.py src/rkg/content_views.py src/rkg/scaffold.py Tests/test_rkg_init_game.py: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-shooter-runtime/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-shooter-runtime/GameSpec.json --output Build/rkg-shooter-runtime/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-shooter-runtime/RoomBreach: ok
+rtk .venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-shooter-runtime/RoomBreach --device booted: ok after sandbox escalation, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-shooter-runtime/RoomBreach: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-racing-regression/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-racing-regression/GameSpec.json --output Build/rkg-racing-regression/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-racing-regression/DesertChase: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 195 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Generic `custom_realitykit` artık iki system adapter ile çalışıyor: racing ve FPS/shooter. Bu, `new-game` yönünü doğruluyor; kullanıcı broad bir oyun fikri verdiğinde RKG boş Xcode projesi değil, seçilen systems set'ine göre state + UI + RealityKit binding + screenshot proof üreten bir başlangıç veriyor.
+
+**Karar:**
+
+Bir sonraki RKG işi yeni adapter eklemekten önce custom adapter üretimini modüllere bölmek olmalı. `archetype_runtime.py`, `content_views.py`, ve `scaffold.py` içinde racing/shooter stringleri büyümeye başladı; üçüncü adapterdan önce generator ownership sınırı temizlenmeli.
+
 ### Sprint 116: RKG Racing Runtime Adapter
 
 **Durum:** Tamamlandı

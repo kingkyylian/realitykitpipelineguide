@@ -111,6 +111,36 @@ struct ContentView: View {{
                     }}
                 }}
 
+                if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {{
+                    HStack(spacing: 12) {{
+                        Text("Health \\(state.shooterHealth)")
+                            .font(.caption.monospacedDigit())
+                        Text("Enemies \\(state.enemiesRemaining)")
+                            .font(.caption.monospacedDigit())
+                        Text("Shots \\(state.shotsFired)")
+                            .font(.caption.monospacedDigit())
+                        Text("Aim \\(state.aimLane + 1)")
+                            .font(.caption.monospacedDigit())
+                        Spacer()
+                    }}
+
+                    HStack {{
+                        Button("Aim Left") {{
+                            state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: -1)
+                        }}
+                        .buttonStyle(.bordered)
+                        Button("Aim Right") {{
+                            state.aimLane = GameRules.aimLaneAfterMove(currentLane: state.aimLane, direction: 1)
+                        }}
+                        .buttonStyle(.bordered)
+                        Button("Cover") {{
+                            state = GameRules.toggleShooterCover(state)
+                        }}
+                        .buttonStyle(.bordered)
+                        Spacer()
+                    }}
+                }}
+
                 if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()

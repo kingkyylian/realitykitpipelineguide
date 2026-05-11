@@ -12,6 +12,7 @@
 - Added `rkg new-game` and the `custom_realitykit` skeleton path for generic racing, FPS/shooter, and other composable RealityKit starts.
 - Added generated `CameraRig.swift`, `InputController.swift`, and `SystemFlags.swift` runtime core files for RKG game skeletons.
 - Added the first `custom_realitykit` system adapter for racing with lane steering, lap/checkpoint state, collision/result proof, camera rig entity binding, and screenshot-state seeding.
+- Added a `custom_realitykit` FPS/shooter system adapter with aim/fire/health/cover/enemy state, controls, RealityKit scene binding, and screenshot-state seeding.
 
 ### Changed
 
@@ -22,6 +23,7 @@
 - Routed generated RKG runtime loading through each asset's declared fallback id, so generic skeletons can show vehicle, track, weapon, enemy, and cover placeholders before USDZ import.
 - Routed `custom_realitykit` generated apps through state-bound overlays and screenshot-state seeding for `gameplay_start`, `mid_action`, `fail_or_hit`, and `results`.
 - Expanded generated racing skeletons from generic placeholders into state-to-scene RealityKit binding for vehicle, track, obstacle, and checkpoint roles.
+- Expanded generated FPS/shooter skeletons from generic placeholders into state-to-scene RealityKit binding for player, weapon, enemy, and cover roles.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

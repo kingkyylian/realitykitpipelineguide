@@ -546,9 +546,13 @@ def _custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> s
         spec,
         [
             ("vehicleEntity", {"player", "vehicle"}),
+            ("playerEntity", {"player"}),
             ("trackEntity", {"arena", "environment", "track"}),
             ("obstacleEntity", {"obstacle", "hazard"}),
             ("checkpointEntity", {"ui_prop", "checkpoint", "target"}),
+            ("weaponEntity", {"weapon"}),
+            ("enemyEntity", {"enemy"}),
+            ("coverEntity", {"cover"}),
         ],
     )
     return f"""import RealityKit
@@ -556,9 +560,13 @@ def _custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> s
 final class GameSceneController {{
     private let anchor = AnchorEntity(world: .zero)
     private var vehicleEntity: Entity?
+    private var playerEntity: Entity?
     private var trackEntity: Entity?
     private var obstacleEntity: Entity?
     private var checkpointEntity: Entity?
+    private var weaponEntity: Entity?
+    private var enemyEntity: Entity?
+    private var coverEntity: Entity?
     private var cameraRigEntity: Entity?
 
     func install(into view: ARView) {{
@@ -574,6 +582,10 @@ final class GameSceneController {{
     func update(state: GameSessionState) {{
         if SystemFlags.hasRacing {{
             updateRacing(state: state)
+            return
+        }}
+        if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {{
+            updateShooter(state: state)
             return
         }}
         cameraRigEntity?.transform = CameraRig.transform
@@ -605,6 +617,32 @@ final class GameSceneController {{
 
     private func xPosition(forRaceLane lane: Int) -> Float {{
         Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
+    }}
+
+    func updateShooter(state: GameSessionState) {{
+        playerEntity?.position = [0, state.isTakingCover ? -0.06 : 0, -0.72]
+        playerEntity?.scale = state.isShooterDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]
+
+        weaponEntity?.isEnabled = SystemFlags.hasWeapon
+        weaponEntity?.position = [xPosition(forShooterLane: state.aimLane) * 0.35, 0.12, -0.66]
+        weaponEntity?.scale = state.lastShotHit ? [1.16, 1.16, 1.16] : [1, 1, 1]
+
+        enemyEntity?.isEnabled = SystemFlags.hasEnemies && state.enemiesRemaining > 0
+        enemyEntity?.position.x = xPosition(forShooterLane: state.enemyLane)
+        enemyEntity?.position.z = -1.15 - Float(state.shotsFired % 3) * 0.12
+        enemyEntity?.scale = state.lastShotHit ? [0.88, 0.88, 0.88] : [1, 1, 1]
+
+        coverEntity?.isEnabled = SystemFlags.hasCover
+        coverEntity?.position = [state.isTakingCover ? 0 : -0.55, -0.05, -0.72]
+        coverEntity?.scale = state.isTakingCover ? [1.12, 1.12, 1.12] : [1, 1, 1]
+
+        cameraRigEntity?.transform = CameraRig.transform
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
+
+    private func xPosition(forShooterLane lane: Int) -> Float {{
+        Float(GameRules.clampedShooterLane(lane) - 1) * 0.45
     }}
 }}
 """

@@ -73,6 +73,14 @@ Generated roles:
 | `enemy_proxy` | `enemy` | First enemy target placeholder. |
 | `cover_block` | `cover` | Health/cover proof role. |
 
+Generated runtime behavior:
+
+- `GameSessionState` includes health, enemy count, shots fired, aim lane, enemy lane, cover, defeated, and hit feedback flags.
+- `GameRules` starts a shooter session, clamps aim steering, fires the weapon, applies health damage, toggles cover, and marks room-clear or health-depleted result states.
+- `ContentView` shows health/enemies/shots/aim HUD values and Aim Left/Aim Right/Cover controls.
+- `GameSceneController` binds player, weapon, enemy, cover, and camera rig entities; aim/enemy/cover/hit/defeated state changes produce visible RealityKit placement, scale, and enabled-state changes.
+- `capture-screenshots` launch states seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` with different shooter state.
+
 ## Supported Axes
 
 Camera:
@@ -100,4 +108,4 @@ shooting, enemies, enemy_ai, health, cover, collect, score, timer, physics
 
 `custom_realitykit` now gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, `CameraRig.swift`, `InputController.swift`, `SystemFlags.swift`, and `verify-game`/`verify-screenshots` gates. The generic overlay is state-bound, so launch screenshot states can seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` instead of capturing four identical idle launches.
 
-The first system adapter is racing: it proves vehicle lane movement, checkpoint/lap progress, collision/result state, and camera rig entity binding. The next runtime slice should add the FPS/shooter adapter for first-person aiming, weapon/hitscan, enemy, health, and cover proof. Until those adapters mature, generated games are still skeletons, not genre-complete gameplay.
+The first two system adapters are racing and FPS/shooter. They prove vehicle lane movement, checkpoint/lap progress, collision/result state, first-person aim/fire state, enemy/health/cover proof, and camera rig entity binding. The next runtime slice should split these adapters into focused generator modules before adding collect/score/timer or projectile behavior. Generated games are still skeletons, not genre-complete gameplay.

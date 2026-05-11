@@ -93,7 +93,7 @@ python3 Tools/rkg.py validate-spec GameSpec.json
 
 ## Custom RealityKit Skeleton Example
 
-`custom_realitykit` is the generic path for racing, FPS, shooter, collector, top-down, and other early RealityKit prototypes before they become native archetypes. Racing is the first system adapter: `racing,lap_timer,collision` generates lane/lap/checkpoint/collision state, steering controls, state-to-scene binding, and screenshot-state proof. FPS/shooter combinations still begin with the generic runtime core until their own adapter is added.
+`custom_realitykit` is the generic path for racing, FPS, shooter, collector, top-down, and other early RealityKit prototypes before they become native archetypes. Racing is the first system adapter: `racing,lap_timer,collision` generates lane/lap/checkpoint/collision state, steering controls, state-to-scene binding, and screenshot-state proof. FPS/shooter is the second adapter: `weapon,hitscan,enemies,health,cover` generates aim/fire/health/cover/enemy state, controls, scene binding, and screenshot-state proof.
 
 ```yaml
 game:

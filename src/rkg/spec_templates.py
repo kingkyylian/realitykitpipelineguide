@@ -144,7 +144,13 @@ def _custom_loop(systems: list[str]) -> JsonDict:
             "fail_condition": "collision or timer pressure ends the run",
             "scoring": {"hit": 10, "perfect": 25, "lap": 100},
         }
-    if system_set & {"weapon", "hitscan", "projectile", "shooting", "enemies"}:
+    if system_set & {"projectile", "shooting"}:
+        return {
+            "player_action": "aim, charge, and launch projectiles at target lanes",
+            "fail_condition": "shots expire before enough projectile hits land",
+            "scoring": {"hit": 10, "perfect": 25, "clear": 100},
+        }
+    if system_set & {"weapon", "hitscan", "enemies"}:
         return {
             "player_action": "move, aim, and fire while managing health and cover",
             "fail_condition": "health reaches zero or enemies overrun the arena",
@@ -223,6 +229,12 @@ def _custom_assets(systems: list[str]) -> JsonDict:
             "role": "projectile",
             "budget": "400 tris / 512 texture",
             "fallback": "procedural_sphere",
+        }
+        assets["target_proxy"] = {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_rings",
         }
     if system_set & {"enemies", "enemy_ai"}:
         assets["enemy_proxy"] = {

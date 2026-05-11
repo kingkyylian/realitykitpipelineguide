@@ -106,6 +106,7 @@ enum InputController {{
 
 def system_flags_swift(spec: Mapping[str, Any]) -> str:
     systems = sorted({str(system) for system in spec["game"].get("systems", [])})
+    system_set = set(systems)
     system_list = ", ".join(_swift_string_literal(system) for system in systems)
     return f"""import Foundation
 
@@ -114,8 +115,10 @@ enum SystemFlags {{
     static let hasRacing = {str("racing" in systems).lower()}
     static let hasLapTimer = {str("lap_timer" in systems).lower()}
     static let hasCollision = {str("collision" in systems).lower()}
-    static let hasWeapon = {str(bool({"weapon", "hitscan", "projectile", "shooting"} & set(systems))).lower()}
-    static let hasEnemies = {str(bool({"enemies", "enemy_ai"} & set(systems))).lower()}
+    static let hasWeapon = {str(bool({"weapon", "hitscan"} & system_set)).lower()}
+    static let hasProjectile = {str("projectile" in systems).lower()}
+    static let hasShooting = {str(bool({"projectile", "shooting"} & system_set)).lower()}
+    static let hasEnemies = {str(bool({"enemies", "enemy_ai"} & system_set)).lower()}
     static let hasHealth = {str("health" in systems).lower()}
     static let hasCover = {str("cover" in systems).lower()}
     static let hasCollect = {str("collect" in systems).lower()}

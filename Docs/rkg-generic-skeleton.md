@@ -2,7 +2,7 @@
 
 `rkg new-game` is the zero-to-skeleton path for game ideas that do not yet deserve a dedicated archetype.
 
-Use it when the user says "racing game", "FPS", "weapon combat", "third-person prototype", "top-down collector", or another broad RealityKit game shape. The command writes a valid `custom_realitykit` GameSpec from four decisions:
+Use it when the user says "racing game", "FPS", "weapon combat", "projectile game", "third-person prototype", "top-down collector", or another broad RealityKit game shape. The command writes a valid `custom_realitykit` GameSpec from four decisions:
 
 - title
 - camera rig
@@ -115,6 +115,50 @@ Generated runtime behavior:
 - `GameSceneController` binds player, arena, pickup, timer, and camera rig entities; lane, combo, pickup, and timeout state changes produce visible RealityKit placement, scale, and enabled-state changes.
 - `capture-screenshots` launch states seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` with different collector state.
 
+## Projectile / Shooting / Score Skeleton
+
+```bash
+python3 Tools/rkg.py new-game \
+  --title "Arc Volley" \
+  --camera third_person \
+  --input drag \
+  --systems projectile,shooting,score \
+  --output Build/rkg-generic-projectile/GameSpec.json
+
+python3 Tools/rkg.py validate-spec Build/rkg-generic-projectile/GameSpec.json
+python3 Tools/rkg.py init-game Build/rkg-generic-projectile/GameSpec.json --output Build/rkg-generic-projectile/ArcVolley --force
+python3 Tools/rkg.py verify-game Build/rkg-generic-projectile/ArcVolley
+```
+
+Generated roles:
+
+| Asset id | Role | Purpose |
+| --- | --- | --- |
+| `player_proxy` | `player` | Player launcher proxy. |
+| `arena_space` | `arena` | Third-person projectile range proxy. |
+| `weapon_proxy` | `weapon` | Launcher or aim-source placeholder. |
+| `projectile_proxy` | `projectile` | Moving projectile proof role. |
+| `target_proxy` | `target` | Impact target lane proof role. |
+
+Generated runtime behavior:
+
+- `GameSessionState` includes projectile shots, hits, charge, aim lane, target lane, travel, in-flight, and hit feedback flags.
+- `SystemFlags` separates `hasProjectile` and `hasShooting` from `hasWeapon`, so projectile-only games do not route through the FPS/shooter adapter.
+- `GameRules` starts a projectile session, clamps lane aim, charges shots, launches projectiles, scores charged hits, marks clear/spent result states, and seeds screenshot states.
+- `ContentView` shows shots/hits/charge/aim HUD values plus Aim Left, Aim Right, Charge, and Launch controls.
+- `GameSceneController` binds player, arena, weapon, projectile, target, and camera rig entities; aim lane, target lane, charge, travel, and hit state produce visible RealityKit placement and scale changes.
+
+## Adapter Capability Matrix
+
+Use `list-adapters` when a caller needs to understand what the generic skeleton currently supports before choosing systems:
+
+```bash
+python3 Tools/rkg.py list-adapters
+python3 Tools/rkg.py list-adapters --json
+```
+
+The JSON output lists each `CustomRealityKitRuntimeAdapter` id, supported systems, generated state fields, rule members, scene properties, and bound scene roles. Current adapter ids are `racing`, `projectile`, `shooter`, and `collector`.
+
 ## Supported Axes
 
 Camera:
@@ -142,4 +186,4 @@ shooting, enemies, enemy_ai, health, cover, collect, score, timer, physics
 
 `custom_realitykit` now gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, `CameraRig.swift`, `InputController.swift`, `SystemFlags.swift`, and `verify-game`/`verify-screenshots` gates. The generic overlay is state-bound, so launch screenshot states can seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` instead of capturing four identical idle launches.
 
-The first three system adapters are racing, FPS/shooter, and collector/score/timer. They prove vehicle lane movement, checkpoint/lap progress, collision/result state, first-person aim/fire state, enemy/health/cover proof, pickup collection, combo/timer proof, and camera rig entity binding. Their state/rule/UI/scene generator surface lives behind `CustomRealityKitRuntimeAdapter` registry entries in `src/rkg/custom_realitykit_runtime.py`, so the next runtime slice can add projectile behavior without growing the native archetype generator files. Generated games are still skeletons, not genre-complete gameplay.
+The current system adapters are racing, projectile/shooting/score, FPS/shooter, and collector/score/timer. They prove vehicle lane movement, checkpoint/lap progress, collision/result state, projectile charge/travel/impact state, first-person aim/fire state, enemy/health/cover proof, pickup collection, combo/timer proof, and camera rig entity binding. Their state/rule/UI/scene generator surface lives behind `CustomRealityKitRuntimeAdapter` registry entries in `src/rkg/custom_realitykit_runtime.py`, and `rkg list-adapters --json` exposes that registry as a capability matrix. Generated games are still skeletons, not genre-complete gameplay.

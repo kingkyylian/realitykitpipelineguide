@@ -12,6 +12,65 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 121: RKG Projectile Adapter and Capability Matrix
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit` artık racing, shooter ve collector üretiyordu; broad projectile/shooting/score fikri veren kullanıcı da FPS adapter'a yanlış düşmeden charge/launch/travel/impact state'i olan, derlenebilir RealityKit iskeleti almalı. Adapter registry ayrıca CLI'dan görülebilir capability matrix üretmeli.
+
+**Yapılanlar:**
+
+- `projectile,shooting,score` için dördüncü `CustomRealityKitRuntimeAdapter` eklendi.
+- `rkg new-game --systems projectile,shooting,score` artık projectile loop metni, `weapon_proxy`, `projectile_proxy`, ve `target_proxy` role/fallback asset'leri üretiyor.
+- `SystemFlags.swift` projectile tarafında `hasProjectile` ve `hasShooting` üretiyor; `hasWeapon` artık yalnızca `weapon`/`hitscan` ile true oluyor.
+- Generated `GameSessionState` projectile alanları üretiyor: `projectileShots`, `projectileHits`, `projectileCharge`, `projectileLane`, `targetLane`, `projectileTravel`, `projectileInFlight`, ve `lastProjectileHit`.
+- Generated `GameRules.swift` projectile session start, lane aim, charge clamp, launch, charged-hit scoring, shot-limit result, target-clear result, ve screenshot-state seeding üretiyor.
+- Generated `ContentView.swift` shots/hits/charge/aim HUD satırı ve Aim Left/Aim Right/Charge/Launch kontrolleri üretiyor.
+- Generated `GameSceneController.swift` player, arena, weapon, projectile, target ve camera rig entity binding'i yapıyor; aim/target lane, charge, travel ve hit state'i RealityKit pozisyon/scale/enabled değişikliklerine yansıyor.
+- `rkg list-adapters` ve `rkg list-adapters --json` eklendi; registry artık id, systems, state fields, rule members, scene properties ve scene roles olarak dışarı açılıyor.
+- `procedural_rings` fallback id'si generated `FallbackFactory` içinde explicit ring/guard placeholder case'ine bağlandı; projectile `target_proxy` artık fallback idsini role-default sphere'e düşürmüyor.
+- RKG docs/handoff/changelog generic skeleton kapsamını projectile ve adapter matrix ile güncelliyor.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_new_game.RkgNewGameTests.test_new_game_writes_projectile_realitykit_skeleton_spec Tests.test_rkg_runtime_core.RkgRuntimeCoreTests.test_system_flags_swift_splits_projectile_from_weapon_systems Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_projectile_runtime_adapter_for_custom_realitykit: expected red before adapter/capability API; then ok, 7 tests
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_projectile_runtime_adapter_for_custom_realitykit: expected red before procedural_rings fallback case; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_runtime_core Tests.test_rkg_new_game Tests.test_rkg_init_game: ok, 48 tests
+rtk ./.venv/bin/python -m ruff check src/rkg/custom_realitykit_runtime.py src/rkg/runtime_core.py src/rkg/spec_templates.py src/rkg/cli.py Tests/test_rkg_custom_realitykit_runtime.py Tests/test_rkg_init_game.py Tests/test_rkg_new_game.py Tests/test_rkg_runtime_core.py: ok
+rtk ./.venv/bin/python Tools/rkg.py list-adapters --json: ok, racing/projectile/shooter/collector records
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Arc Volley" --camera third_person --input drag --systems projectile,shooting,score --output Build/rkg-mvp-projectile/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-mvp-projectile/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-mvp-projectile/GameSpec.json --output Build/rkg-mvp-projectile/ArcVolley --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-mvp-projectile/ArcVolley: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-mvp-projectile/GameSpec.json --output Build/rkg-mvp-projectile/ArcVolley --force: ok after procedural_rings fallback change
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-mvp-projectile/ArcVolley: ok after procedural_rings fallback change
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-mvp-racing/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-mvp-racing/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-mvp-racing/GameSpec.json --output Build/rkg-mvp-racing/DesertChase --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-mvp-racing/DesertChase: ok
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-mvp-shooter/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-mvp-shooter/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-mvp-shooter/GameSpec.json --output Build/rkg-mvp-shooter/RoomBreach --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-mvp-shooter/RoomBreach: ok
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Orb Sprint" --camera top_down --input tap_swipe --systems collect,score,timer --output Build/rkg-mvp-collector/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-mvp-collector/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-mvp-collector/GameSpec.json --output Build/rkg-mvp-collector/OrbSprint --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-mvp-collector/OrbSprint: ok
+rtk git diff --check: ok
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 205 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Projectile, shooter adapter ile aynı "aim" kavramını paylaşsa da aynı sistem değil. `projectile` ve `shooting` sistemlerini `hasWeapon` altında tutmak generated ContentView ve rule dispatch'i FPS adapter'a yönlendiriyordu; ayrı `hasProjectile`/`hasShooting` flag'leri RKG'nin broad system composition modelini daha dürüst yaptı.
+
+**Karar:**
+
+`custom_realitykit` adapter registry artık doküman dışında da sorgulanabilir olmalı. `list-adapters --json`, gelecekte UI veya agent tarafının "hangi sistemleri seçmeliyim?" sorusunu prose parse etmeden yanıtlaması için canonical capability surface olarak kalacak.
+
 ### Sprint 120: RKG Collector Score Timer Runtime Adapter
 
 **Durum:** Tamamlandı

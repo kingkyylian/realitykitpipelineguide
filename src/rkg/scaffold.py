@@ -429,7 +429,7 @@ enum FallbackFactory {
                 mesh: .generateSphere(radius: 0.07),
                 materials: [SimpleMaterial(color: .systemYellow, roughness: 0.25, isMetallic: false)]
             )
-        case "procedural_ring", "procedural_guard":
+        case "procedural_ring", "procedural_rings", "procedural_guard":
             return ModelEntity(
                 mesh: .generateBox(size: [0.36, 0.04, 0.04]),
                 materials: [SimpleMaterial(color: .systemTeal, roughness: 0.25, isMetallic: false)]

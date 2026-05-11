@@ -281,6 +281,52 @@ def custom_collector_spec() -> dict:
     return spec
 
 
+def custom_projectile_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "arc_volley"
+    spec["game"]["display_name"] = "Arc Volley"
+    spec["game"]["archetype"] = "custom_realitykit"
+    spec["game"]["camera"] = "third_person"
+    spec["game"]["input"] = "drag"
+    spec["game"]["systems"] = ["projectile", "shooting", "score"]
+    spec["loop"]["player_action"] = "aim, charge, and launch projectiles at target lanes"
+    spec["loop"]["fail_condition"] = "attempts expire before enough hits land"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "arena_space": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+        "weapon_proxy": {
+            "type": "weapon_proxy",
+            "role": "weapon",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_weapon",
+        },
+        "projectile_proxy": {
+            "type": "projectile",
+            "role": "projectile",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_sphere",
+        },
+        "target_proxy": {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_rings",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
+    return spec
+
+
 def toss_physics_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "toss_arc"
@@ -657,6 +703,47 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("private var timerEntity: Entity?", scene_controller)
             self.assertIn("func updateCollector(state: GameSessionState)", scene_controller)
             self.assertIn("pickupEntity?.position.x = xPosition(forCollectorLane: state.pickupLane)", scene_controller)
+
+    def test_init_game_generates_projectile_runtime_adapter_for_custom_realitykit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_projectile_spec())
+            output = root / "ArcVolley"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "ArcVolley"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            fallback_factory = (source / "FallbackFactory.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            system_flags = (source / "SystemFlags.swift").read_text(encoding="utf-8")
+            self.assertIn("var projectileShots: Int = 0", state)
+            self.assertIn("var projectileHits: Int = 0", state)
+            self.assertIn("var projectileCharge: Int = 1", state)
+            self.assertIn("var projectileLane: Int = 1", state)
+            self.assertIn("var targetLane: Int = 1", state)
+            self.assertIn("var projectileInFlight: Bool = false", state)
+            self.assertIn("static let hasProjectile = true", system_flags)
+            self.assertIn("static let hasShooting = true", system_flags)
+            self.assertIn("static let hasWeapon = false", system_flags)
+            self.assertIn("static let projectileLaneCount = 3", rules)
+            self.assertIn("static func chargeProjectile(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func launchProjectile(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func projectileScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn("Text(\"Hits \\(state.projectileHits)\")", content)
+            self.assertIn("Text(\"Charge \\(state.projectileCharge)\")", content)
+            self.assertIn("Button(\"Charge\")", content)
+            self.assertIn("Button(\"Launch\")", content)
+            self.assertIn("state = GameRules.launchProjectile(state)", content)
+            self.assertIn("private var projectileEntity: Entity?", scene_controller)
+            self.assertIn("private var targetEntity: Entity?", scene_controller)
+            self.assertIn("func updateProjectile(state: GameSessionState)", scene_controller)
+            self.assertIn("projectileEntity?.position = projectilePosition(state: state)", scene_controller)
+            self.assertIn("targetEntity?.position.x = xPosition(forProjectileLane: state.targetLane)", scene_controller)
+            self.assertIn('case "procedural_ring", "procedural_rings", "procedural_guard":', fallback_factory)
 
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

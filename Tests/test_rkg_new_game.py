@@ -89,6 +89,43 @@ class RkgNewGameTests(unittest.TestCase):
             payload = json.loads(validate.stdout)
             self.assertTrue(payload["ok"])
 
+    def test_new_game_writes_projectile_realitykit_skeleton_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = root / "GameSpec.json"
+
+            result = self.run_rkg(
+                root,
+                "new-game",
+                "--title",
+                "Arc Volley",
+                "--camera",
+                "third_person",
+                "--input",
+                "drag",
+                "--systems",
+                "projectile,shooting,score",
+                "--output",
+                str(spec_path),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            spec = json.loads(spec_path.read_text(encoding="utf-8"))
+            self.assertEqual(spec["game"]["id"], "arc_volley")
+            self.assertEqual(spec["game"]["camera"], "third_person")
+            self.assertEqual(spec["game"]["input"], "drag")
+            self.assertEqual(spec["game"]["systems"], ["projectile", "shooting", "score"])
+            self.assertIn("launch projectiles", spec["loop"]["player_action"])
+            self.assertEqual(spec["assets"]["weapon_proxy"]["role"], "weapon")
+            self.assertEqual(spec["assets"]["projectile_proxy"]["role"], "projectile")
+            self.assertEqual(spec["assets"]["target_proxy"]["role"], "target")
+            self.assertEqual(spec["assets"]["target_proxy"]["fallback"], "procedural_rings")
+
+            validate = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+            self.assertEqual(validate.returncode, 0, validate.stderr)
+            payload = json.loads(validate.stdout)
+            self.assertTrue(payload["ok"])
+
     def test_new_game_writes_collector_score_timer_realitykit_skeleton_spec(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

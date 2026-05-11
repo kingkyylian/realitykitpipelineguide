@@ -7,6 +7,7 @@ from pathlib import Path
 
 from rkg.archetypes import describe_archetype, list_archetypes
 from rkg.capture import build_capture_plan, execute_capture_plan
+from rkg.custom_realitykit_runtime import custom_realitykit_adapter_capabilities
 from rkg.idea_score import load_idea, score_game_idea
 from rkg.plan import build_game_plan
 from rkg.qa_plan import build_qa_plan
@@ -47,6 +48,9 @@ def main() -> int:
 
     list_parser = subparsers.add_parser("list-archetypes", help="List built-in RKG archetypes")
     list_parser.add_argument("--json", action="store_true", help="Print machine-readable archetype records")
+
+    adapters = subparsers.add_parser("list-adapters", help="List custom RealityKit system adapter capabilities")
+    adapters.add_argument("--json", action="store_true", help="Print machine-readable adapter records")
 
     describe = subparsers.add_parser("describe-archetype", help="Describe one RKG archetype")
     describe.add_argument("id", help="Archetype id")
@@ -142,6 +146,15 @@ def main() -> int:
         else:
             for record in records:
                 print(f"{record['id']}: {record['mechanic']}")
+        return 0
+
+    if args.command == "list-adapters":
+        records = custom_realitykit_adapter_capabilities()
+        if args.json:
+            print(json.dumps(records, indent=2, sort_keys=True))
+        else:
+            for record in records:
+                print(f"{record['id']}: {', '.join(record['systems'])}")
         return 0
 
     if args.command == "describe-archetype":

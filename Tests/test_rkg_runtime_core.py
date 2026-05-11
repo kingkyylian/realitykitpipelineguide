@@ -87,6 +87,44 @@ def custom_collector_spec() -> dict:
     return spec
 
 
+def custom_projectile_spec() -> dict:
+    spec = custom_racing_spec()
+    spec["game"]["id"] = "arc_volley"
+    spec["game"]["display_name"] = "Arc Volley"
+    spec["game"]["camera"] = "third_person"
+    spec["game"]["input"] = "drag"
+    spec["game"]["systems"] = ["projectile", "shooting", "score"]
+    spec["loop"]["player_action"] = "aim, charge, and launch projectiles at target lanes"
+    spec["loop"]["fail_condition"] = "attempts expire before enough hits land"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "weapon_proxy": {
+            "type": "weapon_proxy",
+            "role": "weapon",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_weapon",
+        },
+        "projectile_proxy": {
+            "type": "projectile",
+            "role": "projectile",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_sphere",
+        },
+        "target_proxy": {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_rings",
+        },
+    }
+    return spec
+
+
 class RkgRuntimeCoreTests(unittest.TestCase):
     def test_camera_rig_swift_binds_selected_camera(self) -> None:
         swift = camera_rig_swift(custom_racing_spec())
@@ -121,6 +159,15 @@ class RkgRuntimeCoreTests(unittest.TestCase):
         self.assertIn("static let hasScore = true", swift)
         self.assertIn("static let hasTimer = true", swift)
         self.assertIn("static let hasRacing = false", swift)
+
+    def test_system_flags_swift_splits_projectile_from_weapon_systems(self) -> None:
+        swift = system_flags_swift(custom_projectile_spec())
+
+        self.assertIn('static let systems: Set<String> = ["projectile", "score", "shooting"]', swift)
+        self.assertIn("static let hasProjectile = true", swift)
+        self.assertIn("static let hasShooting = true", swift)
+        self.assertIn("static let hasWeapon = false", swift)
+        self.assertIn("static let hasScore = true", swift)
 
 
 if __name__ == "__main__":

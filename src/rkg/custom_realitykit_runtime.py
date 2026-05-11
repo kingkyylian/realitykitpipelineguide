@@ -36,9 +36,26 @@ _CORE_STATE_FIELDS = (
 def custom_realitykit_runtime_adapters() -> tuple[CustomRealityKitRuntimeAdapter, ...]:
     return (
         _racing_runtime_adapter(),
+        _projectile_runtime_adapter(),
         _shooter_runtime_adapter(),
         _collector_runtime_adapter(),
     )
+
+
+def custom_realitykit_adapter_capabilities() -> list[dict[str, object]]:
+    records: list[dict[str, object]] = []
+    for adapter in custom_realitykit_runtime_adapters():
+        records.append(
+            {
+                "id": adapter.id,
+                "systems": list(adapter.systems),
+                "state_fields": [_swift_member_name(field) for field in adapter.state_fields],
+                "rule_members": [_swift_member_name(member) for member in adapter.rule_members],
+                "scene_properties": list(adapter.scene_properties),
+                "scene_roles": sorted({role for _, roles in adapter.scene_bindings for role in roles}),
+            }
+        )
+    return records
 
 
 def custom_realitykit_state_fields() -> list[str]:
@@ -264,6 +281,214 @@ def _racing_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
 
     private func xPosition(forRaceLane lane: Int) -> Float {
         Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
+    }""",
+    )
+
+
+def _projectile_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
+    return CustomRealityKitRuntimeAdapter(
+        id="projectile",
+        systems=("projectile", "shooting", "score"),
+        state_fields=(
+            "var projectileShots: Int = 0",
+            "var projectileHits: Int = 0",
+            "var projectileCharge: Int = 1",
+            "var projectileLane: Int = 1",
+            "var targetLane: Int = 1",
+            "var projectileTravel: Int = 0",
+            "var projectileInFlight: Bool = false",
+            "var lastProjectileHit: Bool = false",
+        ),
+        rule_members=(
+            "static let projectileLaneCount = 3",
+            "static let maxProjectileCharge = 3",
+            "static let projectileTravelFrames = 3",
+            "static let projectileHitTarget = 3",
+            "static let projectileShotLimit = 5",
+            """static func clampedProjectileLane(_ lane: Int) -> Int {
+    min(max(lane, 0), projectileLaneCount - 1)
+}""",
+            """static func projectileLaneAfterAim(currentLane: Int, direction: Int) -> Int {
+    clampedProjectileLane(currentLane + direction)
+}""",
+            """static func clampedProjectileCharge(_ charge: Int) -> Int {
+    min(max(charge, 1), maxProjectileCharge)
+}""",
+            """static func nextProjectileTargetLane(after shots: Int) -> Int {
+    (shots + 1) % projectileLaneCount
+}""",
+            """static func startProjectileSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.projectileShots = 0
+    state.projectileHits = 0
+    state.projectileCharge = 1
+    state.projectileLane = 1
+    state.targetLane = 1
+    state.projectileTravel = 0
+    state.projectileInFlight = false
+    state.lastProjectileHit = false
+    state.lastEvent = "projectile range ready"
+    return state
+}""",
+            """static func chargeProjectile(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startProjectileSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.projectileCharge = clampedProjectileCharge(next.projectileCharge + 1)
+    next.projectileInFlight = false
+    next.projectileTravel = 0
+    next.lastEvent = "charge \\(next.projectileCharge)"
+    return next
+}""",
+            """static func launchProjectile(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startProjectileSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    next.projectileShots += 1
+    next.projectileTravel = projectileTravelFrames
+    next.projectileInFlight = true
+    let hit = SystemFlags.hasProjectile && next.projectileLane == next.targetLane
+    next.lastProjectileHit = hit
+    if hit {
+        next.projectileHits += 1
+        next.score += scoreForHit(isPerfect: next.projectileCharge >= maxProjectileCharge)
+        next.lastEvent = "projectile hit"
+    } else {
+        next.lastEvent = "projectile miss"
+    }
+    next.targetLane = nextProjectileTargetLane(after: next.projectileShots)
+    next.projectileCharge = 1
+    if next.projectileHits >= projectileHitTarget {
+        return SessionControl.markResult(next, event: "target clear")
+    }
+    if next.projectileShots >= projectileShotLimit {
+        next.isFailureProofVisible = true
+        return SessionControl.markResult(next, event: "shots spent")
+    }
+    return next
+}""",
+            """static func advanceProjectileFrame(_ state: GameSessionState) -> GameSessionState {
+    launchProjectile(state)
+}""",
+            """static func projectileScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startProjectileSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startProjectileSession(sessionSeconds: fallback.sessionSeconds)
+        state = chargeProjectile(state)
+        state = launchProjectile(state)
+        return state
+    case "fail_or_hit":
+        var state = startProjectileSession(sessionSeconds: fallback.sessionSeconds)
+        state.projectileLane = state.targetLane
+        state = chargeProjectile(state)
+        state = chargeProjectile(state)
+        state = launchProjectile(state)
+        return state
+    case "results":
+        var state = startProjectileSession(sessionSeconds: fallback.sessionSeconds)
+        while state.projectileHits < projectileHitTarget {
+            state.projectileLane = state.targetLane
+            state = chargeProjectile(state)
+            state = chargeProjectile(state)
+            state = launchProjectile(state)
+        }
+        return state
+    default:
+        return fallback
+    }
+}""",
+        ),
+        content_section="""                if SystemFlags.hasProjectile || SystemFlags.hasShooting {
+                    HStack(spacing: 12) {
+                        Text("Shots \\(state.projectileShots)/\\(GameRules.projectileShotLimit)")
+                            .font(.caption.monospacedDigit())
+                        Text("Hits \\(state.projectileHits)")
+                            .font(.caption.monospacedDigit())
+                        Text("Charge \\(state.projectileCharge)")
+                            .font(.caption.monospacedDigit())
+                        Text("Aim \\(state.projectileLane + 1)")
+                            .font(.caption.monospacedDigit())
+                        Spacer()
+                    }
+
+                    HStack {
+                        Button("Aim Left") {
+                            state.projectileLane = GameRules.projectileLaneAfterAim(currentLane: state.projectileLane, direction: -1)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Aim Right") {
+                            state.projectileLane = GameRules.projectileLaneAfterAim(currentLane: state.projectileLane, direction: 1)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Charge") {
+                            state = GameRules.chargeProjectile(state)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Launch") {
+                            state = GameRules.launchProjectile(state)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Spacer()
+                    }
+                }
+""",
+        scene_properties=("playerEntity", "arenaEntity", "weaponEntity", "projectileEntity", "targetEntity"),
+        scene_bindings=(
+            ("playerEntity", frozenset({"player"})),
+            ("arenaEntity", frozenset({"arena", "environment"})),
+            ("weaponEntity", frozenset({"weapon"})),
+            ("projectileEntity", frozenset({"projectile"})),
+            ("targetEntity", frozenset({"target"})),
+        ),
+        system_flags_condition="SystemFlags.hasProjectile || SystemFlags.hasShooting",
+        scene_update_call="updateProjectile(state: state)",
+        start_session_call="startProjectileSession(sessionSeconds: sessionSeconds)",
+        advance_session_call="advanceProjectileFrame(state)",
+        screenshot_session_call="projectileScreenshotSession(for: screenshotState, fallback: fallback)",
+        scene_methods="""    func updateProjectile(state: GameSessionState) {
+        playerEntity?.position = [0, 0, -0.78]
+        playerEntity?.scale = state.isFailureProofVisible ? [0.92, 0.92, 0.92] : [1, 1, 1]
+
+        arenaEntity?.position.z = -Float(state.projectileShots % 4) * 0.03
+
+        weaponEntity?.isEnabled = SystemFlags.hasShooting
+        weaponEntity?.position = [xPosition(forProjectileLane: state.projectileLane) * 0.35, 0.12, -0.70]
+        weaponEntity?.scale = [1, 1, 1 + Float(state.projectileCharge - 1) * 0.10]
+
+        projectileEntity?.isEnabled = SystemFlags.hasProjectile
+        projectileEntity?.position = projectilePosition(state: state)
+        projectileEntity?.scale = state.lastProjectileHit ? [1.22, 1.22, 1.22] : [1, 1, 1]
+
+        targetEntity?.isEnabled = SystemFlags.hasProjectile || SystemFlags.hasShooting
+        targetEntity?.position.x = xPosition(forProjectileLane: state.targetLane)
+        targetEntity?.position.y = state.lastProjectileHit ? 0.16 : 0.08
+        targetEntity?.position.z = -1.38
+        targetEntity?.scale = state.lastProjectileHit ? [1.16, 1.16, 1.16] : [1, 1, 1]
+
+        cameraRigEntity?.transform = CameraRig.transform
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }
+
+    private func projectilePosition(state: GameSessionState) -> SIMD3<Float> {
+        let x = xPosition(forProjectileLane: state.projectileLane)
+        if state.projectileInFlight {
+            let travel = Float(min(state.projectileTravel, GameRules.projectileTravelFrames))
+            return [x, 0.18 + Float(state.projectileCharge) * 0.03, -0.70 - travel * 0.22]
+        }
+        return [x, 0.16, -0.70]
+    }
+
+    private func xPosition(forProjectileLane lane: Int) -> Float {
+        Float(GameRules.clampedProjectileLane(lane) - 1) * 0.45
     }""",
     )
 
@@ -727,6 +952,15 @@ def _ordered_unique(values: Iterable[str]) -> tuple[str, ...]:
         result.append(value)
         seen.add(value)
     return tuple(result)
+
+
+def _swift_member_name(declaration: str) -> str:
+    first_line = declaration.strip().splitlines()[0]
+    for prefix in ("var ", "static let ", "static var ", "static func "):
+        if first_line.startswith(prefix):
+            remainder = first_line[len(prefix) :]
+            return remainder.split("(", 1)[0].split(":", 1)[0].split("=", 1)[0].strip()
+    return first_line
 
 
 def _swift_string_literal(value: object) -> str:

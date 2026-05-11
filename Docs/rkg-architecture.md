@@ -21,6 +21,7 @@ RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot
 ```text
 idea.json
 -> rkg score-idea
+-> rkg new-spec or rkg new-game
 -> GameSpec.yaml
 -> rkg validate-spec
 -> rkg plan-game
@@ -63,6 +64,7 @@ Initial registry ids:
 | `stack_puzzle` | Place pieces. | Spawn piece, stack/collapse rule, height/result score. |
 | `wave_defense_lite` | Survive waves. | Spawn wave, target priority, health/result state. |
 | `fighter_2_5d` | Fixed side-view duel. | Attack, dodge, health, combo, guard cue, knockout/result state. |
+| `custom_realitykit` | Compose from camera, input, and systems. | Generic player/arena roles plus racing, weapon, enemy, cover, pickup, projectile, or obstacle proof roles. |
 
 ## Asset Role Taxonomy
 
@@ -71,6 +73,10 @@ RKG should reason in roles. RKP can still store asset `type`, but generated game
 | Role | Runtime meaning | Required fallback |
 | --- | --- | --- |
 | `player` | Player-controlled entity or avatar proxy. | Capsule, cube, or sphere with readable material. |
+| `vehicle` | Vehicle or mount proxy when the player role is not enough to describe the mesh. | Low box chassis with readable direction. |
+| `weapon` | Held, mounted, or screen-forward weapon proxy. | Thin metallic box or barrel-like primitive. |
+| `enemy` | Non-player threat or target actor. | Contrasting capsule or box. |
+| `cover` | Protective geometry or line-of-sight blocker. | Low wall or block. |
 | `target` | Entity that can be hit, tapped, collected, or cleared. | Sphere, ring, or billboard target. |
 | `opponent` | Opposing character, enemy proxy, or duel target. | Readable box or capsule with contrasting material. |
 | `obstacle` | Entity that causes miss, damage, or blocked movement. | Box, wall, cone, or lane marker. |
@@ -162,10 +168,12 @@ Responsibilities:
 | `GameSceneController.swift` | RealityKit scene lifecycle and per-archetype loop glue. |
 | `GameView.swift` | SwiftUI/RealityKit bridge only. |
 | `AssetLoader.swift` | Try accepted/imported USDZ by asset id; report fallback use. |
-| `FallbackFactory.swift` | Role-based procedural primitives. |
+| `FallbackFactory.swift` | Role- and fallback-id-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, launch argument/env parsing, and evidence paths, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `target_shooter` has a playable SwiftUI overlay loop and RealityKit state binding for start, hit scoring, perfect-hit feedback, finish/result, reset, target movement, result overlay, and scoring. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring. `fighter_2_5d` has a playable generated side-view duel loop with attack, swipe/tap dodge, damage test input, health, combo, guard meter, knockout/result state, hit VFX role binding, guard cue role binding, compact mobile HUD controls, and launch-state screenshot seeding for `round_start`, `mid_combo`, `perfect_dodge`, and `knockout`.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, launch argument/env parsing, and evidence paths, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role- and fallback-id-based procedural primitives. `target_shooter` has a playable SwiftUI overlay loop and RealityKit state binding for start, hit scoring, perfect-hit feedback, finish/result, reset, target movement, result overlay, and scoring. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring. `fighter_2_5d` has a playable generated side-view duel loop with attack, swipe/tap dodge, damage test input, health, combo, guard meter, knockout/result state, hit VFX role binding, guard cue role binding, compact mobile HUD controls, and launch-state screenshot seeding for `round_start`, `mid_combo`, `perfect_dodge`, and `knockout`. `custom_realitykit` currently generates a composable skeleton with camera/input/system metadata, fallback-id-driven placeholder meshes, asset briefs, store/QA docs, and screenshot gates; genre-specific movement/aiming modules are the next runtime slice.
+
+Generated projects also write `Docs/assets/<asset_id>.md` for every declared role. These are not acceptance records; they are RKP handoff briefs for the later asset import loop.
 
 The state-bound scene generators share one entity setup helper for the repeated `AssetLoader.loadPrimaryEntity`, initial position, anchor attachment, and first matching role-to-entity-reference binding. Archetype-specific scene controllers now own only their state update formulas and entity reference names.
 
@@ -173,12 +181,15 @@ The state-bound scene generators share one entity setup helper for the repeated 
 
 | Command | Purpose | First behavior |
 | --- | --- | --- |
+| `rkg new-spec <archetype>` | Write a starter GameSpec from a native archetype template. | Implemented for `fighter_2_5d`. |
+| `rkg new-game` | Write a composable `custom_realitykit` GameSpec from title, camera, input, and gameplay systems. | Implemented for racing and shooter/FPS-like skeletons with early validation. |
 | `rkg list-archetypes` | Show registry ids and short descriptions. | Text and `--json`. |
 | `rkg describe-archetype <id>` | Explain required roles, modules, screenshots, risk. | Text and `--json`. |
 | `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; does not write files. |
-| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, and JPEG/PNG header; does not drive simulator yet. |
+| `rkg capture-screenshots <dir>` | Build, install, launch screenshot states, and save simulator captures. | Starts with dry-run command planning; execution drives `xcrun simctl`. |
+| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, and readable dimensions. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
 | `rkg verify-game <dir>` | Run generated project tests and RKP doctor/release gate. | Implemented with command-only project verification. |
 
@@ -196,8 +207,8 @@ Current `verify-screenshots` behavior:
 - If `--plan qa-plan.json` is passed, consumes the machine-readable `rkg qa-plan --json` payload directly.
 - If no plan is passed, reads `<generated-project>/GameSpec.json` and rebuilds the QA plan.
 - Checks each `capture_path` under the generated project.
-- Reports `missing`, `not_file`, `empty`, `invalid_image`, or `ok`.
-- Accepts JPEG and PNG image headers.
+- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, or `ok`.
+- Accepts JPEG and PNG image headers only when the file carries readable dimensions of at least 300x300 pixels.
 - Exits nonzero when any planned screenshot evidence is missing or invalid.
 
 Current `plan-game --json` shape:
@@ -225,12 +236,14 @@ Current `plan-game --json` shape:
     {
       "asset_id": "target_basic",
       "role": "target",
+      "fallback": "procedural_rings",
       "variable": "targetBasic",
       "position": "[-0.45, 0.00, -1.25]"
     },
     {
       "asset_id": "arena_floor",
       "role": "arena",
+      "fallback": "procedural_grid",
       "variable": "arenaFloor",
       "position": "[0, -0.45, 0]"
     }

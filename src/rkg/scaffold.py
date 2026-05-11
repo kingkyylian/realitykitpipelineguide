@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from rkg.asset_briefs import asset_brief
 from rkg.archetype_runtime import archetype_rule_members, archetype_state_fields, indent_swift_block
 from rkg.content_views import content_view_swift
 from rkg.plan import runtime_entities_for, swift_identifier_for, swift_name_for
@@ -31,6 +32,8 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_json(output / "GameSpec.json", dict(spec))
     _write_json(output / "rkp.json", _rkp_config(swift_name))
     _write_json(output / "Tools" / "asset_manifest.json", _asset_manifest(spec))
+    for asset_id, asset in spec["assets"].items():
+        _write_text(output / "Docs" / "assets" / f"{asset_id}.md", asset_brief(str(asset_id), asset))
 
     _write_text(output / "project.yml", _project_yml(swift_name, display_name, bundle_suffix))
     _write_text(output / "Sources" / swift_name / f"{swift_name}App.swift", _app_swift(swift_name))
@@ -354,12 +357,16 @@ def _asset_loader_swift() -> str:
     return """import RealityKit
 
 enum AssetLoader {
-    static func loadPrimaryEntity(assetId: String, role: String) -> Entity {
+    static func loadPrimaryEntity(assetId: String, role: String, fallback: String) -> Entity {
         if let imported = try? Entity.load(named: assetId) {
             imported.scale = [1, 1, 1]
             return imported
         }
-        return FallbackFactory.makeFallback(role: role)
+        return FallbackFactory.makeFallback(role: role, fallback: fallback)
+    }
+
+    static func loadPrimaryEntity(assetId: String, role: String) -> Entity {
+        loadPrimaryEntity(assetId: assetId, role: role, fallback: "")
     }
 }
 """
@@ -370,6 +377,63 @@ def _fallback_factory_swift() -> str:
 import UIKit
 
 enum FallbackFactory {
+    static func makeFallback(role: String, fallback: String) -> ModelEntity {
+        switch fallback {
+        case "procedural_vehicle":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.30, 0.14, 0.46]),
+                materials: [SimpleMaterial(color: .systemBlue, roughness: 0.35, isMetallic: false)]
+            )
+        case "procedural_weapon":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.08, 0.08, 0.32]),
+                materials: [SimpleMaterial(color: .lightGray, roughness: 0.30, isMetallic: true)]
+            )
+        case "procedural_enemy":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.24, 0.38, 0.18]),
+                materials: [SimpleMaterial(color: .systemPink, roughness: 0.45, isMetallic: false)]
+            )
+        case "procedural_cover":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.44, 0.28, 0.18]),
+                materials: [SimpleMaterial(color: .gray, roughness: 0.70, isMetallic: false)]
+            )
+        case "procedural_track", "procedural_lane", "procedural_grid", "procedural_arena":
+            return ModelEntity(
+                mesh: .generatePlane(width: 2.4, depth: 2.4),
+                materials: [SimpleMaterial(color: .darkGray, roughness: 0.8, isMetallic: false)]
+            )
+        case "procedural_block", "procedural_box":
+            return ModelEntity(
+                mesh: .generateBox(size: 0.28),
+                materials: [SimpleMaterial(color: .systemOrange, roughness: 0.5, isMetallic: false)]
+            )
+        case "procedural_gate":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.50, 0.32, 0.05]),
+                materials: [SimpleMaterial(color: .systemTeal, roughness: 0.35, isMetallic: false)]
+            )
+        case "procedural_pickup":
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.12),
+                materials: [SimpleMaterial(color: .systemGreen, roughness: 0.35, isMetallic: false)]
+            )
+        case "procedural_spark":
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.07),
+                materials: [SimpleMaterial(color: .systemYellow, roughness: 0.25, isMetallic: false)]
+            )
+        case "procedural_ring", "procedural_guard":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.36, 0.04, 0.04]),
+                materials: [SimpleMaterial(color: .systemTeal, roughness: 0.25, isMetallic: false)]
+            )
+        default:
+            return makeFallback(role: role)
+        }
+    }
+
     static func makeFallback(role: String) -> ModelEntity {
         switch role {
         case "arena", "environment":
@@ -391,6 +455,26 @@ enum FallbackFactory {
             return ModelEntity(
                 mesh: .generateBox(size: [0.24, 0.46, 0.16]),
                 materials: [SimpleMaterial(color: .systemPurple, roughness: 0.45, isMetallic: false)]
+            )
+        case "enemy":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.24, 0.38, 0.18]),
+                materials: [SimpleMaterial(color: .systemPink, roughness: 0.45, isMetallic: false)]
+            )
+        case "vehicle":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.30, 0.14, 0.46]),
+                materials: [SimpleMaterial(color: .systemBlue, roughness: 0.35, isMetallic: false)]
+            )
+        case "weapon":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.08, 0.08, 0.32]),
+                materials: [SimpleMaterial(color: .lightGray, roughness: 0.30, isMetallic: true)]
+            )
+        case "cover":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.44, 0.28, 0.18]),
+                materials: [SimpleMaterial(color: .gray, roughness: 0.70, isMetallic: false)]
             )
         case "hit_vfx":
             return ModelEntity(
@@ -450,8 +534,9 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
     variable = entity["variable"]
     asset_id = _swift_string_literal(entity["asset_id"])
     role = _swift_string_literal(entity["role"])
+    fallback = _swift_string_literal(entity["fallback"])
     position = entity["position"]
-    return f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role})
+    return f"""        let {variable} = AssetLoader.loadPrimaryEntity(assetId: {asset_id}, role: {role}, fallback: {fallback})
         {variable}.position = {position}
         anchor.addChild({variable})"""
 

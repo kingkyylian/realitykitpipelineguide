@@ -112,12 +112,20 @@ Minimum idea file:
 
 `score-idea` returns `pass`, `revise`, or `reject`. Rejected ideas should not reach `rkg init-game`.
 
-Before writing a generated project, preview it:
+Before writing a generated project, either start from a native archetype template or compose a generic RealityKit skeleton:
 
 ```bash
-python3 Tools/rkg.py validate-spec GameSpec.yaml
-python3 Tools/rkg.py plan-game GameSpec.yaml
-python3 Tools/rkg.py qa-plan GameSpec.yaml
+python3 Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output GameSpec.json
+python3 Tools/rkg.py validate-spec GameSpec.json
+python3 Tools/rkg.py plan-game GameSpec.json
+python3 Tools/rkg.py qa-plan GameSpec.json
+```
+
+```bash
+python3 Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output GameSpec.json
+python3 Tools/rkg.py validate-spec GameSpec.json
+python3 Tools/rkg.py plan-game GameSpec.json
+python3 Tools/rkg.py qa-plan GameSpec.json
 ```
 
 `plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives, `FeedbackState.swift` for last-event display text, `InputIntent.swift` for primary/reset button labels, and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation. The seed archetypes, including `target_shooter`, use the same shared state/result surface before adding deeper mechanics. Archetype rules should use `SessionControl.markResult` for result/fail transitions after setting their own gameplay-specific flags.
@@ -132,7 +140,7 @@ python3 Tools/rkg.py qa-plan GameSpec.yaml --json > qa-plan.json
 python3 Tools/rkg.py verify-screenshots GeneratedGame --plan qa-plan.json --json
 ```
 
-`verify-screenshots` checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image header. It does not drive the simulator yet; it is the evidence gate that capture automation must satisfy.
+`capture-screenshots` builds the generated project, installs it on a simulator, launches each screenshot state, and writes the capture files. `verify-screenshots` then checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image with readable dimensions.
 
 ### 2. Vertical Slice
 
@@ -201,6 +209,10 @@ Start with small, replayable game shapes. The order below is not product priorit
 | Stack puzzle | Short sessions and strong screenshot clarity. |
 | Wave defense lite | Reuses target/spawn/scoring systems, but has higher scope. |
 | 2.5D fighter | Fixed side-view duel loop with attack, dodge, health, combo, and knockout states. |
+| Custom RealityKit skeleton | Composable camera/input/system starter for racing, FPS, shooter, collector, or other broad prototypes before a native archetype exists. |
+
+For the end-to-end fighter skeleton path, see `Docs/rkg-fighter-walkthrough.md`.
+For generic racing/FPS examples, see `Docs/rkg-generic-skeleton.md`.
 
 Avoid first-wave games that require multiplayer, large maps, complex animation, or moderation.
 
@@ -209,7 +221,7 @@ Before deepening one archetype, define the shared template contract:
 | Contract | Required output |
 | --- | --- |
 | Runtime loop | Start, core action, feedback, fail/miss, reset, result. |
-| Asset roles | Gameplay target, opponent, obstacle, player piece, arena, pickup, hit VFX, guard cue, UI prop, or environment. |
+| Asset roles | Gameplay target, player piece, vehicle, weapon, enemy, cover, opponent, obstacle, arena, pickup, projectile, hit VFX, guard cue, UI prop, or environment. |
 | Fallbacks | Every role has a procedural fallback until RKP accepts imported art. |
 | Verification | Generated project can run tests, build, and capture the required screenshot states. |
 | Store pack | Metadata and screenshots describe actual generated gameplay. |

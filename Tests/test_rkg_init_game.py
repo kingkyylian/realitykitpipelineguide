@@ -155,6 +155,34 @@ def fighter_spec() -> dict:
     return spec
 
 
+def custom_racing_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "desert_chase"
+    spec["game"]["display_name"] = "Desert Chase"
+    spec["game"]["archetype"] = "custom_realitykit"
+    spec["game"]["camera"] = "chase"
+    spec["game"]["input"] = "tilt_tap"
+    spec["game"]["systems"] = ["racing", "lap_timer", "collision"]
+    spec["loop"]["player_action"] = "steer through the course"
+    spec["loop"]["fail_condition"] = "collision ends the run"
+    spec["assets"] = {
+        "player_vehicle": {
+            "type": "vehicle_proxy",
+            "role": "player",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_vehicle",
+        },
+        "race_track": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_track",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
+    return spec
+
+
 def toss_physics_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "toss_arc"
@@ -307,6 +335,25 @@ class RkgInitGameTests(unittest.TestCase):
             monetization = (output / "Docs" / "store" / "monetization.md").read_text(encoding="utf-8")
             self.assertIn("Model: paid", monetization)
 
+    def test_init_game_writes_role_asset_briefs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, fighter_spec())
+            output = root / "NeonRingDuel"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            player_brief = output / "Docs" / "assets" / "fighter_player.md"
+            opponent_brief = output / "Docs" / "assets" / "fighter_opponent.md"
+            self.assertTrue(player_brief.exists())
+            self.assertTrue(opponent_brief.exists())
+            text = player_brief.read_text(encoding="utf-8")
+            self.assertIn("# Asset Brief: fighter_player", text)
+            self.assertIn("- Role: player", text)
+            self.assertIn("- Fallback: procedural_capsule", text)
+            self.assertIn("- [ ] Runtime screenshot evidence captured before imported status.", text)
+
     def test_init_game_escapes_swift_string_literals_from_spec_text(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -339,9 +386,36 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("GameSceneController()", game_view)
             self.assertNotIn("Entity.load(named:", game_view)
             self.assertIn("try? Entity.load(named: assetId)", asset_loader)
-            self.assertIn('loadPrimaryEntity(assetId: "target_basic", role: "target")', scene_controller)
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "target_basic", role: "target", fallback: "procedural_rings")',
+                scene_controller,
+            )
             self.assertNotIn("cameraTransform =", scene_controller)
             self.assertIn("makeFallback(role: String)", fallback_factory)
+
+    def test_init_game_passes_declared_fallbacks_to_runtime_loader(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_racing_spec())
+            output = root / "DesertChase"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            scene_controller = (output / "Sources" / "DesertChase" / "GameSceneController.swift").read_text(encoding="utf-8")
+            asset_loader = (output / "Sources" / "DesertChase" / "AssetLoader.swift").read_text(encoding="utf-8")
+            fallback_factory = (output / "Sources" / "DesertChase" / "FallbackFactory.swift").read_text(encoding="utf-8")
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "player_vehicle", role: "player", fallback: "procedural_vehicle")',
+                scene_controller,
+            )
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "race_track", role: "arena", fallback: "procedural_track")',
+                scene_controller,
+            )
+            self.assertIn("static func loadPrimaryEntity(assetId: String, role: String, fallback: String)", asset_loader)
+            self.assertIn('case "procedural_vehicle":', fallback_factory)
+            self.assertIn('case "procedural_track", "procedural_lane", "procedural_grid", "procedural_arena":', fallback_factory)
 
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -353,9 +427,18 @@ class RkgInitGameTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             scene_controller = (output / "Sources" / "LaneDash" / "GameSceneController.swift").read_text(encoding="utf-8")
-            self.assertIn('loadPrimaryEntity(assetId: "runner", role: "player")', scene_controller)
-            self.assertIn('loadPrimaryEntity(assetId: "crate", role: "obstacle")', scene_controller)
-            self.assertIn('loadPrimaryEntity(assetId: "lane_floor", role: "arena")', scene_controller)
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "runner", role: "player", fallback: "procedural_capsule")',
+                scene_controller,
+            )
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "crate", role: "obstacle", fallback: "procedural_box")',
+                scene_controller,
+            )
+            self.assertIn(
+                'loadPrimaryEntity(assetId: "lane_floor", role: "arena", fallback: "procedural_grid")',
+                scene_controller,
+            )
             self.assertNotIn('FallbackFactory.makeFallback(role: "arena")', scene_controller)
 
     def test_init_game_generates_playable_target_shooter_loop(self) -> None:

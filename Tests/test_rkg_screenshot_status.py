@@ -12,7 +12,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from rkg.qa_plan import build_qa_plan
-from rkg.screenshot_status import build_screenshot_status
+from rkg.screenshot_status import build_screenshot_status, build_screenshot_status_for_project
 
 
 def target_spec(screenshots: list[str] | None = None) -> dict:
@@ -67,7 +67,12 @@ class RkgScreenshotStatusTests(unittest.TestCase):
 
     def write_jpeg_stub(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"\xff\xd8\xff\xe0rkg screenshot evidence\xff\xd9")
+        path.write_bytes(
+            b"\xff\xd8"
+            b"\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
+            b"\xff\xc0\x00\x11\x08\x01\xe0\x02\x80\x03\x01\x11\x00\x02\x11\x00\x03\x11\x00"
+            b"\xff\xd9"
+        )
 
     def test_build_screenshot_status_reports_missing_files_from_qa_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -94,6 +99,20 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             self.assertTrue(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "ok")
             self.assertGreater(payload["checks"][0]["bytes"], 0)
+
+    def test_verify_screenshots_rejects_header_only_jpeg(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            self.write_json(project / "GameSpec.json", target_spec())
+            fake = project / "Docs" / "screenshots" / "gameplay_start.jpg"
+            fake.parent.mkdir(parents=True, exist_ok=True)
+            fake.write_bytes(b"\xff\xd8\xff\xe0fake\xff\xd9")
+
+            payload = build_screenshot_status_for_project(project)
+
+            first = payload["checks"][0]
+            self.assertFalse(payload["ok"])
+            self.assertEqual(first["status"], "invalid_dimensions")
 
     def test_verify_screenshots_cli_consumes_qa_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -72,10 +72,37 @@ def _image_file_status(path: Path) -> tuple[str, int]:
     if size == 0:
         return "empty", 0
     with path.open("rb") as handle:
-        header = handle.read(12)
-    if _is_supported_image_header(header):
-        return "ok", size
-    return "invalid_image", size
+        data = handle.read()
+    if not _is_supported_image_header(data[:12]):
+        return "invalid_image", size
+    dimensions = _image_dimensions(data)
+    if dimensions is None or dimensions[0] < 300 or dimensions[1] < 300:
+        return "invalid_dimensions", size
+    return "ok", size
+
+
+def _image_dimensions(data: bytes) -> tuple[int, int] | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= 24:
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    if data.startswith(b"\xff\xd8"):
+        index = 2
+        while index + 9 < len(data):
+            if data[index] != 0xFF:
+                index += 1
+                continue
+            marker = data[index + 1]
+            index += 2
+            if marker in {0xD8, 0xD9}:
+                continue
+            if index + 2 > len(data):
+                return None
+            length = int.from_bytes(data[index:index + 2], "big")
+            if marker in {0xC0, 0xC1, 0xC2} and index + 7 < len(data):
+                height = int.from_bytes(data[index + 3:index + 5], "big")
+                width = int.from_bytes(data[index + 5:index + 7], "big")
+                return width, height
+            index += max(length, 2)
+    return None
 
 
 def _is_supported_image_header(header: bytes) -> bool:

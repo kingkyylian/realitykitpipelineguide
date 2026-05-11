@@ -76,11 +76,20 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
             ],
         )
 
-        self.assertIn('let runner = AssetLoader.loadPrimaryEntity(assetId: "runner", role: "player")', entity_lines)
+        self.assertIn(
+            'let runner = AssetLoader.loadPrimaryEntity(assetId: "runner", role: "player", fallback: "procedural_capsule")',
+            entity_lines,
+        )
         self.assertIn("playerEntity = runner", entity_lines)
-        self.assertIn('let crate = AssetLoader.loadPrimaryEntity(assetId: "crate", role: "obstacle")', entity_lines)
+        self.assertIn(
+            'let crate = AssetLoader.loadPrimaryEntity(assetId: "crate", role: "obstacle", fallback: "procedural_box")',
+            entity_lines,
+        )
         self.assertIn("obstacleEntity = crate", entity_lines)
-        self.assertIn('let spike = AssetLoader.loadPrimaryEntity(assetId: "spike", role: "obstacle")', entity_lines)
+        self.assertIn(
+            'let spike = AssetLoader.loadPrimaryEntity(assetId: "spike", role: "obstacle", fallback: "procedural_box")',
+            entity_lines,
+        )
         self.assertEqual(entity_lines.count("obstacleEntity ="), 1)
 
     def test_screenshot_state_generator_emits_typed_release_states(self) -> None:

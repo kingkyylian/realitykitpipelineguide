@@ -12,6 +12,93 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 114: Generic RealityKit Skeleton Generator
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** RKG'yi sadece fighter veya target shooter hattı olmaktan çıkarıp, yarış/FPS/shooter gibi broad RealityKit fikirleri için `camera + input + systems` üzerinden sıfırdan skeleton GameSpec ve generated project üretebilen ilk generic tool dilimine taşımak.
+
+**Yapılanlar:**
+
+- `rkg new-game --title ... --camera ... --input ... --systems ... --output ...` komutu eklendi.
+- `custom_realitykit` registry kaydı eklendi: `fixed_non_ar`, `chase`, `first_person`, `third_person`, `top_down` camera; `tap`, `drag`, `tilt_tap`, `dual_stick`, `gamepad_touch`, `tap_swipe` input; racing/shooter/physics/health/cover gibi sistemler.
+- Racing skeleton `player_vehicle`, `race_track`, `track_obstacle`, `checkpoint_gate` rolleriyle; FPS/shooter skeleton `player_proxy`, `arena_space`, `weapon_proxy`, `enemy_proxy`, `cover_block` rolleriyle üretilebiliyor.
+- `new-game` unsupported system, camera ve input değerlerini spec yazmadan önce reddediyor.
+- Generated runtime entity planı artık asset'in declared fallback id'sini taşıyor; `AssetLoader` ve `FallbackFactory` role yanında fallback id ile de placeholder mesh seçiyor.
+- Vehicle, weapon, enemy, cover, track/gate gibi generic fallback primitive'leri eklendi.
+- `Docs/rkg-generic-skeleton.md` generic racing/FPS walkthrough olarak eklendi; `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Docs/ai-handoff.md`, ve `CHANGELOG.md` güncellendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_new_game Tests.test_rkg_archetypes: ok, 12 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_passes_declared_fallbacks_to_runtime_loader: expected red before fallback runtime fix; then ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_passes_declared_fallbacks_to_runtime_loader Tests.test_rkg_scaffold_generators Tests.test_rkg_plan_game: ok, 13 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_new_game Tests.test_rkg_init_game Tests.test_rkg_plan_game Tests.test_rkg_archetypes Tests.test_rkg_scaffold_generators: ok, 51 tests
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 189 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-generic-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py validate-spec Build/rkg-generic-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-generic-final/GameSpec.json --output Build/rkg-generic-final/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-generic-final/DesertChase: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-generic-final/DesertChase --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-generic-final/DesertChase: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health --output Build/rkg-generic-fps-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py validate-spec Build/rkg-generic-fps-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-generic-fps-final/GameSpec.json --output Build/rkg-generic-fps-final/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-generic-fps-final/RoomBreach: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-generic-fps-final/RoomBreach --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-generic-fps-final/RoomBreach: ok, 4 screenshots
+```
+
+**Öğrenme notu:**
+
+Generic generator için doğru ilk hedef full racing/FPS gameplay değil, boş Xcode projesi yerine doğrulanabilir RealityKit skeleton üretmek. `new-game` ile kullanıcı camera/input/systems seçiyor; RKG valid spec, role-aware placeholder mesh, asset brief, store/QA docs, build gate ve screenshot gate'i hazırlıyor. Sonraki anlamlı slice `CameraRig.swift`, `InputController.swift`, vehicle movement, first-person aim, projectile/hitscan, health ve collision adapter'ları.
+
+**Karar:**
+
+RKG ürün yönü iki kola ayrıldı: `new-spec` native archetype template üretir, `new-game` generic `custom_realitykit` skeleton üretir. Generic skeleton shipping claim değildir; runtime sistemleri derinleşene kadar üretilebilir başlangıç projesi ve QA kontratı olarak konumlanacak.
+
+### Sprint 113: RKG Fighter Zero-to-Skeleton Path
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Sıfırdan gelen kullanıcının JSON kopyalamadan `fighter_2_5d` GameSpec üretmesi, RealityKit projesi scaffold etmesi, generated app'i doğrulaması ve simulator screenshot kanıtlarını RKG ile capture etmesi.
+
+**Yapılanlar:**
+
+- `rkg new-spec fighter_2_5d --title ... --output ...` komutu eklendi.
+- Generated `init-game` çıktısı her role asset için `Docs/assets/<asset_id>.md` brief dosyası yazıyor.
+- `rkg capture-screenshots` dry-run planı ve gerçek simulator execution path'i eklendi.
+- `verify-screenshots` header-only fake image dosyalarını reddedecek şekilde JPEG/PNG dimension kontrolü kazandı.
+- `Docs/rkg-fighter-walkthrough.md` sıfırdan fighter skeleton akışını belgeliyor.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_new_spec Tests.test_rkg_validate_spec: ok, 8 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_writes_role_asset_briefs Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_fighter_state_and_rules: ok, 2 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_capture Tests.test_rkg_qa_plan: ok, 6 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_screenshot_status: ok, 5 tests
+rtk .venv/bin/python Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output Build/rkg-fighter-capture/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-fighter-capture/GameSpec.json --output Build/rkg-fighter-capture/NeonRingDuel --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-fighter-capture/NeonRingDuel: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-fighter-capture/NeonRingDuel --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-fighter-capture/NeonRingDuel: ok, 4 screenshots
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 182 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+rtk .venv/bin/python Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output Build/rkg-fighter-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py validate-spec Build/rkg-fighter-final/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-fighter-final/GameSpec.json --output Build/rkg-fighter-final/NeonRingDuel --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-fighter-final/NeonRingDuel: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-fighter-final/NeonRingDuel --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-fighter-final/NeonRingDuel: ok, 4 screenshots
+```
+
+**Öğrenme notu:**
+
+Fighter skeleton için kritik eksik yeni archetype değil, sıfırdan başlama yüzeyi ve gerçek screenshot automation kapısıydı. `new-spec` ve `capture-screenshots` birlikte JSON kopyalama ve manuel simulator adımlarını azaltıyor.
+
 ### Sprint 112: Module 4 Metallic Value Comparison
 
 **Durum:** Tamamlandı

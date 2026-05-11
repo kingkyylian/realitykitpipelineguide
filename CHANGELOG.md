@@ -8,12 +8,16 @@
 - Added configured material-map reporting to `rkp inspect-usdz --json` while keeping `baseColorTexture` as a compatibility alias.
 - Added native RKG `fighter_2_5d` archetype support with fixed side-view duel validation, generated Swift gameplay state/rules, RealityKit role binding, launch-state screenshot automation, and simulator screenshot evidence.
 - Added a fourth `material_response_targets` comparison panel for metallic material-value behavior.
+- Added the zero-to-skeleton RKG fighter walkthrough and screenshot capture path.
+- Added `rkg new-game` and the `custom_realitykit` skeleton path for generic racing, FPS/shooter, and other composable RealityKit starts.
 
 ### Changed
 
 - Extended the direct USDZ fallback builder so supported teaching drafts can package manifest-configured baseColor and roughness maps when Blender background export crashes.
 - Improved `material_response_targets` roughness readability with high-contrast roughness values, a curved neutral witness patch, and grazing fixture lights.
 - Kept Module 4 metallic comparison as a material value instead of adding an unproven metallic texture map.
+- Expanded RKG role planning and procedural fallback coverage for vehicle, weapon, enemy, and cover-style skeleton roles.
+- Routed generated RKG runtime loading through each asset's declared fallback id, so generic skeletons can show vehicle, track, weapon, enemy, and cover placeholders before USDZ import.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

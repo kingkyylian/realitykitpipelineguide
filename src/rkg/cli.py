@@ -6,12 +6,14 @@ import sys
 from pathlib import Path
 
 from rkg.archetypes import describe_archetype, list_archetypes
+from rkg.capture import build_capture_plan, execute_capture_plan
 from rkg.idea_score import load_idea, score_game_idea
 from rkg.plan import build_game_plan
 from rkg.qa_plan import build_qa_plan
 from rkg.scaffold import init_game
 from rkg.screenshot_status import build_screenshot_status, build_screenshot_status_for_project, load_qa_plan
 from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
+from rkg.spec_templates import build_game_template, build_spec_template
 from rkg.verify import verify_game
 
 
@@ -26,6 +28,18 @@ def main() -> int:
     init.add_argument("spec", help="Path to GameSpec.json or GameSpec.yaml")
     init.add_argument("--output", required=True, help="Output game directory")
     init.add_argument("--force", action="store_true", help="Overwrite known generated files in the output directory")
+
+    new_spec = subparsers.add_parser("new-spec", help="Write a starter GameSpec for an archetype")
+    new_spec.add_argument("archetype", help="Archetype id")
+    new_spec.add_argument("--title", required=True, help="Display title for the generated game")
+    new_spec.add_argument("--output", required=True, help="Output GameSpec.json path")
+
+    new_game = subparsers.add_parser("new-game", help="Write a composable RealityKit skeleton GameSpec")
+    new_game.add_argument("--title", required=True, help="Display title for the generated game")
+    new_game.add_argument("--camera", required=True, help="Camera rig: fixed_non_ar, chase, first_person, third_person, or top_down")
+    new_game.add_argument("--input", required=True, dest="input_model", help="Input model such as tap, drag, dual_stick, or tilt_tap")
+    new_game.add_argument("--systems", required=True, help="Comma-separated gameplay systems")
+    new_game.add_argument("--output", required=True, help="Output GameSpec.json path")
 
     score_idea = subparsers.add_parser("score-idea", help="Evaluate a game idea before scaffolding")
     score_idea.add_argument("idea", help="Path to idea JSON or YAML")
@@ -55,10 +69,40 @@ def main() -> int:
     verify_screenshots.add_argument("--plan", help="Path to qa-plan JSON from `rkg qa-plan --json`")
     verify_screenshots.add_argument("--json", action="store_true", help="Print machine-readable screenshot status")
 
+    capture = subparsers.add_parser("capture-screenshots", help="Capture generated screenshot states on a simulator")
+    capture.add_argument("project", help="Path to generated game directory")
+    capture.add_argument("--device", default="booted", help="Simulator UDID or 'booted'")
+    capture.add_argument("--dry-run", action="store_true", help="Print planned commands without running them")
+    capture.add_argument("--json", action="store_true", help="Print machine-readable capture plan")
+
     verify = subparsers.add_parser("verify-game", help="Run verification gates for a generated RKG project")
     verify.add_argument("project", help="Path to generated game directory")
 
     args = parser.parse_args()
+
+    if args.command == "new-spec":
+        try:
+            payload = build_spec_template(args.archetype, args.title)
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(f"wrote GameSpec: {Path(args.output)}")
+        return 0
+
+    if args.command == "new-game":
+        try:
+            payload = build_game_template(args.title, args.camera, args.input_model, [args.systems])
+            output = Path(args.output)
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        except (OSError, ValueError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        print(f"wrote GameSpec: {Path(args.output)}")
+        return 0
 
     if args.command == "init-game":
         try:
@@ -190,6 +234,31 @@ def main() -> int:
             for check in payload["checks"]:
                 print(f"{check['order']}. {check['state']}: {check['status']} -> {check['capture_path']}")
         return 0 if payload["ok"] else 1
+
+    if args.command == "capture-screenshots":
+        try:
+            payload = build_capture_plan(Path(args.project), device=args.device)
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(json.dumps(payload, indent=2, sort_keys=True))
+        else:
+            print(f"capture plan: {payload['project']}")
+            print("build: " + " ".join(payload["build"]))
+            print("install: " + " ".join(payload["install"]))
+            for step in payload["steps"]:
+                print(f"{step['order']}. {step['state']}: {' '.join(step['launch'])}")
+                print(f"   screenshot: {step['screenshot']}")
+        if args.dry_run:
+            return 0
+        result = execute_capture_plan(payload)
+        if args.json:
+            print(json.dumps(result, indent=2, sort_keys=True))
+        else:
+            for completed in result["completed"]:
+                print(("ok" if completed["exit_code"] == 0 else "fail") + ": " + " ".join(completed["command"]))
+        return 0 if result["ok"] else 1
 
     if args.command == "verify-game":
         return verify_game(Path(args.project))

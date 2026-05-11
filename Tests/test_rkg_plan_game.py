@@ -155,11 +155,24 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(
             payload["runtime_entities"],
             [
-                {"asset_id": "runner", "role": "player", "variable": "runner", "position": "[0, 0, -0.85]"},
-                {"asset_id": "crate", "role": "obstacle", "variable": "crate", "position": "[0.00, 0.00, -1.25]"},
+                {
+                    "asset_id": "runner",
+                    "role": "player",
+                    "fallback": "procedural_capsule",
+                    "variable": "runner",
+                    "position": "[0, 0, -0.85]",
+                },
+                {
+                    "asset_id": "crate",
+                    "role": "obstacle",
+                    "fallback": "procedural_box",
+                    "variable": "crate",
+                    "position": "[0.00, 0.00, -1.25]",
+                },
                 {
                     "asset_id": "lane_floor",
                     "role": "arena",
+                    "fallback": "procedural_grid",
                     "variable": "laneFloor",
                     "position": "[0, -0.45, 0]",
                 },
@@ -178,14 +191,27 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(
             payload["runtime_entities"],
             [
-                {"asset_id": "fighter_player", "role": "player", "variable": "fighterPlayer", "position": "[0, 0, -0.85]"},
+                {
+                    "asset_id": "fighter_player",
+                    "role": "player",
+                    "fallback": "procedural_capsule",
+                    "variable": "fighterPlayer",
+                    "position": "[0, 0, -0.85]",
+                },
                 {
                     "asset_id": "fighter_opponent",
                     "role": "opponent",
+                    "fallback": "procedural_capsule",
                     "variable": "fighterOpponent",
                     "position": "[0.35, 0, -0.85]",
                 },
-                {"asset_id": "duel_arena", "role": "arena", "variable": "duelArena", "position": "[0, -0.45, 0]"},
+                {
+                    "asset_id": "duel_arena",
+                    "role": "arena",
+                    "fallback": "procedural_lane",
+                    "variable": "duelArena",
+                    "position": "[0, -0.45, 0]",
+                },
             ],
         )
 

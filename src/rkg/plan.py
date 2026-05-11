@@ -102,6 +102,7 @@ def runtime_entities_for(spec: Mapping[str, Any]) -> list[JsonDict]:
             {
                 "asset_id": str(asset_id),
                 "role": role,
+                "fallback": str(asset.get("fallback") or "procedural_fallback"),
                 "variable": swift_identifier_for(str(asset_id)),
                 "position": _entity_position_for(role, index),
             }
@@ -121,13 +122,13 @@ def _asset_role(asset: Mapping[str, Any]) -> str:
 
 
 def _entity_position_for(role: str, index: int) -> str:
-    if role in {"arena", "environment"}:
+    if role in {"arena", "environment", "track"}:
         return "[0, -0.45, 0]"
-    if role == "player":
+    if role in {"player", "vehicle"}:
         return "[0, 0, -0.85]"
-    if role == "opponent":
+    if role in {"opponent", "enemy"}:
         return "[0.35, 0, -0.85]"
-    if role in {"target", "obstacle", "hazard"}:
+    if role in {"target", "obstacle", "hazard", "cover"}:
         x = -0.45 + (index % 3) * 0.45
         z = -1.25 - (index // 3) * 0.25
         return _vector_literal(x, 0, z)
@@ -135,6 +136,8 @@ def _entity_position_for(role: str, index: int) -> str:
         return "[0.45, 0.12, -1.0]"
     if role == "projectile":
         return "[0, 0.2, -0.65]"
+    if role == "weapon":
+        return "[0.18, 0.12, -0.72]"
     if role == "hit_vfx":
         return "[0.03, 0.18, -0.86]"
     if role in {"guard_cue", "telegraph"}:

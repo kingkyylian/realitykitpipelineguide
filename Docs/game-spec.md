@@ -73,6 +73,83 @@ python3 Tools/rkg.py validate-spec GameSpec.yaml --json
 
 Role-aware specs are preferred because they let RKG generate role-specific loaders, fallbacks, screenshots, and store checklists. RKP still owns the final asset acceptance state.
 
+## Starter Specs
+
+Use `rkg new-spec` when starting from zero instead of hand-writing `GameSpec.json`.
+
+```bash
+python3 Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output GameSpec.json
+python3 Tools/rkg.py validate-spec GameSpec.json
+```
+
+Use `rkg new-game` when the idea is broader than a built-in archetype and should begin as a composable RealityKit skeleton.
+
+```bash
+python3 Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output GameSpec.json
+python3 Tools/rkg.py validate-spec GameSpec.json
+```
+
+`new-game` writes `game.archetype: custom_realitykit` and rejects unsupported camera rigs, input models, and gameplay systems before it writes the file.
+
+## Custom RealityKit Skeleton Example
+
+`custom_realitykit` is the generic path for racing, FPS, shooter, collector, top-down, and other early RealityKit prototypes before they become native archetypes.
+
+```yaml
+game:
+  id: desert_chase
+  display_name: Desert Chase
+  archetype: custom_realitykit
+  session_seconds: 60
+  camera: chase
+  input: tilt_tap
+  monetization: paid
+  systems:
+    - racing
+    - lap_timer
+    - collision
+
+loop:
+  player_action: steer through the course, avoid obstacles, and complete laps
+  fail_condition: collision or timer pressure ends the run
+  scoring:
+    hit: 10
+    perfect: 25
+    lap: 100
+
+assets:
+  player_vehicle:
+    type: vehicle_proxy
+    role: player
+    budget: "1800 tris / 512 texture"
+    fallback: procedural_vehicle
+  race_track:
+    type: environment
+    role: arena
+    budget: "1200 tris / 512 texture"
+    fallback: procedural_track
+  track_obstacle:
+    type: hazard
+    role: obstacle
+    budget: "700 tris / 512 texture"
+    fallback: procedural_block
+  checkpoint_gate:
+    type: ui_prop
+    role: ui_prop
+    budget: "500 tris / 512 texture"
+    fallback: procedural_gate
+
+release:
+  devices:
+    - iPhone 15
+    - iPad
+  screenshots:
+    - gameplay_start
+    - mid_action
+    - fail_or_hit
+    - results
+```
+
 ## 2.5D Fighter Example
 
 `fighter_2_5d` is the first native duel archetype. It requires `player`, `opponent`, and `arena` roles, can bind optional `hit_vfx`, `guard_cue`, `telegraph`, `ui_prop`, and `environment` roles, and can launch directly into each screenshot state with `--rkg-screenshot-state <state>`.

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from rkg.plan import runtime_entities_for
@@ -25,6 +25,7 @@ class CustomRealityKitRuntimeAdapter:
     advance_session_call: str
     screenshot_session_call: str
     scene_methods: str
+    screenshot_proofs: Mapping[str, str] = field(default_factory=dict)
 
 
 _CORE_STATE_FIELDS = (
@@ -42,6 +43,14 @@ def custom_realitykit_runtime_adapters() -> tuple[CustomRealityKitRuntimeAdapter
     )
 
 
+def custom_realitykit_adapter_for_systems(systems: Iterable[str]) -> CustomRealityKitRuntimeAdapter | None:
+    system_set = set(systems)
+    for adapter in custom_realitykit_runtime_adapters():
+        if _adapter_matches_systems(adapter.id, system_set):
+            return adapter
+    return None
+
+
 def custom_realitykit_adapter_capabilities() -> list[dict[str, object]]:
     records: list[dict[str, object]] = []
     for adapter in custom_realitykit_runtime_adapters():
@@ -56,6 +65,18 @@ def custom_realitykit_adapter_capabilities() -> list[dict[str, object]]:
             }
         )
     return records
+
+
+def _adapter_matches_systems(adapter_id: str, systems: set[str]) -> bool:
+    if adapter_id == "racing":
+        return "racing" in systems
+    if adapter_id == "projectile":
+        return bool({"projectile", "shooting"} & systems)
+    if adapter_id == "shooter":
+        return bool({"weapon", "hitscan", "enemies", "health", "cover"} & systems)
+    if adapter_id == "collector":
+        return bool({"collect", "timer"} & systems)
+    return False
 
 
 def custom_realitykit_state_fields() -> list[str]:
@@ -282,6 +303,12 @@ def _racing_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
     private func xPosition(forRaceLane lane: Int) -> Float {
         Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
     }""",
+        screenshot_proofs={
+            "gameplay_start": "Launch with gameplay_start; state.lastEvent == \"race started\", currentLap == 1, and vehicle/track roles are visible.",
+            "mid_action": "Launch with mid_action; advanceRacingFrame has run once, raceDistance > 0, and checkpoint proof is visible.",
+            "fail_or_hit": "Launch with fail_or_hit; collision proof is seeded when vehicleLane meets obstacleLane, state.isFailureProofVisible == true.",
+            "results": "Launch with results; state.phase == .result and race result UI is visible.",
+        },
     )
 
 
@@ -490,6 +517,12 @@ def _projectile_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
     private func xPosition(forProjectileLane lane: Int) -> Float {
         Float(GameRules.clampedProjectileLane(lane) - 1) * 0.45
     }""",
+        screenshot_proofs={
+            "gameplay_start": "Launch with gameplay_start; lastEvent is projectile range ready, projectileShots == 0, and weapon/projectile/target roles are visible.",
+            "mid_action": "Launch with mid_action; chargeProjectile then launchProjectile have run, projectileShots == 1, and projectileInFlight proof is visible.",
+            "fail_or_hit": "Launch with fail_or_hit; projectileLane matches targetLane, projectileHits > 0, score > 0, and target reacts.",
+            "results": "Launch with results; state.phase == .result after projectileHitTarget hits and ResultView is visible.",
+        },
     )
 
 
@@ -681,6 +714,12 @@ def _shooter_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
     private func xPosition(forShooterLane lane: Int) -> Float {
         Float(GameRules.clampedShooterLane(lane) - 1) * 0.45
     }""",
+        screenshot_proofs={
+            "gameplay_start": "Launch with gameplay_start; lastEvent is breach started, shooterHealth is full, and player/enemy roles are visible.",
+            "mid_action": "Launch with mid_action; fireShooterWeapon has run once, shotsFired == 1, and weapon/enemy proof is visible.",
+            "fail_or_hit": "Launch with fail_or_hit; damage/failure proof is seeded and health or cover state changes are visible.",
+            "results": "Launch with results; state.phase == .result after enemiesRemaining reaches zero and ResultView is visible.",
+        },
     )
 
 
@@ -855,6 +894,12 @@ def _collector_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
     private func xPosition(forCollectorLane lane: Int) -> Float {
         Float(GameRules.clampedCollectorLane(lane) - 1) * 0.45
     }""",
+        screenshot_proofs={
+            "gameplay_start": "Launch with gameplay_start; lastEvent is collection started, collectedItems == 0, and pickup/timer roles are visible.",
+            "mid_action": "Launch with mid_action; collectPickup has run once and collectedItems or comboStreak proof is visible.",
+            "fail_or_hit": "Launch with fail_or_hit; timer/failure proof is seeded, collectionTimer is near zero, and miss feedback is visible.",
+            "results": "Launch with results; state.phase == .result after startingCollectibleCount pickups and ResultView is visible.",
+        },
     )
 
 

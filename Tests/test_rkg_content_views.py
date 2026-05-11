@@ -80,6 +80,15 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("state = GameRules.performPerfectDodge(state)", content)
         self.assertIn("state = GameRules.applyFighterDamage(state)", content)
 
+    def test_custom_realitykit_content_view_keeps_overlay_compact(self) -> None:
+        content = content_view_swift("Arc Volley", spec_for("custom_realitykit"))
+
+        self.assertIn("@State private var state = GameRules.customRealityKitScreenshotSession(", content)
+        self.assertIn(".controlSize(.small)", content)
+        self.assertIn(".padding(.horizontal, 10)", content)
+        self.assertIn(".padding(.vertical, 8)", content)
+        self.assertIn(".lineLimit(1)", content)
+
     def test_generic_content_view_contract_remains_available_for_unknown_archetype(self) -> None:
         content = content_view_swift('Ring "Dash"', spec_for("prototype"))
 

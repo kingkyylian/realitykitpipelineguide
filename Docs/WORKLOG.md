@@ -12,6 +12,47 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 123: RKG QA Proof and Screenshot Guardrails
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Shard Volley dogfood sırasında görülen QA güvenilirliği açıklarını kapatmak: `custom_realitykit` QA planı generic kalmamalı, capture verifier geçerli boyutlu ama boş/tek renk kanıtı yakalayabilmeli, ve generated custom overlay screenshot'ta sahneyi gereğinden fazla örtmemeli.
+
+**Yapılanlar:**
+
+- `CustomRealityKitRuntimeAdapter` registry entry'lerine adapter-specific screenshot proof map eklendi.
+- `rkg qa-plan` artık `custom_realitykit` için seçili sistemlere göre racing/projectile/shooter/collector proof metni seçiyor.
+- `custom_realitykit` QA automation hint'i `launch_arg --rkg-screenshot-state <state>` olarak güncellendi; generated custom apps zaten launch-state seeding kullanıyor.
+- `verify-screenshots` PNG captures için geçerli header/boyutun yanında piksel örnekleme yapıyor ve tek renk/boş kanıtı `blank_or_solid` olarak reddediyor.
+- Generated `custom_realitykit` overlay compact hale getirildi: küçük controls, daha düşük spacing/padding ve tek satır limitleri.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan.RkgQaPlanTests.test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_solid_png_capture Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_accepts_varied_png_capture: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_solid_filtered_png_capture: expected red before PNG filter reconstruction; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_content_views.RkgContentViewTests.test_custom_realitykit_content_view_keeps_overlay_compact: expected red before compact overlay change; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan Tests.test_rkg_screenshot_status Tests.test_rkg_content_views Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_init_game: ok, 56 tests
+rtk ./.venv/bin/python Tools/rkg.py qa-plan Build/rkg-dogfood-shard-volley/GameSpec.json --json: ok, projectile-specific proof and launch_arg automation visible
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-dogfood-shard-volley/ShardVolley --json: ok, 4 existing screenshots
+rtk git diff --check: ok
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 212 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-dogfood-shard-volley/GameSpec.json --output Build/rkg-qa-proof/ShardVolley --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-qa-proof/ShardVolley: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-qa-proof/ShardVolley --device booted: ok, 4 simulator screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-qa-proof/ShardVolley --json: ok, 4 fresh screenshots
+```
+
+**Öğrenme notu:**
+
+`custom_realitykit` artık sadece "generic skeleton" demiyor; screenshot QA planında hangi adapter'ın hangi state değerini kanıtladığını söylüyor. Görsel QA tarafı hâlâ tam OCR/wrong-app kontrolü değil; bu sprint boş/tek renk PNG kanıtını yakalayan ilk guardrail'i ekledi.
+
+**Karar:**
+
+RKG tarafında bir sonraki büyük değer yeni adapter değil; idea -> systems/spec orchestration, JPEG/real simulator visual-quality guardrail, ve asset brief -> RKP asset task köprüsü.
+
 ### Sprint 122: RKG Shard Volley Dogfood
 
 **Durum:** Tamamlandı

@@ -3,6 +3,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 
@@ -74,6 +75,55 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             b"\xff\xd9"
         )
 
+    def write_png_rgb(self, path: Path, rows: list[list[tuple[int, int, int]]], filter_type: int = 0) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        height = len(rows)
+        width = len(rows[0])
+        bytes_per_pixel = 3
+        previous = bytearray(width * bytes_per_pixel)
+        raw = bytearray()
+        for row in rows:
+            source = bytearray()
+            for red, green, blue in row:
+                source.extend((red, green, blue))
+            raw.append(filter_type)
+            raw.extend(self.encode_png_scanline(source, previous, bytes_per_pixel, filter_type))
+            previous = source
+
+        def chunk(kind: bytes, payload: bytes) -> bytes:
+            crc = zlib.crc32(kind + payload) & 0xFFFFFFFF
+            return len(payload).to_bytes(4, "big") + kind + payload + crc.to_bytes(4, "big")
+
+        header = (
+            b"\x89PNG\r\n\x1a\n"
+            + chunk(b"IHDR", width.to_bytes(4, "big") + height.to_bytes(4, "big") + b"\x08\x02\x00\x00\x00")
+            + chunk(b"IDAT", zlib.compress(bytes(raw)))
+            + chunk(b"IEND", b"")
+        )
+        path.write_bytes(header)
+
+    def encode_png_scanline(
+        self,
+        source: bytearray,
+        previous: bytearray,
+        bytes_per_pixel: int,
+        filter_type: int,
+    ) -> bytes:
+        encoded = bytearray()
+        for index, value in enumerate(source):
+            left = source[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+            up = previous[index]
+            if filter_type == 0:
+                predictor = 0
+            elif filter_type == 1:
+                predictor = left
+            elif filter_type == 2:
+                predictor = up
+            else:
+                raise ValueError(f"unsupported test png filter: {filter_type}")
+            encoded.append((value - predictor) & 0xFF)
+        return bytes(encoded)
+
     def test_build_screenshot_status_reports_missing_files_from_qa_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "RingDash"
@@ -113,6 +163,48 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             first = payload["checks"][0]
             self.assertFalse(payload["ok"])
             self.assertEqual(first["status"], "invalid_dimensions")
+
+    def test_verify_screenshots_rejects_solid_png_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            solid = [[(244, 244, 244) for _ in range(320)] for _ in range(320)]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", solid)
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "blank_or_solid")
+
+    def test_verify_screenshots_rejects_solid_filtered_png_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            solid = [[(244, 244, 244) for _ in range(320)] for _ in range(320)]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", solid, filter_type=1)
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "blank_or_solid")
+
+    def test_verify_screenshots_accepts_varied_png_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "ok")
 
     def test_verify_screenshots_cli_consumes_qa_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

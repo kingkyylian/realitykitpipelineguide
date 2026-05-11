@@ -58,24 +58,28 @@ The dogfood run found two product bugs:
 - `score` was treated as enough to activate the collector adapter UI. Projectile games that included `score` also showed collector controls. Fix: collector adapter dispatch and UI now use `SystemFlags.hasCollect || SystemFlags.hasTimer`; score remains a shared scoring flag.
 - The first screenshot could be captured before the launched app was visually settled. Fix: `capture-screenshots` now waits 2 seconds after each launch by default.
 
+The follow-up QA slice closed three of the gaps from this run:
+
+- `qa-plan` now uses adapter-specific proof text for `custom_realitykit`; projectile plans call out charge, launch, hit, and result state values instead of generic archetype prose.
+- `custom_realitykit` screenshot states now advertise launch-state automation with `--rkg-screenshot-state <state>`.
+- `verify-screenshots` rejects valid-dimensional PNG evidence that is visually blank or near-solid via `blank_or_solid`, and generated custom overlays use smaller controls/padding for screenshot readability.
+
 ## Remaining Gaps For A Comprehensive Tool
 
 1. `score-idea` and `new-game` are still separate manual commands. A comprehensive flow needs an orchestrator that can turn an accepted idea into a suggested camera/input/systems set and a generated project path.
-2. `qa-plan` proof text is still archetype-level for `custom_realitykit`; projectile screenshots should say exactly what state values or controls prove `charge`, `launch`, `hit`, and `result`.
-3. Screenshot verification checks file validity, not visual quality. It should catch blank screenshots, previous-app captures, major text overlap, and missing declared roles.
-4. Generated UI is functional but not polished. On iPhone screenshots, the overlay is large and covers too much of the scene.
-5. Generated fallback art is useful for proof, but not enough for production. The next bridge should turn each asset brief into `rkp make-asset` / `build-asset` / `accept-asset` tasks.
-6. Adapter conflict rules need more coverage. `score` overlapping with collector was one example; future shared systems like `physics`, `timer`, `health`, or `enemy_ai` need explicit ownership rules.
-7. There is no safe regeneration story for hand-edited generated projects. The tool can create a project, but it does not preserve user edits or apply structured patches yet.
-8. Store metadata is draft-quality. It creates a checklist, but product-specific copy, privacy text, pricing notes, and App Review notes still require human pass.
-9. Game tuning is shallow. We need spec-driven knobs for session length, target counts, win thresholds, score values, spawn timing, and difficulty ramps.
-10. The generated project has no imported art path by default. A real 0-to-first-playable path should include at least one accepted USDZ asset with screenshot evidence.
+2. Screenshot verification still needs deeper visual QA. It now catches blank/solid PNG evidence, but JPEG content checks, previous-app detection, OCR/text overlap, and missing declared-role detection remain open.
+3. Generated UI is functional but not product-polished. The custom overlay is more compact now, but it still needs simulator screenshot review across iPhone/iPad before any shipping claim.
+4. Generated fallback art is useful for proof, but not enough for production. The next bridge should turn each asset brief into `rkp make-asset` / `build-asset` / `accept-asset` tasks.
+5. Adapter conflict rules need more coverage. `score` overlapping with collector was one example; future shared systems like `physics`, `timer`, `health`, or `enemy_ai` need explicit ownership rules.
+6. There is no safe regeneration story for hand-edited generated projects. The tool can create a project, but it does not preserve user edits or apply structured patches yet.
+7. Store metadata is draft-quality. It creates a checklist, but product-specific copy, privacy text, pricing notes, and App Review notes still require human pass.
+8. Game tuning is shallow. We need spec-driven knobs for session length, target counts, win thresholds, score values, spawn timing, and difficulty ramps.
+9. The generated project has no imported art path by default. A real 0-to-first-playable path should include at least one accepted USDZ asset with screenshot evidence.
 
 ## Next Slice
 
-The next highest-value RKG slice is adapter-specific QA proof plus visual screenshot QA:
+The next highest-value RKG slice is orchestration plus stronger visual QA:
 
-- Add `CustomRealityKitRuntimeAdapter` fields for screenshot proof text.
-- Make `qa-plan` use adapter-specific proof when systems select an adapter.
-- Add screenshot checks for blank image, wrong app capture, and basic content presence.
-- Keep the Shard Volley dogfood flow as the regression example.
+- Add an idea-to-project orchestrator that can score an idea, choose camera/input/systems, write a GameSpec, and generate the project in one reviewed flow.
+- Extend screenshot QA beyond PNG blank checks toward JPEG visual-quality checks, wrong-app detection, and role-presence evidence.
+- Bridge generated asset briefs into RKP asset commands so a zero-to-first-playable path includes at least one accepted USDZ asset with screenshot evidence.

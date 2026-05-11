@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import zlib
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,9 @@ def _image_file_status(path: Path) -> tuple[str, int]:
     dimensions = _image_dimensions(data)
     if dimensions is None or dimensions[0] < 300 or dimensions[1] < 300:
         return "invalid_dimensions", size
+    visual_status = _image_visual_status(data)
+    if visual_status is not None:
+        return visual_status, size
     return "ok", size
 
 
@@ -107,3 +111,140 @@ def _image_dimensions(data: bytes) -> tuple[int, int] | None:
 
 def _is_supported_image_header(header: bytes) -> bool:
     return header.startswith(b"\xff\xd8\xff") or header.startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def _image_visual_status(data: bytes) -> str | None:
+    samples = _png_rgb_samples(data)
+    if samples is None:
+        return None
+    if samples and _rgb_sample_span(samples) <= 3:
+        return "blank_or_solid"
+    return None
+
+
+def _rgb_sample_span(samples: list[tuple[int, int, int]]) -> int:
+    red = [sample[0] for sample in samples]
+    green = [sample[1] for sample in samples]
+    blue = [sample[2] for sample in samples]
+    return max(
+        max(red) - min(red),
+        max(green) - min(green),
+        max(blue) - min(blue),
+    )
+
+
+def _png_rgb_samples(data: bytes) -> list[tuple[int, int, int]] | None:
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return None
+    if len(data) < 33:
+        return None
+
+    width: int | None = None
+    height: int | None = None
+    color_type: int | None = None
+    bit_depth: int | None = None
+    idat = bytearray()
+    index = 8
+    while index + 12 <= len(data):
+        length = int.from_bytes(data[index:index + 4], "big")
+        chunk_type = data[index + 4:index + 8]
+        chunk_start = index + 8
+        chunk_end = chunk_start + length
+        if chunk_end + 4 > len(data):
+            return None
+        payload = data[chunk_start:chunk_end]
+        if chunk_type == b"IHDR" and len(payload) >= 13:
+            width = int.from_bytes(payload[0:4], "big")
+            height = int.from_bytes(payload[4:8], "big")
+            bit_depth = payload[8]
+            color_type = payload[9]
+        elif chunk_type == b"IDAT":
+            idat.extend(payload)
+        elif chunk_type == b"IEND":
+            break
+        index = chunk_end + 4
+
+    if width is None or height is None or bit_depth != 8 or color_type not in {2, 6}:
+        return None
+
+    bytes_per_pixel = 4 if color_type == 6 else 3
+    stride = width * bytes_per_pixel
+    try:
+        raw = zlib.decompress(bytes(idat))
+    except zlib.error:
+        return None
+    if len(raw) < (stride + 1) * height:
+        return None
+
+    rows = _png_unfiltered_scanlines(raw, width, height, bytes_per_pixel)
+    if rows is None:
+        return None
+
+    row_step = max(1, height // 32)
+    column_step = max(1, width // 32)
+    samples: list[tuple[int, int, int]] = []
+    for y in range(0, height, row_step):
+        row = rows[y]
+        for x in range(0, width, column_step):
+            offset = x * bytes_per_pixel
+            samples.append((row[offset], row[offset + 1], row[offset + 2]))
+    return samples
+
+
+def _png_unfiltered_scanlines(raw: bytes, width: int, height: int, bytes_per_pixel: int) -> list[bytes] | None:
+    stride = width * bytes_per_pixel
+    rows: list[bytes] = []
+    previous = bytes(stride)
+    offset = 0
+    for _ in range(height):
+        if offset + stride + 1 > len(raw):
+            return None
+        filter_type = raw[offset]
+        offset += 1
+        filtered = raw[offset:offset + stride]
+        offset += stride
+        row = _png_unfiltered_scanline(filtered, previous, bytes_per_pixel, filter_type)
+        if row is None:
+            return None
+        rows.append(row)
+        previous = row
+    return rows
+
+
+def _png_unfiltered_scanline(
+    filtered: bytes,
+    previous: bytes,
+    bytes_per_pixel: int,
+    filter_type: int,
+) -> bytes | None:
+    row = bytearray(len(filtered))
+    for index, value in enumerate(filtered):
+        left = row[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+        up = previous[index]
+        up_left = previous[index - bytes_per_pixel] if index >= bytes_per_pixel else 0
+        if filter_type == 0:
+            predictor = 0
+        elif filter_type == 1:
+            predictor = left
+        elif filter_type == 2:
+            predictor = up
+        elif filter_type == 3:
+            predictor = (left + up) // 2
+        elif filter_type == 4:
+            predictor = _png_paeth_predictor(left, up, up_left)
+        else:
+            return None
+        row[index] = (value + predictor) & 0xFF
+    return bytes(row)
+
+
+def _png_paeth_predictor(left: int, up: int, up_left: int) -> int:
+    estimate = left + up - up_left
+    left_distance = abs(estimate - left)
+    up_distance = abs(estimate - up)
+    up_left_distance = abs(estimate - up_left)
+    if left_distance <= up_distance and left_distance <= up_left_distance:
+        return left
+    if up_distance <= up_left_distance:
+        return up
+    return up_left

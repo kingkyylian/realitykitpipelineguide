@@ -49,27 +49,32 @@ struct ContentView: View {{
             GameView(state: state)
                 .ignoresSafeArea()
 
-            VStack(spacing: 8) {{
+            VStack(spacing: 6) {{
                 HStack {{
                     VStack(alignment: .leading, spacing: 2) {{
                         Text({title})
                             .font(.headline)
+                            .lineLimit(1)
                         Text({subtitle})
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }}
                     Spacer()
                     Text("Score \\(state.score)")
                         .font(.headline.monospacedDigit())
+                        .lineLimit(1)
                 }}
 
                 HStack(spacing: 12) {{
                     Text(InputController.controlSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     Text(SystemFlags.summary)
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     Spacer()
                 }}
 
@@ -77,6 +82,7 @@ struct ContentView: View {{
                     Text({player_action})
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                     Spacer()
                     Button(isPlaying ? InputController.primaryActionLabel : InputIntent.startTitle) {{
                         advanceSkeleton()
@@ -96,7 +102,9 @@ struct ContentView: View {{
                     }}
                 }}
             }}
-            .padding()
+            .controlSize(.small)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(.thinMaterial)
         }}
     }}

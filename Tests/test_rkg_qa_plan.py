@@ -89,6 +89,52 @@ def fighter_spec() -> dict:
     return spec
 
 
+def custom_projectile_spec() -> dict:
+    spec = lane_dodger_spec()
+    spec["game"]["id"] = "arc_volley"
+    spec["game"]["display_name"] = "Arc Volley"
+    spec["game"]["archetype"] = "custom_realitykit"
+    spec["game"]["camera"] = "third_person"
+    spec["game"]["input"] = "drag"
+    spec["game"]["systems"] = ["projectile", "shooting", "score"]
+    spec["loop"]["player_action"] = "aim, charge, and launch projectiles at target lanes"
+    spec["loop"]["fail_condition"] = "attempts expire before enough hits land"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "arena_space": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+        "weapon_proxy": {
+            "type": "weapon_proxy",
+            "role": "weapon",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_weapon",
+        },
+        "projectile_proxy": {
+            "type": "projectile",
+            "role": "projectile",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_sphere",
+        },
+        "target_proxy": {
+            "type": "gameplay_target",
+            "role": "target",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_rings",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
+    return spec
+
+
 class RkgQaPlanTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -128,6 +174,19 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["steps"][1]["state"], "mid_combo")
         self.assertEqual(payload["steps"][1]["automation"], "launch_arg --rkg-screenshot-state mid_combo")
         self.assertEqual(payload["steps"][3]["automation"], "launch_arg --rkg-screenshot-state knockout")
+
+    def test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation(self) -> None:
+        payload = build_qa_plan(custom_projectile_spec())
+
+        self.assertEqual(payload["archetype"], "custom_realitykit")
+        self.assertEqual(payload["steps"][0]["automation"], "launch_arg --rkg-screenshot-state gameplay_start")
+        self.assertIn("projectile range ready", payload["steps"][0]["drive"])
+        self.assertIn("projectileShots == 0", payload["steps"][0]["drive"])
+        self.assertIn("chargeProjectile", payload["steps"][1]["drive"])
+        self.assertIn("projectileShots == 1", payload["steps"][1]["drive"])
+        self.assertIn("projectileHits > 0", payload["steps"][2]["drive"])
+        self.assertIn("state.phase == .result", payload["steps"][3]["drive"])
+        self.assertEqual(payload["steps"][2]["visible_roles"], ["player", "arena", "weapon", "projectile", "target"])
 
     def test_qa_plan_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

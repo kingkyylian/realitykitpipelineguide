@@ -32,6 +32,9 @@
 - Split projectile/shooting systems from weapon/hitscan routing so projectile-only skeletons do not fall through the FPS/shooter adapter.
 - Split shared `score` away from collector adapter activation so projectile scoring does not show collector UI controls.
 - Increased generated screenshot capture launch settle time to reduce first-state blank or previous-app captures.
+- Made `rkg qa-plan` use adapter-specific proof text and launch-state automation for `custom_realitykit` skeletons.
+- Added a `blank_or_solid` screenshot status for valid-dimensional PNG captures that do not contain visual variation.
+- Reduced generated `custom_realitykit` overlay spacing, padding, and control size so screenshot evidence exposes more of the RealityKit scene.
 - Routed generated `procedural_rings` fallback ids to the explicit ring/guard placeholder instead of the role-default sphere.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.
 - Introduced a `CustomRealityKitRuntimeAdapter` registry so `custom_realitykit` system adapters declare their systems, state fields, rules, UI sections, and scene bindings in one composable place.

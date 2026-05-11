@@ -12,6 +12,48 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 116: RKG Racing Runtime Adapter
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit` generic runtime core üstüne ilk system-specific adapter'ı eklemek: `racing,lap_timer,collision` seçen bir kullanıcı sıfırdan lane/lap/checkpoint/collision state'i olan, screenshot state'leri farklı görünen, derlenebilir RealityKit yarış iskeleti üretebilmeli.
+
+**Yapılanlar:**
+
+- `custom_realitykit` state'ine racing alanları eklendi: `raceDistance`, `currentLap`, `checkpointIndex`, `vehicleLane`, `obstacleLane`, ve `isRaceCollision`.
+- `GameRules.swift` artık racing seçildiğinde `startRacingSession`, `laneAfterSteer`, `advanceRacingFrame`, `racingScreenshotSession`, checkpoint/lap scoring ve collision-result proof üretiyor.
+- `ContentView.swift` generic custom overlay içinde racing seçildiğinde lap, distance, checkpoint, lane HUD satırı ve Left/Right lane steering kontrolleri üretiyor.
+- `GameSceneController.swift` custom path'i racing adapter'a ayrıldı: vehicle/track/obstacle/checkpoint entity referansları bağlanıyor, `CameraRig.transform` scene içindeki camera rig entity'sine uygulanıyor, distance/lane/checkpoint/collision state'i RealityKit pozisyon/scale/enabled değişikliklerine yansıyor.
+- Non-racing `custom_realitykit` yolu korunup generic state-bound overlay ile derlenmeye devam ediyor.
+- Test önce `raceDistance` eksikliğinden kırıldı, sonra racing adapter generated Swift yüzeyi yeşile alındı.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_racing_runtime_adapter_for_custom_realitykit: expected red before adapter; then ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game Tests.test_rkg_runtime_core Tests.test_rkg_new_game: ok, 37 tests
+rtk .venv/bin/python -m ruff check src/rkg/archetype_runtime.py src/rkg/content_views.py src/rkg/scaffold.py Tests/test_rkg_init_game.py: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-racing-runtime/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-racing-runtime/GameSpec.json --output Build/rkg-racing-runtime/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-racing-runtime/DesertChase: ok
+rtk .venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-racing-runtime/DesertChase --device booted: ok after sandbox escalation, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-racing-runtime/DesertChase: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-fps-runtime/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-fps-runtime/GameSpec.json --output Build/rkg-fps-runtime/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-fps-runtime/RoomBreach: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 194 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Generic RealityKit üretimi için doğru ara katman `systems` bazlı adapter. Racing artık `new-game` için sadece asset/fallback planı değil, generated state + UI + scene binding + screenshot proof üretiyor. FPS/weapon tarafı halen generic core üstünde derlenen skeleton; bir sonraki runtime adapter oraya eklenmeli.
+
+**Karar:**
+
+`custom_realitykit` içinde system-specific davranışlar tek bir placeholder branch'e yığılmayacak. Racing ilk adapter olarak kaldı; sıradaki anlamlı slice `weapon/hitscan/enemies/health/cover` için FPS/shooter adapter veya mevcut racing adapter'ı ayrı generator modülüne çıkarmak.
+
 ### Sprint 115: RKG Generic Runtime Core
 
 **Durum:** Tamamlandı

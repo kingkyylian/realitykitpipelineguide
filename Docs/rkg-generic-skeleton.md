@@ -9,7 +9,7 @@ Use it when the user says "racing game", "FPS", "weapon combat", "third-person p
 - input model
 - gameplay systems
 
-It does not make a finished racing or FPS game. It creates a generated RealityKit project with asset roles, procedural fallbacks, store/QA docs, screenshot states, and verification gates so the next slice can deepen runtime behavior without starting from an empty Xcode project.
+It does not make a finished racing or FPS game. It creates a generated RealityKit project with asset roles, procedural fallbacks, store/QA docs, screenshot states, and verification gates so each system adapter can deepen runtime behavior without starting from an empty Xcode project.
 
 ## Racing Skeleton
 
@@ -37,6 +37,14 @@ Generated roles:
 | `race_track` | `arena` | Track/playfield proxy. |
 | `track_obstacle` | `obstacle` | Collision proof role when `collision` is selected. |
 | `checkpoint_gate` | `ui_prop` | Lap/timer proof role when `lap_timer` is selected. |
+
+Generated runtime behavior:
+
+- `GameSessionState` includes race distance, lap, checkpoint, vehicle lane, obstacle lane, and collision proof flags.
+- `GameRules` starts a racing session, clamps lane steering, advances distance/checkpoints, scores lap progress, and marks collision/result states.
+- `ContentView` shows lap/distance/checkpoint/lane HUD values and Left/Right lane controls.
+- `GameSceneController` binds vehicle, track, obstacle, checkpoint, and camera rig entities; lane/distance/checkpoint/collision state changes produce visible RealityKit placement and scale changes.
+- `capture-screenshots` launch states seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` with different racing state.
 
 ## FPS / Shooter Skeleton
 
@@ -92,4 +100,4 @@ shooting, enemies, enemy_ai, health, cover, collect, score, timer, physics
 
 `custom_realitykit` now gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, `CameraRig.swift`, `InputController.swift`, `SystemFlags.swift`, and `verify-game`/`verify-screenshots` gates. The generic overlay is state-bound, so launch screenshot states can seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` instead of capturing four identical idle launches.
 
-The next runtime slice should connect those core modules to genre adapters for vehicle movement, first-person aiming, projectile/hitscan, health, and collision. Until that lands, racing and FPS skeletons are scaffolded RealityKit projects with composable roles and generic state, not genre-complete gameplay.
+The first system adapter is racing: it proves vehicle lane movement, checkpoint/lap progress, collision/result state, and camera rig entity binding. The next runtime slice should add the FPS/shooter adapter for first-person aiming, weapon/hitscan, enemy, health, and cover proof. Until those adapters mature, generated games are still skeletons, not genre-complete gameplay.

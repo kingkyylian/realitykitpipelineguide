@@ -85,6 +85,32 @@ struct ContentView: View {{
                     .buttonStyle(.bordered)
                 }}
 
+                if SystemFlags.hasRacing {{
+                    HStack(spacing: 12) {{
+                        Text("Lap \\(state.currentLap)")
+                            .font(.caption.monospacedDigit())
+                        Text("Distance \\(state.raceDistance)")
+                            .font(.caption.monospacedDigit())
+                        Text("Checkpoint \\(state.checkpointIndex + 1)/\\(GameRules.checkpointCount)")
+                            .font(.caption.monospacedDigit())
+                        Text("Lane \\(state.vehicleLane + 1)")
+                            .font(.caption.monospacedDigit())
+                        Spacer()
+                    }}
+
+                    HStack {{
+                        Button("Left") {{
+                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: -1)
+                        }}
+                        .buttonStyle(.bordered)
+                        Button("Right") {{
+                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: 1)
+                        }}
+                        .buttonStyle(.bordered)
+                        Spacer()
+                    }}
+                }}
+
                 if SessionControl.isResult(state) {{
                     ResultView(state: state) {{
                         state = SessionControl.reset()

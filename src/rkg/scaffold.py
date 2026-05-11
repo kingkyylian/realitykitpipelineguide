@@ -519,6 +519,8 @@ def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
         return _stack_puzzle_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "fighter_2_5d":
         return _fighter_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "custom_realitykit":
+        return _custom_realitykit_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -534,6 +536,75 @@ final class GameSceneController {{
     func update(state: GameSessionState) {{
         anchor.position.z = SystemFlags.hasRacing ? -Float(state.primaryActions % 5) * 0.02 : 0
         anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
+}}
+"""
+
+
+def _custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("vehicleEntity", {"player", "vehicle"}),
+            ("trackEntity", {"arena", "environment", "track"}),
+            ("obstacleEntity", {"obstacle", "hazard"}),
+            ("checkpointEntity", {"ui_prop", "checkpoint", "target"}),
+        ],
+    )
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var vehicleEntity: Entity?
+    private var trackEntity: Entity?
+    private var obstacleEntity: Entity?
+    private var checkpointEntity: Entity?
+    private var cameraRigEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        let cameraRig = Entity()
+        cameraRig.transform = CameraRig.transform
+        cameraRigEntity = cameraRig
+        anchor.addChild(cameraRig)
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        if SystemFlags.hasRacing {{
+            updateRacing(state: state)
+            return
+        }}
+        cameraRigEntity?.transform = CameraRig.transform
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
+
+    func updateRacing(state: GameSessionState) {{
+        vehicleEntity?.position.x = xPosition(forRaceLane: state.vehicleLane)
+        vehicleEntity?.position.z = -0.80
+        vehicleEntity?.scale = state.isRaceCollision ? [0.90, 0.90, 0.90] : [1, 1, 1]
+
+        trackEntity?.position.z = -Float(state.raceDistance % 6) * 0.04
+
+        obstacleEntity?.isEnabled = SystemFlags.hasCollision
+        obstacleEntity?.position.x = xPosition(forRaceLane: state.obstacleLane)
+        obstacleEntity?.position.z = -1.10 - Float(state.raceDistance % 4) * 0.16
+
+        checkpointEntity?.isEnabled = SystemFlags.hasLapTimer
+        checkpointEntity?.position = [0, 0.18, -1.55 - Float(state.checkpointIndex) * 0.12]
+
+        var cameraTransform = CameraRig.transform
+        cameraTransform.translation.z -= Float(state.raceDistance) * 0.03
+        cameraRigEntity?.transform = cameraTransform
+
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
+
+    private func xPosition(forRaceLane lane: Int) -> Float {{
+        Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
     }}
 }}
 """

@@ -48,6 +48,12 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
         return [
             "var primaryActions: Int = 0",
             "var isFailureProofVisible: Bool = false",
+            "var raceDistance: Int = 0",
+            "var currentLap: Int = 0",
+            "var checkpointIndex: Int = 0",
+            "var vehicleLane: Int = 1",
+            "var obstacleLane: Int = 0",
+            "var isRaceCollision: Bool = false",
         ]
     return []
 
@@ -378,7 +384,67 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
         ]
     if archetype_id == "custom_realitykit":
         return [
+            "static let raceLaneCount = 3",
+            "static let checkpointCount = 3",
+            """static func clampedRaceLane(_ lane: Int) -> Int {
+    min(max(lane, 0), raceLaneCount - 1)
+}""",
+            """static func laneAfterSteer(currentLane: Int, direction: Int) -> Int {
+    clampedRaceLane(currentLane + direction)
+}""",
+            """static func nextRaceObstacleLane(after distance: Int) -> Int {
+    (distance + 2) % raceLaneCount
+}""",
+            """static func nextCheckpointIndex(after distance: Int) -> Int {
+    distance % checkpointCount
+}""",
+            """static func hasRaceCollision(vehicleLane: Int, obstacleLane: Int, distance: Int) -> Bool {
+    SystemFlags.hasCollision && distance >= 2 && vehicleLane == obstacleLane
+}""",
+            """static func scoreForRace(distance: Int, currentLap: Int) -> Int {
+    max(0, distance) * hitScore + max(0, currentLap - 1) * perfectScore
+}""",
+            """static func startRacingSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.currentLap = 1
+    state.checkpointIndex = 0
+    state.vehicleLane = 1
+    state.obstacleLane = nextRaceObstacleLane(after: 0)
+    state.lastEvent = "race started"
+    return state
+}""",
+            """static func advanceRacingFrame(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startRacingSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    next.raceDistance += 1
+    next.obstacleLane = nextRaceObstacleLane(after: next.raceDistance)
+    next.checkpointIndex = nextCheckpointIndex(after: next.raceDistance)
+    let completedLap = next.raceDistance > 0 && next.checkpointIndex == 0
+    if completedLap {
+        next.currentLap += 1
+    }
+    next.score = scoreForRace(distance: next.raceDistance, currentLap: next.currentLap)
+    if hasRaceCollision(vehicleLane: next.vehicleLane, obstacleLane: next.obstacleLane, distance: next.raceDistance) {
+        next.isRaceCollision = true
+        next.isFailureProofVisible = true
+        next = SessionControl.markResult(next, event: "collision")
+    } else if completedLap {
+        next.lastEvent = "lap complete"
+    } else {
+        next.lastEvent = "checkpoint \\(next.checkpointIndex + 1)"
+    }
+    return next
+}""",
             """static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState {
+    if SystemFlags.hasRacing {
+        return startRacingSession(sessionSeconds: sessionSeconds)
+    }
     var state = GameSessionState()
     state.phase = .playing
     state.sessionSeconds = sessionSeconds
@@ -386,6 +452,9 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     return state
 }""",
             """static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState {
+    if SystemFlags.hasRacing {
+        return advanceRacingFrame(state)
+    }
     var next = state
     if next.phase != .playing {
         return startCustomRealityKitSession(sessionSeconds: next.sessionSeconds)
@@ -400,7 +469,33 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     }
     return next
 }""",
+            """static func racingScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startRacingSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        return state
+    case "fail_or_hit":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        return state
+    case "results":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        return SessionControl.markResult(state, event: "race results")
+    default:
+        return fallback
+    }
+}""",
             """static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    if SystemFlags.hasRacing {
+        return racingScreenshotSession(for: screenshotState, fallback: fallback)
+    }
     switch screenshotState?.rawValue {
     case "gameplay_start":
         return startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)

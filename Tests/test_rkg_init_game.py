@@ -178,6 +178,18 @@ def custom_racing_spec() -> dict:
             "budget": "1200 tris / 512 texture",
             "fallback": "procedural_track",
         },
+        "track_obstacle": {
+            "type": "hazard",
+            "role": "obstacle",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_block",
+        },
+        "checkpoint_gate": {
+            "type": "ui_prop",
+            "role": "ui_prop",
+            "budget": "500 tris / 512 texture",
+            "fallback": "procedural_gate",
+        },
     }
     spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
     return spec
@@ -446,6 +458,42 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState", rules)
             self.assertIn("static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState", rules)
             self.assertIn("static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?", rules)
+
+    def test_init_game_generates_racing_runtime_adapter_for_custom_realitykit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_racing_spec())
+            output = root / "DesertChase"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "DesertChase"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var raceDistance: Int = 0", state)
+            self.assertIn("var currentLap: Int = 0", state)
+            self.assertIn("var checkpointIndex: Int = 0", state)
+            self.assertIn("var vehicleLane: Int = 1", state)
+            self.assertIn("var obstacleLane: Int = 0", state)
+            self.assertIn("var isRaceCollision: Bool = false", state)
+            self.assertIn("static let raceLaneCount = 3", rules)
+            self.assertIn("static let checkpointCount = 3", rules)
+            self.assertIn("static func laneAfterSteer(currentLane: Int, direction: Int) -> Int", rules)
+            self.assertIn("static func advanceRacingFrame(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func racingScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn("Text(\"Lap \\(state.currentLap)\")", content)
+            self.assertIn("Text(\"Checkpoint \\(state.checkpointIndex + 1)/\\(GameRules.checkpointCount)\")", content)
+            self.assertIn("Button(\"Left\")", content)
+            self.assertIn("Button(\"Right\")", content)
+            self.assertIn("state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: -1)", content)
+            self.assertIn("state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: 1)", content)
+            self.assertIn("private var vehicleEntity: Entity?", scene_controller)
+            self.assertIn("private var checkpointEntity: Entity?", scene_controller)
+            self.assertIn("CameraRig.transform", scene_controller)
+            self.assertIn("func updateRacing(state: GameSessionState)", scene_controller)
 
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

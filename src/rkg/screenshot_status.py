@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
+import subprocess
+import tempfile
 import zlib
 from collections.abc import Mapping
 from pathlib import Path
@@ -10,6 +14,7 @@ from rkg.qa_plan import build_qa_plan
 from rkg.spec import load_game_spec
 
 JsonDict = dict[str, Any]
+RgbSamples = list[tuple[int, int, int]]
 
 
 def load_qa_plan(path: Path) -> JsonDict:
@@ -32,6 +37,9 @@ def build_screenshot_status(project: Path, qa_plan: Mapping[str, Any]) -> JsonDi
         raise ValueError(f"generated project does not exist: {project}")
 
     checks = [_check_step(project, step) for step in _qa_steps(qa_plan)]
+    _mark_duplicate_visual_evidence(checks)
+    for check in checks:
+        check.pop("_visual_fingerprint", None)
     return {
         "game_id": str(qa_plan.get("game_id", "")),
         "display_name": str(qa_plan.get("display_name", "")),
@@ -54,35 +62,50 @@ def _qa_steps(qa_plan: Mapping[str, Any]) -> list[Mapping[str, Any]]:
 def _check_step(project: Path, step: Mapping[str, Any]) -> JsonDict:
     capture_path = str(step.get("capture_path", ""))
     path = project / capture_path
-    status, size = _image_file_status(path)
+    status, size, visual_fingerprint = _image_file_status(path)
     return {
         "order": int(step.get("order", 0)),
         "state": str(step.get("state", "")),
         "capture_path": capture_path,
         "status": status,
         "bytes": size,
+        "_visual_fingerprint": visual_fingerprint,
     }
 
 
-def _image_file_status(path: Path) -> tuple[str, int]:
+def _mark_duplicate_visual_evidence(checks: list[JsonDict]) -> None:
+    seen: set[str] = set()
+    for check in checks:
+        if check["status"] != "ok":
+            continue
+        fingerprint = check.get("_visual_fingerprint")
+        if not isinstance(fingerprint, str):
+            continue
+        if fingerprint in seen:
+            check["status"] = "duplicate_visual_evidence"
+            continue
+        seen.add(fingerprint)
+
+
+def _image_file_status(path: Path) -> tuple[str, int, str | None]:
     if not path.exists():
-        return "missing", 0
+        return "missing", 0, None
     if not path.is_file():
-        return "not_file", 0
+        return "not_file", 0, None
     size = path.stat().st_size
     if size == 0:
-        return "empty", 0
+        return "empty", 0, None
     with path.open("rb") as handle:
         data = handle.read()
     if not _is_supported_image_header(data[:12]):
-        return "invalid_image", size
+        return "invalid_image", size, None
     dimensions = _image_dimensions(data)
     if dimensions is None or dimensions[0] < 300 or dimensions[1] < 300:
-        return "invalid_dimensions", size
-    visual_status = _image_visual_status(data)
+        return "invalid_dimensions", size, None
+    visual_status, visual_fingerprint = _image_visual_status(data)
     if visual_status is not None:
-        return visual_status, size
-    return "ok", size
+        return visual_status, size, visual_fingerprint
+    return "ok", size, visual_fingerprint
 
 
 def _image_dimensions(data: bytes) -> tuple[int, int] | None:
@@ -113,16 +136,28 @@ def _is_supported_image_header(header: bytes) -> bool:
     return header.startswith(b"\xff\xd8\xff") or header.startswith(b"\x89PNG\r\n\x1a\n")
 
 
-def _image_visual_status(data: bytes) -> str | None:
-    samples = _png_rgb_samples(data)
+def _image_visual_status(data: bytes) -> tuple[str | None, str | None]:
+    samples, decode_failed = _image_rgb_samples(data)
+    if decode_failed:
+        return "invalid_image", None
     if samples is None:
-        return None
+        return None, None
+    fingerprint = _rgb_sample_fingerprint(samples)
     if samples and _rgb_sample_span(samples) <= 3:
-        return "blank_or_solid"
-    return None
+        return "blank_or_solid", fingerprint
+    return None, fingerprint
 
 
-def _rgb_sample_span(samples: list[tuple[int, int, int]]) -> int:
+def _image_rgb_samples(data: bytes) -> tuple[RgbSamples | None, bool]:
+    samples = _png_rgb_samples(data)
+    if samples is not None:
+        return samples, False
+    if data.startswith(b"\xff\xd8"):
+        return _jpeg_rgb_samples(data)
+    return None, False
+
+
+def _rgb_sample_span(samples: RgbSamples) -> int:
     red = [sample[0] for sample in samples]
     green = [sample[1] for sample in samples]
     blue = [sample[2] for sample in samples]
@@ -133,7 +168,39 @@ def _rgb_sample_span(samples: list[tuple[int, int, int]]) -> int:
     )
 
 
-def _png_rgb_samples(data: bytes) -> list[tuple[int, int, int]] | None:
+def _rgb_sample_fingerprint(samples: RgbSamples) -> str:
+    digest = hashlib.sha256()
+    for red, green, blue in samples:
+        digest.update(bytes((red, green, blue)))
+    return digest.hexdigest()
+
+
+def _jpeg_rgb_samples(data: bytes) -> tuple[RgbSamples | None, bool]:
+    decoder = shutil.which("sips")
+    if decoder is None:
+        return None, False
+    with tempfile.TemporaryDirectory(prefix="rkg-screenshot-") as tmp:
+        input_path = Path(tmp) / "capture.jpg"
+        output_path = Path(tmp) / "capture.png"
+        input_path.write_bytes(data)
+        try:
+            result = subprocess.run(
+                [decoder, "-s", "format", "png", str(input_path), "--out", str(output_path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None, True
+        if result.returncode != 0 or not output_path.exists():
+            return None, True
+        samples = _png_rgb_samples(output_path.read_bytes())
+        if samples is None:
+            return None, True
+        return samples, False
+
+
+def _png_rgb_samples(data: bytes) -> RgbSamples | None:
     if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         return None
     if len(data) < 33:
@@ -180,8 +247,8 @@ def _png_rgb_samples(data: bytes) -> list[tuple[int, int, int]] | None:
     if rows is None:
         return None
 
-    row_step = max(1, height // 32)
-    column_step = max(1, width // 32)
+    row_step = max(1, height // 128)
+    column_step = max(1, width // 128)
     samples: list[tuple[int, int, int]] = []
     for y in range(0, height, row_step):
         row = rows[y]

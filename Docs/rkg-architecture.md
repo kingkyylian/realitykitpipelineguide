@@ -196,7 +196,7 @@ The state-bound scene generators share one entity setup helper for the repeated 
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; custom RealityKit proof text is adapter-specific when systems select racing, projectile, shooter, or collector. |
 | `rkg capture-screenshots <dir>` | Build, install, launch screenshot states, and save simulator captures. | Starts with dry-run command planning; execution drives `xcrun simctl`. |
-| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, readable dimensions, and blank/solid PNG evidence. |
+| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, readable dimensions, blank/solid PNG/JPEG evidence, and duplicate visual evidence across states. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
 | `rkg verify-game <dir>` | Run generated project tests and RKP doctor/release gate. | Implemented with command-only project verification. |
 
@@ -214,9 +214,11 @@ Current `verify-screenshots` behavior:
 - If `--plan qa-plan.json` is passed, consumes the machine-readable `rkg qa-plan --json` payload directly.
 - If no plan is passed, reads `<generated-project>/GameSpec.json` and rebuilds the QA plan.
 - Checks each `capture_path` under the generated project.
-- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `blank_or_solid`, or `ok`.
+- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `blank_or_solid`, `duplicate_visual_evidence`, or `ok`.
 - Accepts JPEG and PNG image headers only when the file carries readable dimensions of at least 300x300 pixels.
 - For 8-bit RGB/RGBA PNG captures, reconstructs filtered scanlines, samples pixels, and rejects near-solid images as `blank_or_solid`.
+- On macOS, uses `sips` to rasterize JPEG captures into the same sampler. A malformed dimension-bearing JPEG is `invalid_image`; a near-solid JPEG is `blank_or_solid`.
+- If two planned states produce the same sampled visual fingerprint, the later state is `duplicate_visual_evidence`.
 - Exits nonzero when any planned screenshot evidence is missing or invalid.
 
 Current `plan-game --json` shape:
@@ -324,7 +326,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | Scaffolding | Generated files exist, Swift literals escape correctly, screenshot states become typed Swift cases, every declared asset role gets a generated load attempt with fallback. |
 | Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, `stack_puzzle`, and `fighter_2_5d`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
-| Screenshot evidence | `verify-screenshots` reports missing/empty/invalid evidence, rejects blank/solid PNG captures, and accepts captured JPEG/PNG files at planned paths. |
+| Screenshot evidence | `verify-screenshots` reports missing/empty/invalid evidence, rejects blank/solid PNG/JPEG captures, rejects duplicate visual evidence across states, and accepts captured JPEG/PNG files at planned paths. |
 
 ## Store Pack Contract
 

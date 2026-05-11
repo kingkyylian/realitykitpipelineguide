@@ -63,11 +63,12 @@ The follow-up QA slice closed three of the gaps from this run:
 - `qa-plan` now uses adapter-specific proof text for `custom_realitykit`; projectile plans call out charge, launch, hit, and result state values instead of generic archetype prose.
 - `custom_realitykit` screenshot states now advertise launch-state automation with `--rkg-screenshot-state <state>`.
 - `verify-screenshots` rejects valid-dimensional PNG evidence that is visually blank or near-solid via `blank_or_solid`, and generated custom overlays use smaller controls/padding for screenshot readability.
+- `verify-screenshots` also samples JPEG evidence through `sips`, rejects malformed dimension-bearing JPEG files as `invalid_image`, rejects blank/solid JPEG captures, and rejects duplicate visual evidence across release states as `duplicate_visual_evidence`.
 
 ## Remaining Gaps For A Comprehensive Tool
 
 1. `score-idea` and `new-game` are still separate manual commands. A comprehensive flow needs an orchestrator that can turn an accepted idea into a suggested camera/input/systems set and a generated project path.
-2. Screenshot verification still needs deeper visual QA. It now catches blank/solid PNG evidence, but JPEG content checks, previous-app detection, OCR/text overlap, and missing declared-role detection remain open.
+2. Screenshot verification still needs semantic visual QA. It now catches blank/solid PNG/JPEG evidence and duplicate state captures, but OCR/text overlap and missing declared-role detection remain open.
 3. Generated UI is functional but not product-polished. The custom overlay is more compact now, but it still needs simulator screenshot review across iPhone/iPad before any shipping claim.
 4. Generated fallback art is useful for proof, but not enough for production. The next bridge should turn each asset brief into `rkp make-asset` / `build-asset` / `accept-asset` tasks.
 5. Adapter conflict rules need more coverage. `score` overlapping with collector was one example; future shared systems like `physics`, `timer`, `health`, or `enemy_ai` need explicit ownership rules.
@@ -81,5 +82,5 @@ The follow-up QA slice closed three of the gaps from this run:
 The next highest-value RKG slice is orchestration plus stronger visual QA:
 
 - Add an idea-to-project orchestrator that can score an idea, choose camera/input/systems, write a GameSpec, and generate the project in one reviewed flow.
-- Extend screenshot QA beyond PNG blank checks toward JPEG visual-quality checks, wrong-app detection, and role-presence evidence.
+- Extend screenshot QA from pixel guardrails toward semantic role-presence evidence and text-overlap checks.
 - Bridge generated asset briefs into RKP asset commands so a zero-to-first-playable path includes at least one accepted USDZ asset with screenshot evidence.

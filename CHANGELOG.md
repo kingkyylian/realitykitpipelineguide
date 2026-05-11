@@ -34,6 +34,7 @@
 - Increased generated screenshot capture launch settle time to reduce first-state blank or previous-app captures.
 - Made `rkg qa-plan` use adapter-specific proof text and launch-state automation for `custom_realitykit` skeletons.
 - Added a `blank_or_solid` screenshot status for valid-dimensional PNG captures that do not contain visual variation.
+- Extended `verify-screenshots` visual QA to sampled JPEG captures, malformed dimension-bearing JPEG files, and duplicate visual evidence across release states.
 - Reduced generated `custom_realitykit` overlay spacing, padding, and control size so screenshot evidence exposes more of the RealityKit scene.
 - Routed generated `procedural_rings` fallback ids to the explicit ring/guard placeholder instead of the role-default sphere.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.

@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 124: RKG JPEG Visual Evidence Guardrail
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Önceki sprintte kalan görsel QA açığını kapatmak: JPEG screenshot evidence yalnızca header/boyut ile kabul edilmemeli; boş/tek renk JPEG, decode edilemeyen JPEG stub, ve aynı görselin birden fazla release state için tekrar kullanılması yakalanmalı.
+
+**Yapılanlar:**
+
+- `verify-screenshots` JPEG captures için macOS `sips` decoder'ını kullanarak raster örnekleme yapıyor.
+- Decode edilemeyen ama boyut bilgisi taşıyan JPEG stub artık `invalid_image` oluyor.
+- Tek renk/boş JPEG evidence artık `blank_or_solid` oluyor.
+- Release state'ler arasında aynı görsel fingerprint'i tekrar ederse ikinci ve sonraki state'ler `duplicate_visual_evidence` oluyor; bu previous-app / stuck capture sınıfı için pratik sinyal sağlıyor.
+- Screenshot status docs ve dogfood gap listesi JPEG/duplicate guardrail ile güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_dimension_only_jpeg_stub Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_solid_jpeg_capture Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_duplicate_visual_evidence_across_states: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status: ok, 11 tests
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-qa-proof/ShardVolley --json: ok, 4 JPEG screenshots sampled and unique
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 215 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+JPEG visual QA için yeni Python dependency eklemeden macOS `sips` yeterli oldu. Bu OCR değil; rol varlığı/metin overlap gibi semantik kontroller hâlâ ayrı iş. Ancak boş ekran, malformed JPEG ve stuck/previous-state capture artık dosya boyutu doğru olsa bile geçmiyor.
+
+**Karar:**
+
+Bir sonraki görsel QA seviyesi OCR değilse bile role-presence için generated overlay/scene metadata ile screenshot sidecar üretmek olmalı; sadece pikselden "target rolü var mı" çıkarmak kırılgan olur.
+
 ### Sprint 123: RKG QA Proof and Screenshot Guardrails
 
 **Durum:** Tamamlandı

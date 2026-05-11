@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -75,6 +76,20 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             b"\xff\xd9"
         )
 
+    def write_jpeg_rgb(self, path: Path, rows: list[list[tuple[int, int, int]]]) -> None:
+        if shutil.which("sips") is None:
+            self.skipTest("sips is required to write JPEG fixtures")
+        source_png = path.with_name(path.name + ".source.png")
+        self.write_png_rgb(source_png, rows)
+        result = subprocess.run(
+            ["sips", "-s", "format", "jpeg", str(source_png), "--out", str(path)],
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+        source_png.unlink(missing_ok=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def write_png_rgb(self, path: Path, rows: list[list[tuple[int, int, int]]], filter_type: int = 0) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         height = len(rows)
@@ -141,7 +156,11 @@ class RkgScreenshotStatusTests(unittest.TestCase):
     def test_build_screenshot_status_accepts_valid_jpeg_capture(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "RingDash"
-            self.write_jpeg_stub(project / "Docs" / "screenshots" / "gameplay_start.jpg")
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
             plan = build_qa_plan(target_spec())
 
             payload = build_screenshot_status(project, plan)
@@ -163,6 +182,46 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             first = payload["checks"][0]
             self.assertFalse(payload["ok"])
             self.assertEqual(first["status"], "invalid_dimensions")
+
+    def test_verify_screenshots_rejects_dimension_only_jpeg_stub(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            self.write_jpeg_stub(project / "Docs" / "screenshots" / "gameplay_start.jpg")
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "invalid_image")
+
+    def test_verify_screenshots_rejects_solid_jpeg_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            solid = [[(244, 244, 244) for _ in range(320)] for _ in range(320)]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", solid)
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "blank_or_solid")
+
+    def test_verify_screenshots_rejects_duplicate_visual_evidence_across_states(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "results.jpg", rows)
+            plan = build_qa_plan(target_spec(["gameplay_start", "results"]))
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "ok")
+            self.assertEqual(payload["checks"][1]["status"], "duplicate_visual_evidence")
 
     def test_verify_screenshots_rejects_solid_png_capture(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -226,7 +285,11 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             root = Path(tmp)
             project = root / "RingDash"
             self.write_json(project / "GameSpec.json", target_spec())
-            self.write_jpeg_stub(project / "Docs" / "screenshots" / "gameplay_start.jpg")
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
 
             result = self.run_rkg(root, "verify-screenshots", str(project), "--json")
 

@@ -25,6 +25,7 @@
 - Expanded generated racing skeletons from generic placeholders into state-to-scene RealityKit binding for vehicle, track, obstacle, and checkpoint roles.
 - Expanded generated FPS/shooter skeletons from generic placeholders into state-to-scene RealityKit binding for player, weapon, enemy, and cover roles.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.
+- Introduced a `CustomRealityKitRuntimeAdapter` registry so `custom_realitykit` system adapters declare their systems, state fields, rules, UI sections, and scene bindings in one composable place.
 
 ## v0.2.1 - Release identity and screenshot evidence patch (2026-05-10)
 

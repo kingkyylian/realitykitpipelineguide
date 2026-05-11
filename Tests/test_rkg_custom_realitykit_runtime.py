@@ -12,6 +12,7 @@ from rkg.custom_realitykit_runtime import (
     custom_realitykit_adapter_content_sections,
     custom_realitykit_game_scene_controller_swift,
     custom_realitykit_rule_members,
+    custom_realitykit_runtime_adapters,
     custom_realitykit_state_fields,
 )
 
@@ -67,6 +68,21 @@ def custom_shooter_spec() -> dict:
 
 
 class RkgCustomRealityKitRuntimeTests(unittest.TestCase):
+    def test_runtime_adapters_are_declared_as_registry_entries(self) -> None:
+        adapters = custom_realitykit_runtime_adapters()
+
+        self.assertEqual(["racing", "shooter"], [adapter.id for adapter in adapters])
+        self.assertEqual(("racing", "lap_timer", "collision"), adapters[0].systems)
+        self.assertEqual(("weapon", "hitscan", "enemies", "health", "cover"), adapters[1].systems)
+        self.assertIn("var raceDistance: Int = 0", adapters[0].state_fields)
+        self.assertIn("var shooterHealth: Int = GameRules.shooterMaxHealth", adapters[1].state_fields)
+        self.assertIn("static func startRacingSession(sessionSeconds: Int) -> GameSessionState", "\n".join(adapters[0].rule_members))
+        self.assertIn("static func startShooterSession(sessionSeconds: Int) -> GameSessionState", "\n".join(adapters[1].rule_members))
+        self.assertIn("Button(\"Left\")", adapters[0].content_section)
+        self.assertIn("Button(\"Aim Left\")", adapters[1].content_section)
+        self.assertIn("vehicleEntity", adapters[0].scene_properties)
+        self.assertIn("weaponEntity", adapters[1].scene_properties)
+
     def test_custom_runtime_module_owns_state_rules_content_and_scene_strings(self) -> None:
         fields = custom_realitykit_state_fields()
         rules = "\n".join(custom_realitykit_rule_members())

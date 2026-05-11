@@ -1,56 +1,146 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from rkg.plan import runtime_entities_for
 
+SceneBinding = tuple[str, frozenset[str]]
+
+
+@dataclass(frozen=True)
+class CustomRealityKitRuntimeAdapter:
+    id: str
+    systems: tuple[str, ...]
+    state_fields: tuple[str, ...]
+    rule_members: tuple[str, ...]
+    content_section: str
+    scene_properties: tuple[str, ...]
+    scene_bindings: tuple[SceneBinding, ...]
+    system_flags_condition: str
+    scene_update_call: str
+    start_session_call: str
+    advance_session_call: str
+    screenshot_session_call: str
+    scene_methods: str
+
+
+_CORE_STATE_FIELDS = (
+    "var primaryActions: Int = 0",
+    "var isFailureProofVisible: Bool = false",
+)
+
+
+def custom_realitykit_runtime_adapters() -> tuple[CustomRealityKitRuntimeAdapter, ...]:
+    return (
+        _racing_runtime_adapter(),
+        _shooter_runtime_adapter(),
+    )
+
 
 def custom_realitykit_state_fields() -> list[str]:
-    return [
-        "var primaryActions: Int = 0",
-        "var isFailureProofVisible: Bool = false",
-        "var raceDistance: Int = 0",
-        "var currentLap: Int = 0",
-        "var checkpointIndex: Int = 0",
-        "var vehicleLane: Int = 1",
-        "var obstacleLane: Int = 0",
-        "var isRaceCollision: Bool = false",
-        "var shooterHealth: Int = GameRules.shooterMaxHealth",
-        "var enemiesRemaining: Int = GameRules.startingEnemyCount",
-        "var shotsFired: Int = 0",
-        "var aimLane: Int = 1",
-        "var enemyLane: Int = 1",
-        "var isTakingCover: Bool = false",
-        "var isShooterDefeated: Bool = false",
-        "var lastShotHit: Bool = false",
-    ]
+    fields = list(_CORE_STATE_FIELDS)
+    for adapter in custom_realitykit_runtime_adapters():
+        fields.extend(adapter.state_fields)
+    return fields
 
 
 def custom_realitykit_rule_members() -> list[str]:
-    return [
-        "static let raceLaneCount = 3",
-        "static let checkpointCount = 3",
-        """static func clampedRaceLane(_ lane: Int) -> Int {
+    adapters = custom_realitykit_runtime_adapters()
+    members: list[str] = []
+    for adapter in adapters:
+        members.extend(adapter.rule_members)
+    members.extend(_custom_realitykit_core_rule_members(adapters))
+    return members
+
+
+def custom_realitykit_adapter_content_sections() -> str:
+    return "\n".join(adapter.content_section for adapter in custom_realitykit_runtime_adapters())
+
+
+def custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    adapters = custom_realitykit_runtime_adapters()
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        tuple(binding for adapter in adapters for binding in adapter.scene_bindings),
+    )
+    property_lines = "\n".join(
+        f"    private var {property_name}: Entity?"
+        for property_name in _ordered_unique(property_name for adapter in adapters for property_name in adapter.scene_properties)
+    )
+    update_dispatch = "\n".join(
+        f"""        if {adapter.system_flags_condition} {{
+            {adapter.scene_update_call}
+            return
+        }}"""
+        for adapter in adapters
+    )
+    adapter_methods = "\n\n".join(adapter.scene_methods for adapter in adapters)
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+{property_lines}
+    private var cameraRigEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        let cameraRig = Entity()
+        cameraRig.transform = CameraRig.transform
+        cameraRigEntity = cameraRig
+        anchor.addChild(cameraRig)
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+{update_dispatch}
+        cameraRigEntity?.transform = CameraRig.transform
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }}
+
+{adapter_methods}
+}}
+"""
+
+
+def _racing_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
+    return CustomRealityKitRuntimeAdapter(
+        id="racing",
+        systems=("racing", "lap_timer", "collision"),
+        state_fields=(
+            "var raceDistance: Int = 0",
+            "var currentLap: Int = 0",
+            "var checkpointIndex: Int = 0",
+            "var vehicleLane: Int = 1",
+            "var obstacleLane: Int = 0",
+            "var isRaceCollision: Bool = false",
+        ),
+        rule_members=(
+            "static let raceLaneCount = 3",
+            "static let checkpointCount = 3",
+            """static func clampedRaceLane(_ lane: Int) -> Int {
     min(max(lane, 0), raceLaneCount - 1)
 }""",
-        """static func laneAfterSteer(currentLane: Int, direction: Int) -> Int {
+            """static func laneAfterSteer(currentLane: Int, direction: Int) -> Int {
     clampedRaceLane(currentLane + direction)
 }""",
-        """static func nextRaceObstacleLane(after distance: Int) -> Int {
+            """static func nextRaceObstacleLane(after distance: Int) -> Int {
     (distance + 2) % raceLaneCount
 }""",
-        """static func nextCheckpointIndex(after distance: Int) -> Int {
+            """static func nextCheckpointIndex(after distance: Int) -> Int {
     distance % checkpointCount
 }""",
-        """static func hasRaceCollision(vehicleLane: Int, obstacleLane: Int, distance: Int) -> Bool {
+            """static func hasRaceCollision(vehicleLane: Int, obstacleLane: Int, distance: Int) -> Bool {
     SystemFlags.hasCollision && distance >= 2 && vehicleLane == obstacleLane
 }""",
-        """static func scoreForRace(distance: Int, currentLap: Int) -> Int {
+            """static func scoreForRace(distance: Int, currentLap: Int) -> Int {
     max(0, distance) * hitScore + max(0, currentLap - 1) * perfectScore
 }""",
-        """static func startRacingSession(sessionSeconds: Int) -> GameSessionState {
+            """static func startRacingSession(sessionSeconds: Int) -> GameSessionState {
     var state = GameSessionState()
     state.phase = .playing
     state.sessionSeconds = sessionSeconds
@@ -61,7 +151,7 @@ def custom_realitykit_rule_members() -> list[str]:
     state.lastEvent = "race started"
     return state
 }""",
-        """static func advanceRacingFrame(_ state: GameSessionState) -> GameSessionState {
+            """static func advanceRacingFrame(_ state: GameSessionState) -> GameSessionState {
     var next = state
     if next.phase != .playing {
         return startRacingSession(sessionSeconds: next.sessionSeconds)
@@ -87,19 +177,124 @@ def custom_realitykit_rule_members() -> list[str]:
     }
     return next
 }""",
-        "static let shooterLaneCount = 3",
-        "static let shooterMaxHealth = 3",
-        "static let startingEnemyCount = 3",
-        """static func clampedShooterLane(_ lane: Int) -> Int {
+            """static func racingScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startRacingSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        return state
+    case "fail_or_hit":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        return state
+    case "results":
+        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        state = advanceRacingFrame(state)
+        return SessionControl.markResult(state, event: "race results")
+    default:
+        return fallback
+    }
+}""",
+        ),
+        content_section="""                if SystemFlags.hasRacing {
+                    HStack(spacing: 12) {
+                        Text("Lap \\(state.currentLap)")
+                            .font(.caption.monospacedDigit())
+                        Text("Distance \\(state.raceDistance)")
+                            .font(.caption.monospacedDigit())
+                        Text("Checkpoint \\(state.checkpointIndex + 1)/\\(GameRules.checkpointCount)")
+                            .font(.caption.monospacedDigit())
+                        Text("Lane \\(state.vehicleLane + 1)")
+                            .font(.caption.monospacedDigit())
+                        Spacer()
+                    }
+
+                    HStack {
+                        Button("Left") {
+                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: -1)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Right") {
+                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: 1)
+                        }
+                        .buttonStyle(.bordered)
+                        Spacer()
+                    }
+                }
+""",
+        scene_properties=("vehicleEntity", "trackEntity", "obstacleEntity", "checkpointEntity"),
+        scene_bindings=(
+            ("vehicleEntity", frozenset({"player", "vehicle"})),
+            ("trackEntity", frozenset({"arena", "environment", "track"})),
+            ("obstacleEntity", frozenset({"obstacle", "hazard"})),
+            ("checkpointEntity", frozenset({"ui_prop", "checkpoint", "target"})),
+        ),
+        system_flags_condition="SystemFlags.hasRacing",
+        scene_update_call="updateRacing(state: state)",
+        start_session_call="startRacingSession(sessionSeconds: sessionSeconds)",
+        advance_session_call="advanceRacingFrame(state)",
+        screenshot_session_call="racingScreenshotSession(for: screenshotState, fallback: fallback)",
+        scene_methods="""    func updateRacing(state: GameSessionState) {
+        vehicleEntity?.position.x = xPosition(forRaceLane: state.vehicleLane)
+        vehicleEntity?.position.z = -0.80
+        vehicleEntity?.scale = state.isRaceCollision ? [0.90, 0.90, 0.90] : [1, 1, 1]
+
+        trackEntity?.position.z = -Float(state.raceDistance % 6) * 0.04
+
+        obstacleEntity?.isEnabled = SystemFlags.hasCollision
+        obstacleEntity?.position.x = xPosition(forRaceLane: state.obstacleLane)
+        obstacleEntity?.position.z = -1.10 - Float(state.raceDistance % 4) * 0.16
+
+        checkpointEntity?.isEnabled = SystemFlags.hasLapTimer
+        checkpointEntity?.position = [0, 0.18, -1.55 - Float(state.checkpointIndex) * 0.12]
+
+        var cameraTransform = CameraRig.transform
+        cameraTransform.translation.z -= Float(state.raceDistance) * 0.03
+        cameraRigEntity?.transform = cameraTransform
+
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }
+
+    private func xPosition(forRaceLane lane: Int) -> Float {
+        Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
+    }""",
+    )
+
+
+def _shooter_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
+    return CustomRealityKitRuntimeAdapter(
+        id="shooter",
+        systems=("weapon", "hitscan", "enemies", "health", "cover"),
+        state_fields=(
+            "var shooterHealth: Int = GameRules.shooterMaxHealth",
+            "var enemiesRemaining: Int = GameRules.startingEnemyCount",
+            "var shotsFired: Int = 0",
+            "var aimLane: Int = 1",
+            "var enemyLane: Int = 1",
+            "var isTakingCover: Bool = false",
+            "var isShooterDefeated: Bool = false",
+            "var lastShotHit: Bool = false",
+        ),
+        rule_members=(
+            "static let shooterLaneCount = 3",
+            "static let shooterMaxHealth = 3",
+            "static let startingEnemyCount = 3",
+            """static func clampedShooterLane(_ lane: Int) -> Int {
     min(max(lane, 0), shooterLaneCount - 1)
 }""",
-        """static func aimLaneAfterMove(currentLane: Int, direction: Int) -> Int {
+            """static func aimLaneAfterMove(currentLane: Int, direction: Int) -> Int {
     clampedShooterLane(currentLane + direction)
 }""",
-        """static func nextShooterEnemyLane(after shotsFired: Int) -> Int {
+            """static func nextShooterEnemyLane(after shotsFired: Int) -> Int {
     (shotsFired + 1) % shooterLaneCount
 }""",
-        """static func startShooterSession(sessionSeconds: Int) -> GameSessionState {
+            """static func startShooterSession(sessionSeconds: Int) -> GameSessionState {
     var state = GameSessionState()
     state.phase = .playing
     state.sessionSeconds = sessionSeconds
@@ -110,7 +305,7 @@ def custom_realitykit_rule_members() -> list[str]:
     state.lastEvent = "breach started"
     return state
 }""",
-        """static func toggleShooterCover(_ state: GameSessionState) -> GameSessionState {
+            """static func toggleShooterCover(_ state: GameSessionState) -> GameSessionState {
     var next = state
     if next.phase != .playing {
         return next
@@ -119,7 +314,7 @@ def custom_realitykit_rule_members() -> list[str]:
     next.lastEvent = next.isTakingCover ? "in cover" : "leaving cover"
     return next
 }""",
-        """static func applyShooterDamage(_ state: GameSessionState) -> GameSessionState {
+            """static func applyShooterDamage(_ state: GameSessionState) -> GameSessionState {
     var next = state
     if next.phase != .playing {
         return next
@@ -138,7 +333,7 @@ def custom_realitykit_rule_members() -> list[str]:
     }
     return next
 }""",
-        """static func fireShooterWeapon(_ state: GameSessionState) -> GameSessionState {
+            """static func fireShooterWeapon(_ state: GameSessionState) -> GameSessionState {
     var next = state
     if next.phase != .playing {
         return startShooterSession(sessionSeconds: next.sessionSeconds)
@@ -163,67 +358,10 @@ def custom_realitykit_rule_members() -> list[str]:
     next.enemyLane = nextShooterEnemyLane(after: next.shotsFired)
     return next
 }""",
-        """static func advanceShooterFrame(_ state: GameSessionState) -> GameSessionState {
+            """static func advanceShooterFrame(_ state: GameSessionState) -> GameSessionState {
     fireShooterWeapon(state)
 }""",
-        """static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState {
-    if SystemFlags.hasRacing {
-        return startRacingSession(sessionSeconds: sessionSeconds)
-    }
-    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
-        return startShooterSession(sessionSeconds: sessionSeconds)
-    }
-    var state = GameSessionState()
-    state.phase = .playing
-    state.sessionSeconds = sessionSeconds
-    state.lastEvent = "started"
-    return state
-}""",
-        """static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState {
-    if SystemFlags.hasRacing {
-        return advanceRacingFrame(state)
-    }
-    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
-        return advanceShooterFrame(state)
-    }
-    var next = state
-    if next.phase != .playing {
-        return startCustomRealityKitSession(sessionSeconds: next.sessionSeconds)
-    }
-    next.primaryActions += 1
-    next.elapsedSeconds += 1
-    next.score += scoreForHit(isPerfect: SystemFlags.has("lap_timer"))
-    next.lastEvent = InputController.primaryActionLabel
-    if SystemFlags.hasCollision && next.primaryActions >= 2 {
-        next.isFailureProofVisible = true
-        next = SessionControl.markResult(next, event: "collision proof")
-    }
-    return next
-}""",
-        """static func racingScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
-    switch screenshotState?.rawValue {
-    case "gameplay_start":
-        return startRacingSession(sessionSeconds: fallback.sessionSeconds)
-    case "mid_action":
-        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceRacingFrame(state)
-        return state
-    case "fail_or_hit":
-        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceRacingFrame(state)
-        state = advanceRacingFrame(state)
-        return state
-    case "results":
-        var state = startRacingSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceRacingFrame(state)
-        state = advanceRacingFrame(state)
-        state = advanceRacingFrame(state)
-        return SessionControl.markResult(state, event: "race results")
-    default:
-        return fallback
-    }
-}""",
-        """static func shooterScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+            """static func shooterScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
     switch screenshotState?.rawValue {
     case "gameplay_start":
         return startShooterSession(sessionSeconds: fallback.sessionSeconds)
@@ -249,64 +387,8 @@ def custom_realitykit_rule_members() -> list[str]:
         return fallback
     }
 }""",
-        """static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
-    if SystemFlags.hasRacing {
-        return racingScreenshotSession(for: screenshotState, fallback: fallback)
-    }
-    if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
-        return shooterScreenshotSession(for: screenshotState, fallback: fallback)
-    }
-    switch screenshotState?.rawValue {
-    case "gameplay_start":
-        return startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
-    case "mid_action":
-        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceCustomRealityKitSession(state)
-        return state
-    case "fail_or_hit":
-        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceCustomRealityKitSession(state)
-        state = advanceCustomRealityKitSession(state)
-        return state
-    case "results":
-        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
-        state = advanceCustomRealityKitSession(state)
-        return SessionControl.markResult(state, event: "results proof")
-    default:
-        return fallback
-    }
-}""",
-    ]
-
-
-def custom_realitykit_adapter_content_sections() -> str:
-    return """                if SystemFlags.hasRacing {
-                    HStack(spacing: 12) {
-                        Text("Lap \\(state.currentLap)")
-                            .font(.caption.monospacedDigit())
-                        Text("Distance \\(state.raceDistance)")
-                            .font(.caption.monospacedDigit())
-                        Text("Checkpoint \\(state.checkpointIndex + 1)/\\(GameRules.checkpointCount)")
-                            .font(.caption.monospacedDigit())
-                        Text("Lane \\(state.vehicleLane + 1)")
-                            .font(.caption.monospacedDigit())
-                        Spacer()
-                    }
-
-                    HStack {
-                        Button("Left") {
-                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: -1)
-                        }
-                        .buttonStyle(.bordered)
-                        Button("Right") {
-                            state.vehicleLane = GameRules.laneAfterSteer(currentLane: state.vehicleLane, direction: 1)
-                        }
-                        .buttonStyle(.bordered)
-                        Spacer()
-                    }
-                }
-
-                if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
+        ),
+        content_section="""                if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {
                     HStack(spacing: 12) {
                         Text("Health \\(state.shooterHealth)")
                             .font(.caption.monospacedDigit())
@@ -335,88 +417,20 @@ def custom_realitykit_adapter_content_sections() -> str:
                         Spacer()
                     }
                 }
-"""
-
-
-def custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
-    entity_lines = _scene_entity_setup_lines(
-        spec,
-        [
-            ("vehicleEntity", {"player", "vehicle"}),
-            ("playerEntity", {"player"}),
-            ("trackEntity", {"arena", "environment", "track"}),
-            ("obstacleEntity", {"obstacle", "hazard"}),
-            ("checkpointEntity", {"ui_prop", "checkpoint", "target"}),
-            ("weaponEntity", {"weapon"}),
-            ("enemyEntity", {"enemy"}),
-            ("coverEntity", {"cover"}),
-        ],
-    )
-    return f"""import RealityKit
-
-final class GameSceneController {{
-    private let anchor = AnchorEntity(world: .zero)
-    private var vehicleEntity: Entity?
-    private var playerEntity: Entity?
-    private var trackEntity: Entity?
-    private var obstacleEntity: Entity?
-    private var checkpointEntity: Entity?
-    private var weaponEntity: Entity?
-    private var enemyEntity: Entity?
-    private var coverEntity: Entity?
-    private var cameraRigEntity: Entity?
-
-    func install(into view: ARView) {{
-{entity_lines}
-
-        let cameraRig = Entity()
-        cameraRig.transform = CameraRig.transform
-        cameraRigEntity = cameraRig
-        anchor.addChild(cameraRig)
-        view.scene.addAnchor(anchor)
-    }}
-
-    func update(state: GameSessionState) {{
-        if SystemFlags.hasRacing {{
-            updateRacing(state: state)
-            return
-        }}
-        if SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover {{
-            updateShooter(state: state)
-            return
-        }}
-        cameraRigEntity?.transform = CameraRig.transform
-        anchor.position.z = 0
-        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
-    }}
-
-    func updateRacing(state: GameSessionState) {{
-        vehicleEntity?.position.x = xPosition(forRaceLane: state.vehicleLane)
-        vehicleEntity?.position.z = -0.80
-        vehicleEntity?.scale = state.isRaceCollision ? [0.90, 0.90, 0.90] : [1, 1, 1]
-
-        trackEntity?.position.z = -Float(state.raceDistance % 6) * 0.04
-
-        obstacleEntity?.isEnabled = SystemFlags.hasCollision
-        obstacleEntity?.position.x = xPosition(forRaceLane: state.obstacleLane)
-        obstacleEntity?.position.z = -1.10 - Float(state.raceDistance % 4) * 0.16
-
-        checkpointEntity?.isEnabled = SystemFlags.hasLapTimer
-        checkpointEntity?.position = [0, 0.18, -1.55 - Float(state.checkpointIndex) * 0.12]
-
-        var cameraTransform = CameraRig.transform
-        cameraTransform.translation.z -= Float(state.raceDistance) * 0.03
-        cameraRigEntity?.transform = cameraTransform
-
-        anchor.position.z = 0
-        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
-    }}
-
-    private func xPosition(forRaceLane lane: Int) -> Float {{
-        Float(GameRules.clampedRaceLane(lane) - 1) * 0.45
-    }}
-
-    func updateShooter(state: GameSessionState) {{
+""",
+        scene_properties=("playerEntity", "weaponEntity", "enemyEntity", "coverEntity"),
+        scene_bindings=(
+            ("playerEntity", frozenset({"player"})),
+            ("weaponEntity", frozenset({"weapon"})),
+            ("enemyEntity", frozenset({"enemy"})),
+            ("coverEntity", frozenset({"cover"})),
+        ),
+        system_flags_condition="SystemFlags.hasWeapon || SystemFlags.hasEnemies || SystemFlags.hasHealth || SystemFlags.hasCover",
+        scene_update_call="updateShooter(state: state)",
+        start_session_call="startShooterSession(sessionSeconds: sessionSeconds)",
+        advance_session_call="advanceShooterFrame(state)",
+        screenshot_session_call="shooterScreenshotSession(for: screenshotState, fallback: fallback)",
+        scene_methods="""    func updateShooter(state: GameSessionState) {
         playerEntity?.position = [0, state.isTakingCover ? -0.06 : 0, -0.72]
         playerEntity?.scale = state.isShooterDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]
 
@@ -436,13 +450,72 @@ final class GameSceneController {{
         cameraRigEntity?.transform = CameraRig.transform
         anchor.position.z = 0
         anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
-    }}
+    }
 
-    private func xPosition(forShooterLane lane: Int) -> Float {{
+    private func xPosition(forShooterLane lane: Int) -> Float {
         Float(GameRules.clampedShooterLane(lane) - 1) * 0.45
+    }""",
+    )
+
+
+def _custom_realitykit_core_rule_members(adapters: Sequence[CustomRealityKitRuntimeAdapter]) -> tuple[str, ...]:
+    return (
+        f"""static func startCustomRealityKitSession(sessionSeconds: Int) -> GameSessionState {{
+{_rule_dispatch_lines(adapters, "start_session_call")}
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.lastEvent = "started"
+    return state
+}}""",
+        f"""static func advanceCustomRealityKitSession(_ state: GameSessionState) -> GameSessionState {{
+{_rule_dispatch_lines(adapters, "advance_session_call")}
+    var next = state
+    if next.phase != .playing {{
+        return startCustomRealityKitSession(sessionSeconds: next.sessionSeconds)
     }}
-}}
-"""
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    next.score += scoreForHit(isPerfect: SystemFlags.has("lap_timer"))
+    next.lastEvent = InputController.primaryActionLabel
+    if SystemFlags.hasCollision && next.primaryActions >= 2 {{
+        next.isFailureProofVisible = true
+        next = SessionControl.markResult(next, event: "collision proof")
+    }}
+    return next
+}}""",
+        f"""static func customRealityKitScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {{
+{_rule_dispatch_lines(adapters, "screenshot_session_call")}
+    switch screenshotState?.rawValue {{
+    case "gameplay_start":
+        return startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        return state
+    case "fail_or_hit":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        state = advanceCustomRealityKitSession(state)
+        return state
+    case "results":
+        var state = startCustomRealityKitSession(sessionSeconds: fallback.sessionSeconds)
+        state = advanceCustomRealityKitSession(state)
+        return SessionControl.markResult(state, event: "results proof")
+    default:
+        return fallback
+    }}
+}}""",
+    )
+
+
+def _rule_dispatch_lines(adapters: Sequence[CustomRealityKitRuntimeAdapter], call_attribute: str) -> str:
+    return "\n".join(
+        f"""    if {adapter.system_flags_condition} {{
+        return {getattr(adapter, call_attribute)}
+    }}"""
+        for adapter in adapters
+    )
 
 
 def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
@@ -456,7 +529,7 @@ def _runtime_entity_swift(entity: Mapping[str, str]) -> str:
         anchor.addChild({variable})"""
 
 
-def _scene_entity_setup_lines(spec: Mapping[str, Any], bindings: list[tuple[str, set[str]]]) -> str:
+def _scene_entity_setup_lines(spec: Mapping[str, Any], bindings: Sequence[SceneBinding]) -> str:
     lines: list[str] = []
     bound_properties: set[str] = set()
     for entity in runtime_entities_for(spec):
@@ -468,6 +541,17 @@ def _scene_entity_setup_lines(spec: Mapping[str, Any], bindings: list[tuple[str,
                 lines.append(f"        {property_name} = {entity['variable']}")
                 bound_properties.add(property_name)
     return "\n\n".join(lines)
+
+
+def _ordered_unique(values: Iterable[str]) -> tuple[str, ...]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value in seen:
+            continue
+        result.append(value)
+        seen.add(value)
+    return tuple(result)
 
 
 def _swift_string_literal(value: object) -> str:

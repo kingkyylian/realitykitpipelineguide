@@ -12,6 +12,47 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 119: RKG Custom Runtime Adapter Registry
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit_runtime.py` modülü racing/shooter stringlerini tek büyük public fonksiyonlardan üretmeye başlamıştı. Üçüncü adapter eklemeden önce her system adapter state/rules/UI/scene binding parçalarını tek bir registry kaydında beyan etmeli.
+
+**Yapılanlar:**
+
+- Yeni `CustomRealityKitRuntimeAdapter` veri modeli eklendi.
+- `custom_realitykit_runtime_adapters()` registry yüzeyi eklendi; şu an `racing` ve `shooter` kayıtlarını sıralı döndürüyor.
+- `custom_realitykit_state_fields()`, `custom_realitykit_rule_members()`, `custom_realitykit_adapter_content_sections()`, ve `custom_realitykit_game_scene_controller_swift()` artık registry kayıtlarından compose ediyor.
+- Racing ve shooter adapter'ları kendi `systems`, state field, rule member, ContentView section, scene property, scene binding, session dispatch, screenshot dispatch, ve scene update method parçalarını tek yerde taşıyor.
+- `Tests/test_rkg_custom_realitykit_runtime.py` registry kontratını kapsayacak şekilde genişletildi; test önce eksik API import hatasıyla kırıldı.
+- `CHANGELOG.md`, `Docs/ai-handoff.md`, `Docs/rkg-architecture.md`, ve `Docs/rkg-generic-skeleton.md` registry sınırını anlatacak şekilde güncellendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_custom_realitykit_runtime: expected red before registry API; then ok, 2 tests
+rtk .venv/bin/python -m ruff check src/rkg/custom_realitykit_runtime.py Tests/test_rkg_custom_realitykit_runtime.py: ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_racing_runtime_adapter_for_custom_realitykit Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_shooter_runtime_adapter_for_custom_realitykit: ok, 2 tests
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-registry-racing/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-registry-racing/GameSpec.json --output Build/rkg-registry-racing/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-registry-racing/DesertChase: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-registry-shooter/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-registry-shooter/GameSpec.json --output Build/rkg-registry-shooter/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-registry-shooter/RoomBreach: ok
+rtk git diff --check: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 197 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Adapter ekleme işi artık tek bir büyük Swift string patch'i değil, bir registry kaydı ekleme işi haline geldi. Bu, `collect,score,timer` veya `projectile` gibi üçüncü adapter'ı küçük tutmak için gerekli ara katman.
+
+**Karar:**
+
+Sıradaki RKG davranış işi yeni registry şeklini kullanarak küçük bir üçüncü adapter eklemek olmalı. Öncelik `collect,score,timer`: yarış ve shooter'dan farklı olarak item/pickup role binding, skor artışı, timer proof ve sonuç state'i gösterebilir.
+
 ### Sprint 118: RKG Custom Runtime Adapter Module Split
 
 **Durum:** Tamamlandı

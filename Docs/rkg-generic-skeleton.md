@@ -81,6 +81,40 @@ Generated runtime behavior:
 - `GameSceneController` binds player, weapon, enemy, cover, and camera rig entities; aim/enemy/cover/hit/defeated state changes produce visible RealityKit placement, scale, and enabled-state changes.
 - `capture-screenshots` launch states seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` with different shooter state.
 
+## Collector / Score / Timer Skeleton
+
+```bash
+python3 Tools/rkg.py new-game \
+  --title "Orb Sprint" \
+  --camera top_down \
+  --input tap_swipe \
+  --systems collect,score,timer \
+  --output Build/rkg-generic-collector/GameSpec.json
+
+python3 Tools/rkg.py validate-spec Build/rkg-generic-collector/GameSpec.json
+python3 Tools/rkg.py init-game Build/rkg-generic-collector/GameSpec.json --output Build/rkg-generic-collector/OrbSprint --force
+python3 Tools/rkg.py verify-game Build/rkg-generic-collector/OrbSprint
+python3 Tools/rkg.py capture-screenshots Build/rkg-generic-collector/OrbSprint --device booted
+python3 Tools/rkg.py verify-screenshots Build/rkg-generic-collector/OrbSprint
+```
+
+Generated roles:
+
+| Asset id | Role | Purpose |
+| --- | --- | --- |
+| `player_proxy` | `player` | Player collector proxy. |
+| `arena_space` | `arena` | Top-down pickup space proxy. |
+| `pickup_proxy` | `pickup` | Collectible proof role when `collect` is selected. |
+| `timer_gate` | `ui_prop` | Timer pressure proof role when `timer` is selected. |
+
+Generated runtime behavior:
+
+- `GameSessionState` includes collected item count, remaining items, timer, combo streak, collector lane, pickup lane, and timeout proof flags.
+- `GameRules` starts a collector session, clamps lane movement, resolves pickup collection, scores combo progress, marks collection-complete results, and marks timer-expired fail states.
+- `ContentView` shows item/timer/combo/lane HUD values plus Move Left, Move Right, and Collect controls.
+- `GameSceneController` binds player, arena, pickup, timer, and camera rig entities; lane, combo, pickup, and timeout state changes produce visible RealityKit placement, scale, and enabled-state changes.
+- `capture-screenshots` launch states seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` with different collector state.
+
 ## Supported Axes
 
 Camera:
@@ -108,4 +142,4 @@ shooting, enemies, enemy_ai, health, cover, collect, score, timer, physics
 
 `custom_realitykit` now gives a valid generated project, declared fallback-driven placeholder meshes, generated asset briefs, store docs, screenshot QA, simulator capture, `CameraRig.swift`, `InputController.swift`, `SystemFlags.swift`, and `verify-game`/`verify-screenshots` gates. The generic overlay is state-bound, so launch screenshot states can seed `gameplay_start`, `mid_action`, `fail_or_hit`, and `results` instead of capturing four identical idle launches.
 
-The first two system adapters are racing and FPS/shooter. They prove vehicle lane movement, checkpoint/lap progress, collision/result state, first-person aim/fire state, enemy/health/cover proof, and camera rig entity binding. Their state/rule/UI/scene generator surface now lives behind `CustomRealityKitRuntimeAdapter` registry entries in `src/rkg/custom_realitykit_runtime.py`, so the next runtime slice can add a small third adapter for collect/score/timer or projectile behavior without growing the native archetype generator files. Generated games are still skeletons, not genre-complete gameplay.
+The first three system adapters are racing, FPS/shooter, and collector/score/timer. They prove vehicle lane movement, checkpoint/lap progress, collision/result state, first-person aim/fire state, enemy/health/cover proof, pickup collection, combo/timer proof, and camera rig entity binding. Their state/rule/UI/scene generator surface lives behind `CustomRealityKitRuntimeAdapter` registry entries in `src/rkg/custom_realitykit_runtime.py`, so the next runtime slice can add projectile behavior without growing the native archetype generator files. Generated games are still skeletons, not genre-complete gameplay.

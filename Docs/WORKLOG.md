@@ -12,6 +12,54 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 120: RKG Collector Score Timer Runtime Adapter
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `custom_realitykit` generic skeleton artık racing ve shooter üretiyordu; top-down collector, score chase veya timer tabanlı prototip isteyen kullanıcı da boş proje yerine pickup/timer/score state'i olan, derlenebilir ve screenshot state'leri farklı görünen RealityKit iskeleti almalı.
+
+**Yapılanlar:**
+
+- `collect,score,timer` için üçüncü `CustomRealityKitRuntimeAdapter` eklendi.
+- `rkg new-game --systems collect,score,timer` artık collector loop metni, `pickup_proxy` ve `timer_gate` role/fallback asset'leri üretiyor.
+- `SystemFlags.swift` artık `hasCollect`, `hasScore`, ve `hasTimer` booleans üretiyor.
+- Generated `GameSessionState` collector alanları üretiyor: `collectedItems`, `collectiblesRemaining`, `collectionTimer`, `comboStreak`, `collectorLane`, `pickupLane`, ve `isCollectionTimedOut`.
+- Generated `GameRules.swift` collector session start, lane clamp/move, pickup collection, score/combo update, timer-expired fail state, collection-complete result state, ve screenshot-state seeding üretiyor.
+- Generated `ContentView.swift` item/timer/combo/lane HUD satırı ve Move Left/Move Right/Collect kontrolleri üretiyor.
+- Generated `GameSceneController.swift` player, arena, pickup, timer ve camera rig entity binding'i yapıyor; lane/combo/timer state'i RealityKit pozisyon/scale/enabled değişikliklerine yansıyor.
+- RKG docs/handoff/changelog collector adapter sınırını anlatacak şekilde güncellendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_new_game.RkgNewGameTests.test_new_game_writes_collector_score_timer_realitykit_skeleton_spec Tests.test_rkg_runtime_core.RkgRuntimeCoreTests.test_system_flags_swift_binds_collector_systems Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_collector_runtime_adapter_for_custom_realitykit: expected red before adapter; then ok, 5 tests
+rtk .venv/bin/python -m ruff check src/rkg/custom_realitykit_runtime.py src/rkg/runtime_core.py src/rkg/spec_templates.py Tests/test_rkg_custom_realitykit_runtime.py Tests/test_rkg_init_game.py Tests/test_rkg_new_game.py Tests/test_rkg_runtime_core.py: ok
+rtk .venv/bin/python -m unittest Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_racing_runtime_adapter_for_custom_realitykit Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_shooter_runtime_adapter_for_custom_realitykit Tests.test_rkg_new_game.RkgNewGameTests.test_new_game_writes_racing_realitykit_skeleton_spec Tests.test_rkg_new_game.RkgNewGameTests.test_new_game_writes_fps_shooter_realitykit_skeleton_spec: ok, 4 tests
+rtk .venv/bin/python Tools/rkg.py new-game --title "Orb Sprint" --camera top_down --input tap_swipe --systems collect,score,timer --output Build/rkg-collector-runtime/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-collector-runtime/GameSpec.json --output Build/rkg-collector-runtime/OrbSprint --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-collector-runtime/OrbSprint: ok
+rtk .venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-collector-runtime/OrbSprint --device booted: ok, 4 simulator screenshots
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-collector-runtime/OrbSprint: ok, 4 screenshots
+rtk .venv/bin/python Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt_tap --systems racing,lap_timer,collision --output Build/rkg-collector-regression-racing/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-collector-regression-racing/GameSpec.json --output Build/rkg-collector-regression-racing/DesertChase --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-collector-regression-racing/DesertChase: ok
+rtk .venv/bin/python Tools/rkg.py new-game --title "Room Breach" --camera first_person --input dual_stick --systems weapon,hitscan,enemies,health,cover --output Build/rkg-collector-regression-shooter/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-collector-regression-shooter/GameSpec.json --output Build/rkg-collector-regression-shooter/RoomBreach --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-collector-regression-shooter/RoomBreach: ok
+rtk git diff --check: ok
+rtk .venv/bin/python -m ruff check src Tests Tools: ok
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 200 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Registry formatı üçüncü adapter eklerken işe yaradı: template, state, rules, UI, scene binding ve screenshot seeding tek adapter kaydında toplandı; native archetype generator dosyaları büyümedi.
+
+**Karar:**
+
+Sıradaki RKG adapter işi `projectile` olabilir. Collector'dan sonra artık yarış, shooter ve pickup/timer eksenleri var; projectile adapter bu üçüne ek olarak travel/impact proof ve projectile role binding'i kapsamalı.
+
 ### Sprint 119: RKG Custom Runtime Adapter Registry
 
 **Durum:** Tamamlandı

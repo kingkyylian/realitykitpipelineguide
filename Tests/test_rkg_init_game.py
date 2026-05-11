@@ -241,6 +241,46 @@ def custom_shooter_spec() -> dict:
     return spec
 
 
+def custom_collector_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "orb_sprint"
+    spec["game"]["display_name"] = "Orb Sprint"
+    spec["game"]["archetype"] = "custom_realitykit"
+    spec["game"]["camera"] = "top_down"
+    spec["game"]["input"] = "tap_swipe"
+    spec["game"]["systems"] = ["collect", "score", "timer"]
+    spec["loop"]["player_action"] = "collect pickups before the timer expires"
+    spec["loop"]["fail_condition"] = "timer reaches zero"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "arena_space": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+        "pickup_proxy": {
+            "type": "pickup",
+            "role": "pickup",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_pickup",
+        },
+        "timer_gate": {
+            "type": "ui_prop",
+            "role": "ui_prop",
+            "budget": "500 tris / 512 texture",
+            "fallback": "procedural_gate",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_action", "fail_or_hit", "results"]
+    return spec
+
+
 def toss_physics_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "toss_arc"
@@ -579,6 +619,44 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("private var enemyEntity: Entity?", scene_controller)
             self.assertIn("private var coverEntity: Entity?", scene_controller)
             self.assertIn("func updateShooter(state: GameSessionState)", scene_controller)
+
+    def test_init_game_generates_collector_runtime_adapter_for_custom_realitykit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, custom_collector_spec())
+            output = root / "OrbSprint"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "OrbSprint"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            system_flags = (source / "SystemFlags.swift").read_text(encoding="utf-8")
+            self.assertIn("var collectedItems: Int = 0", state)
+            self.assertIn("var collectiblesRemaining: Int = GameRules.startingCollectibleCount", state)
+            self.assertIn("var collectionTimer: Int = GameRules.collectionTimerSeconds", state)
+            self.assertIn("var collectorLane: Int = 1", state)
+            self.assertIn("var pickupLane: Int = 1", state)
+            self.assertIn("static let hasCollect = true", system_flags)
+            self.assertIn("static let hasScore = true", system_flags)
+            self.assertIn("static let hasTimer = true", system_flags)
+            self.assertIn("static let startingCollectibleCount = 5", rules)
+            self.assertIn("static let collectionTimerSeconds = 20", rules)
+            self.assertIn("static func collectPickup(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func collectorScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn("Text(\"Items \\(state.collectedItems)/\\(GameRules.startingCollectibleCount)\")", content)
+            self.assertIn("Text(\"Timer \\(state.collectionTimer)\")", content)
+            self.assertIn("Button(\"Move Left\")", content)
+            self.assertIn("Button(\"Move Right\")", content)
+            self.assertIn("Button(\"Collect\")", content)
+            self.assertIn("state = GameRules.collectPickup(state)", content)
+            self.assertIn("private var pickupEntity: Entity?", scene_controller)
+            self.assertIn("private var timerEntity: Entity?", scene_controller)
+            self.assertIn("func updateCollector(state: GameSessionState)", scene_controller)
+            self.assertIn("pickupEntity?.position.x = xPosition(forCollectorLane: state.pickupLane)", scene_controller)
 
     def test_init_game_generated_scene_loads_all_declared_required_roles(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

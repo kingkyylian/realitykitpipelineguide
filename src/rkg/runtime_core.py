@@ -118,6 +118,9 @@ enum SystemFlags {{
     static let hasEnemies = {str(bool({"enemies", "enemy_ai"} & set(systems))).lower()}
     static let hasHealth = {str("health" in systems).lower()}
     static let hasCover = {str("cover" in systems).lower()}
+    static let hasCollect = {str("collect" in systems).lower()}
+    static let hasScore = {str("score" in systems).lower()}
+    static let hasTimer = {str("timer" in systems).lower()}
 
     static var summary: String {{
         systems.sorted().joined(separator: ", ")

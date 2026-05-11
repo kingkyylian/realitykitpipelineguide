@@ -150,6 +150,12 @@ def _custom_loop(systems: list[str]) -> JsonDict:
             "fail_condition": "health reaches zero or enemies overrun the arena",
             "scoring": {"hit": 10, "perfect": 25, "clear": 100},
         }
+    if system_set & {"collect", "score", "timer"}:
+        return {
+            "player_action": "collect pickups, build score streaks, and beat the timer",
+            "fail_condition": "timer reaches zero before the pickup route is clear",
+            "scoring": {"hit": 10, "perfect": 25, "clear": 100},
+        }
     return {
         "player_action": "start the session and exercise the selected RealityKit systems",
         "fail_condition": "session timer or collision proxy ends the run",
@@ -238,5 +244,12 @@ def _custom_assets(systems: list[str]) -> JsonDict:
             "role": "pickup",
             "budget": "400 tris / 512 texture",
             "fallback": "procedural_pickup",
+        }
+    if "timer" in system_set:
+        assets["timer_gate"] = {
+            "type": "ui_prop",
+            "role": "ui_prop",
+            "budget": "500 tris / 512 texture",
+            "fallback": "procedural_gate",
         }
     return assets

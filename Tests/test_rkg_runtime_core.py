@@ -49,6 +49,44 @@ def custom_racing_spec() -> dict:
     }
 
 
+def custom_collector_spec() -> dict:
+    spec = custom_racing_spec()
+    spec["game"]["id"] = "orb_sprint"
+    spec["game"]["display_name"] = "Orb Sprint"
+    spec["game"]["camera"] = "top_down"
+    spec["game"]["input"] = "tap_swipe"
+    spec["game"]["systems"] = ["collect", "score", "timer"]
+    spec["loop"]["player_action"] = "collect pickups before the timer expires"
+    spec["loop"]["fail_condition"] = "timer reaches zero"
+    spec["assets"] = {
+        "player_proxy": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1500 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "arena_space": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+        "pickup_proxy": {
+            "type": "pickup",
+            "role": "pickup",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_pickup",
+        },
+        "timer_gate": {
+            "type": "ui_prop",
+            "role": "ui_prop",
+            "budget": "500 tris / 512 texture",
+            "fallback": "procedural_gate",
+        },
+    }
+    return spec
+
+
 class RkgRuntimeCoreTests(unittest.TestCase):
     def test_camera_rig_swift_binds_selected_camera(self) -> None:
         swift = camera_rig_swift(custom_racing_spec())
@@ -74,6 +112,15 @@ class RkgRuntimeCoreTests(unittest.TestCase):
         self.assertIn('static let hasRacing = true', swift)
         self.assertIn('static let hasWeapon = false', swift)
         self.assertIn('static let hasCollision = true', swift)
+
+    def test_system_flags_swift_binds_collector_systems(self) -> None:
+        swift = system_flags_swift(custom_collector_spec())
+
+        self.assertIn('static let systems: Set<String> = ["collect", "score", "timer"]', swift)
+        self.assertIn("static let hasCollect = true", swift)
+        self.assertIn("static let hasScore = true", swift)
+        self.assertIn("static let hasTimer = true", swift)
+        self.assertIn("static let hasRacing = false", swift)
 
 
 if __name__ == "__main__":

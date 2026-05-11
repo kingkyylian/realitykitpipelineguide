@@ -37,6 +37,7 @@ def custom_realitykit_runtime_adapters() -> tuple[CustomRealityKitRuntimeAdapter
     return (
         _racing_runtime_adapter(),
         _shooter_runtime_adapter(),
+        _collector_runtime_adapter(),
     )
 
 
@@ -454,6 +455,180 @@ def _shooter_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
 
     private func xPosition(forShooterLane lane: Int) -> Float {
         Float(GameRules.clampedShooterLane(lane) - 1) * 0.45
+    }""",
+    )
+
+
+def _collector_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
+    return CustomRealityKitRuntimeAdapter(
+        id="collector",
+        systems=("collect", "score", "timer"),
+        state_fields=(
+            "var collectedItems: Int = 0",
+            "var collectiblesRemaining: Int = GameRules.startingCollectibleCount",
+            "var collectionTimer: Int = GameRules.collectionTimerSeconds",
+            "var comboStreak: Int = 0",
+            "var collectorLane: Int = 1",
+            "var pickupLane: Int = 1",
+            "var isCollectionTimedOut: Bool = false",
+        ),
+        rule_members=(
+            "static let collectorLaneCount = 3",
+            "static let startingCollectibleCount = 5",
+            "static let collectionTimerSeconds = 20",
+            """static func clampedCollectorLane(_ lane: Int) -> Int {
+    min(max(lane, 0), collectorLaneCount - 1)
+}""",
+            """static func collectorLaneAfterMove(currentLane: Int, direction: Int) -> Int {
+    clampedCollectorLane(currentLane + direction)
+}""",
+            """static func nextPickupLane(after collectedItems: Int) -> Int {
+    (collectedItems + 1) % collectorLaneCount
+}""",
+            """static func scoreForCollection(collectedItems: Int, comboStreak: Int) -> Int {
+    collectedItems * hitScore + comboStreak * 5
+}""",
+            """static func startCollectorSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.collectedItems = 0
+    state.collectiblesRemaining = startingCollectibleCount
+    state.collectionTimer = min(sessionSeconds, collectionTimerSeconds)
+    state.comboStreak = 0
+    state.collectorLane = 1
+    state.pickupLane = 1
+    state.lastEvent = "collection started"
+    return state
+}""",
+            """static func collectPickup(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startCollectorSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.primaryActions += 1
+    next.elapsedSeconds += 1
+    if SystemFlags.hasTimer {
+        next.collectionTimer = max(0, next.collectionTimer - 1)
+    }
+    let didCollect = next.collectiblesRemaining > 0 && next.collectorLane == next.pickupLane
+    if didCollect {
+        next.collectedItems += 1
+        next.collectiblesRemaining = max(0, next.collectiblesRemaining - 1)
+        next.comboStreak += 1
+        next.score = scoreForCollection(collectedItems: next.collectedItems, comboStreak: next.comboStreak)
+        next.pickupLane = nextPickupLane(after: next.collectedItems)
+        next.lastEvent = "pickup collected"
+    } else {
+        next.comboStreak = 0
+        next.lastEvent = "pickup missed"
+    }
+    if next.collectiblesRemaining <= 0 {
+        return SessionControl.markResult(next, event: "collection complete")
+    }
+    if SystemFlags.hasTimer && next.collectionTimer <= 0 {
+        next.isCollectionTimedOut = true
+        next.isFailureProofVisible = true
+        return SessionControl.markResult(next, event: "timer expired")
+    }
+    return next
+}""",
+            """static func advanceCollectorFrame(_ state: GameSessionState) -> GameSessionState {
+    collectPickup(state)
+}""",
+            """static func collectorScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startCollectorSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_action":
+        var state = startCollectorSession(sessionSeconds: fallback.sessionSeconds)
+        state = collectPickup(state)
+        return state
+    case "fail_or_hit":
+        var state = startCollectorSession(sessionSeconds: fallback.sessionSeconds)
+        state.collectionTimer = 1
+        state.collectorLane = 0
+        state.pickupLane = 2
+        state = collectPickup(state)
+        return state
+    case "results":
+        var state = startCollectorSession(sessionSeconds: fallback.sessionSeconds)
+        for _ in 0..<startingCollectibleCount {
+            state.collectorLane = state.pickupLane
+            state = collectPickup(state)
+        }
+        return state
+    default:
+        return fallback
+    }
+}""",
+        ),
+        content_section="""                if SystemFlags.hasCollect || SystemFlags.hasScore || SystemFlags.hasTimer {
+                    HStack(spacing: 12) {
+                        Text("Items \\(state.collectedItems)/\\(GameRules.startingCollectibleCount)")
+                            .font(.caption.monospacedDigit())
+                        Text("Timer \\(state.collectionTimer)")
+                            .font(.caption.monospacedDigit())
+                        Text("Combo \\(state.comboStreak)")
+                            .font(.caption.monospacedDigit())
+                        Text("Lane \\(state.collectorLane + 1)")
+                            .font(.caption.monospacedDigit())
+                        Spacer()
+                    }
+
+                    HStack {
+                        Button("Move Left") {
+                            state.collectorLane = GameRules.collectorLaneAfterMove(currentLane: state.collectorLane, direction: -1)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Move Right") {
+                            state.collectorLane = GameRules.collectorLaneAfterMove(currentLane: state.collectorLane, direction: 1)
+                        }
+                        .buttonStyle(.bordered)
+                        Button("Collect") {
+                            state = GameRules.collectPickup(state)
+                        }
+                        .buttonStyle(.bordered)
+                        Spacer()
+                    }
+                }
+""",
+        scene_properties=("playerEntity", "arenaEntity", "pickupEntity", "timerEntity"),
+        scene_bindings=(
+            ("playerEntity", frozenset({"player"})),
+            ("arenaEntity", frozenset({"arena", "environment"})),
+            ("pickupEntity", frozenset({"pickup"})),
+            ("timerEntity", frozenset({"ui_prop", "timer"})),
+        ),
+        system_flags_condition="SystemFlags.hasCollect || SystemFlags.hasScore || SystemFlags.hasTimer",
+        scene_update_call="updateCollector(state: state)",
+        start_session_call="startCollectorSession(sessionSeconds: sessionSeconds)",
+        advance_session_call="advanceCollectorFrame(state)",
+        screenshot_session_call="collectorScreenshotSession(for: screenshotState, fallback: fallback)",
+        scene_methods="""    func updateCollector(state: GameSessionState) {
+        playerEntity?.position.x = xPosition(forCollectorLane: state.collectorLane)
+        playerEntity?.position.z = -0.76
+        playerEntity?.scale = state.isCollectionTimedOut ? [0.88, 0.88, 0.88] : [1, 1, 1]
+
+        arenaEntity?.position.z = -Float(state.collectedItems % 4) * 0.04
+
+        pickupEntity?.isEnabled = SystemFlags.hasCollect && state.collectiblesRemaining > 0
+        pickupEntity?.position.x = xPosition(forCollectorLane: state.pickupLane)
+        pickupEntity?.position.y = 0.12 + Float(state.comboStreak % 2) * 0.04
+        pickupEntity?.position.z = -1.04
+        pickupEntity?.scale = state.comboStreak > 0 ? [1.18, 1.18, 1.18] : [1, 1, 1]
+
+        timerEntity?.isEnabled = SystemFlags.hasTimer
+        timerEntity?.position = [0, 0.22, -1.38]
+        timerEntity?.scale = state.collectionTimer <= 5 ? [1.18, 1.18, 1.18] : [1, 1, 1]
+
+        cameraRigEntity?.transform = CameraRig.transform
+        anchor.position.z = 0
+        anchor.scale = state.isFailureProofVisible ? [1.05, 1.05, 1.05] : [1, 1, 1]
+    }
+
+    private func xPosition(forCollectorLane lane: Int) -> Float {
+        Float(GameRules.clampedCollectorLane(lane) - 1) * 0.45
     }""",
     )
 

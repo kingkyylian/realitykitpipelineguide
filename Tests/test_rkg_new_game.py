@@ -89,6 +89,44 @@ class RkgNewGameTests(unittest.TestCase):
             payload = json.loads(validate.stdout)
             self.assertTrue(payload["ok"])
 
+    def test_new_game_writes_collector_score_timer_realitykit_skeleton_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = root / "GameSpec.json"
+
+            result = self.run_rkg(
+                root,
+                "new-game",
+                "--title",
+                "Orb Sprint",
+                "--camera",
+                "top_down",
+                "--input",
+                "tap_swipe",
+                "--systems",
+                "collect,score,timer",
+                "--output",
+                str(spec_path),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            spec = json.loads(spec_path.read_text(encoding="utf-8"))
+            self.assertEqual(spec["game"]["id"], "orb_sprint")
+            self.assertEqual(spec["game"]["camera"], "top_down")
+            self.assertEqual(spec["game"]["input"], "tap_swipe")
+            self.assertEqual(spec["game"]["systems"], ["collect", "score", "timer"])
+            self.assertIn("collect pickups", spec["loop"]["player_action"])
+            self.assertEqual(spec["assets"]["player_proxy"]["role"], "player")
+            self.assertEqual(spec["assets"]["arena_space"]["role"], "arena")
+            self.assertEqual(spec["assets"]["pickup_proxy"]["role"], "pickup")
+            self.assertEqual(spec["assets"]["timer_gate"]["role"], "ui_prop")
+            self.assertEqual(spec["assets"]["timer_gate"]["fallback"], "procedural_gate")
+
+            validate = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+            self.assertEqual(validate.returncode, 0, validate.stderr)
+            payload = json.loads(validate.stdout)
+            self.assertTrue(payload["ok"])
+
     def test_new_game_rejects_unsupported_system(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

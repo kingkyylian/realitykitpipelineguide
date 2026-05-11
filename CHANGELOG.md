@@ -13,6 +13,7 @@
 - Added generated `CameraRig.swift`, `InputController.swift`, and `SystemFlags.swift` runtime core files for RKG game skeletons.
 - Added the first `custom_realitykit` system adapter for racing with lane steering, lap/checkpoint state, collision/result proof, camera rig entity binding, and screenshot-state seeding.
 - Added a `custom_realitykit` FPS/shooter system adapter with aim/fire/health/cover/enemy state, controls, RealityKit scene binding, and screenshot-state seeding.
+- Added a `custom_realitykit` collector/score/timer system adapter with pickup state, combo scoring, timer proof, controls, RealityKit pickup/timer binding, and simulator screenshot evidence.
 
 ### Changed
 
@@ -24,6 +25,7 @@
 - Routed `custom_realitykit` generated apps through state-bound overlays and screenshot-state seeding for `gameplay_start`, `mid_action`, `fail_or_hit`, and `results`.
 - Expanded generated racing skeletons from generic placeholders into state-to-scene RealityKit binding for vehicle, track, obstacle, and checkpoint roles.
 - Expanded generated FPS/shooter skeletons from generic placeholders into state-to-scene RealityKit binding for player, weapon, enemy, and cover roles.
+- Expanded collector-style generated skeletons with pickup and timer proof roles when `collect,score,timer` is selected.
 - Moved `custom_realitykit` state, rule, UI, and scene adapter generation into `src/rkg/custom_realitykit_runtime.py` so the next system adapters can grow outside the native archetype generator files.
 - Introduced a `CustomRealityKitRuntimeAdapter` registry so `custom_realitykit` system adapters declare their systems, state fields, rules, UI sections, and scene bindings in one composable place.
 

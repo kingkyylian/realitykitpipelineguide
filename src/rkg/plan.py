@@ -125,6 +125,8 @@ def _entity_position_for(role: str, index: int) -> str:
         return "[0, -0.45, 0]"
     if role == "player":
         return "[0, 0, -0.85]"
+    if role == "opponent":
+        return "[0.35, 0, -0.85]"
     if role in {"target", "obstacle", "hazard"}:
         x = -0.45 + (index % 3) * 0.45
         z = -1.25 - (index // 3) * 0.25
@@ -133,6 +135,10 @@ def _entity_position_for(role: str, index: int) -> str:
         return "[0.45, 0.12, -1.0]"
     if role == "projectile":
         return "[0, 0.2, -0.65]"
+    if role == "hit_vfx":
+        return "[0.03, 0.18, -0.86]"
+    if role in {"guard_cue", "telegraph"}:
+        return "[-0.35, 0.24, -0.85]"
     return _vector_literal(-0.3 + (index % 3) * 0.3, 0, -1.0)
 
 

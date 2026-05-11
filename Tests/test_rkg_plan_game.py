@@ -81,6 +81,39 @@ def lane_dodger_spec() -> dict:
     return spec
 
 
+def fighter_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "neon_ring_duel"
+    spec["game"]["display_name"] = "Neon Ring Duel"
+    spec["game"]["archetype"] = "fighter_2_5d"
+    spec["game"]["input"] = "tap_swipe"
+    spec["loop"]["player_action"] = "tap attack, swipe dodge, and time guard windows"
+    spec["loop"]["fail_condition"] = "fighter health reaches zero"
+    spec["loop"]["scoring"] = {"hit": 10, "perfect": 25, "knockout": 100}
+    spec["assets"] = {
+        "fighter_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "fighter_opponent": {
+            "type": "gameplay_actor",
+            "role": "opponent",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "duel_arena": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_lane",
+        },
+    }
+    spec["release"]["screenshots"] = ["round_start", "mid_combo", "perfect_dodge", "knockout"]
+    return spec
+
+
 class RkgPlanGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -133,6 +166,28 @@ class RkgPlanGameTests(unittest.TestCase):
             ],
         )
         self.assertIn("state.nearMisses > 0", payload["screenshot_proofs"]["near_miss"])
+
+    def test_build_game_plan_exposes_fighter_runtime_entities_and_proofs(self) -> None:
+        payload = build_game_plan(fighter_spec())
+
+        self.assertEqual(payload["archetype"]["id"], "fighter_2_5d")
+        self.assertEqual(payload["asset_roles"]["fighter_opponent"], "opponent")
+        self.assertEqual(payload["screenshot_states"], ["round_start", "mid_combo", "perfect_dodge", "knockout"])
+        self.assertIn("state.comboCount > 0", payload["screenshot_proofs"]["mid_combo"])
+        self.assertIn("state.isKnockout == true", payload["screenshot_proofs"]["knockout"])
+        self.assertEqual(
+            payload["runtime_entities"],
+            [
+                {"asset_id": "fighter_player", "role": "player", "variable": "fighterPlayer", "position": "[0, 0, -0.85]"},
+                {
+                    "asset_id": "fighter_opponent",
+                    "role": "opponent",
+                    "variable": "fighterOpponent",
+                    "position": "[0.35, 0, -0.85]",
+                },
+                {"asset_id": "duel_arena", "role": "arena", "variable": "duelArena", "position": "[0, -0.45, 0]"},
+            ],
+        )
 
     def test_plan_game_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

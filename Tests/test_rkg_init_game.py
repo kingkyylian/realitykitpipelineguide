@@ -109,6 +109,52 @@ def wave_defense_spec() -> dict:
     return spec
 
 
+def fighter_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "neon_ring_duel"
+    spec["game"]["display_name"] = "Neon Ring Duel"
+    spec["game"]["archetype"] = "fighter_2_5d"
+    spec["game"]["input"] = "tap_swipe"
+    spec["game"]["session_seconds"] = 90
+    spec["loop"]["player_action"] = "tap attack, swipe dodge, and time guard windows"
+    spec["loop"]["fail_condition"] = "fighter health reaches zero"
+    spec["loop"]["scoring"] = {"hit": 10, "perfect": 25, "knockout": 100}
+    spec["assets"] = {
+        "fighter_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "fighter_opponent": {
+            "type": "gameplay_actor",
+            "role": "opponent",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "duel_arena": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_lane",
+        },
+        "hit_spark": {
+            "type": "vfx",
+            "role": "hit_vfx",
+            "budget": "300 tris / procedural material",
+            "fallback": "procedural_spark",
+        },
+        "guard_ring": {
+            "type": "gameplay_cue",
+            "role": "guard_cue",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_ring",
+        },
+    }
+    spec["release"]["screenshots"] = ["round_start", "mid_combo", "perfect_dodge", "knockout"]
+    return spec
+
+
 def toss_physics_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "toss_arc"
@@ -448,6 +494,96 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("threatEntity?.position = threatPosition(", scene_controller)
             self.assertIn("defenderEntity?.scale = state.isDefeated ? [0.85, 0.85, 0.85] : [1, 1, 1]", scene_controller)
             self.assertIn("private func threatPosition(wave: Int, threatsRemaining: Int) -> SIMD3<Float>", scene_controller)
+
+    def test_init_game_generates_fighter_state_and_rules(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, fighter_spec())
+            output = root / "NeonRingDuel"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            state = (output / "Sources" / "NeonRingDuel" / "GameState.swift").read_text(encoding="utf-8")
+            rules = (output / "Sources" / "NeonRingDuel" / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("var playerHealth: Int = GameRules.fighterMaxHealth", state)
+            self.assertIn("var opponentHealth: Int = GameRules.fighterMaxHealth", state)
+            self.assertIn("var comboCount: Int = 0", state)
+            self.assertIn("var guardMeter: Int = GameRules.startingGuardMeter", state)
+            self.assertIn("var isDodging: Bool = false", state)
+            self.assertIn("var isKnockout: Bool = false", state)
+            self.assertIn("static let fighterMaxHealth = 5", rules)
+            self.assertIn("static func startFighterDuelSession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func recordFighterAttack(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func performPerfectDodge(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func applyFighterDamage(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func fighterScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn('case "knockout":', rules)
+            self.assertIn("while state.opponentHealth > 0", rules)
+            self.assertIn('next = SessionControl.markResult(next, event: "knockout")', rules)
+
+    def test_init_game_generates_playable_fighter_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, fighter_spec())
+            output = root / "NeonRingDuel"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "NeonRingDuel" / "ContentView.swift").read_text(encoding="utf-8")
+            input_intent = (output / "Sources" / "NeonRingDuel" / "InputIntent.swift").read_text(encoding="utf-8")
+            screenshot_state = (output / "Sources" / "NeonRingDuel" / "ScreenshotState.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameRules.fighterScreenshotSession(", content)
+            self.assertIn("for: ScreenshotState.requested", content)
+            self.assertIn("fallback: GameSessionState()", content)
+            self.assertIn('Text("HP \\(state.playerHealth)")', content)
+            self.assertIn('Text("Opponent \\(state.opponentHealth)")', content)
+            self.assertIn('Text("Combo \\(state.comboCount)")', content)
+            self.assertIn('Text("Guard \\(state.guardMeter)")', content)
+            self.assertIn("FeedbackState.message(for: state)", content)
+            self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
+            self.assertIn('Button("Dodge")', content)
+            self.assertIn("if !SessionControl.isResult(state)", content)
+            self.assertIn('Button("Damage")', content)
+            self.assertIn(".controlSize(.small)", content)
+            self.assertIn("DragGesture(minimumDistance: 20).onEnded", content)
+            self.assertIn("state = GameRules.startFighterDuelSession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.recordFighterAttack(state)", content)
+            self.assertIn("state = GameRules.performPerfectDodge(state)", content)
+            self.assertIn("state = GameRules.applyFighterDamage(state)", content)
+            self.assertIn('static let primaryActionTitle = "Attack"', input_intent)
+            self.assertIn('static let launchEnvironmentKey = "RKG_SCREENSHOT_STATE"', screenshot_state)
+            self.assertIn("static var requested: ScreenshotState?", screenshot_state)
+
+    def test_init_game_binds_fighter_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, fighter_spec())
+            output = root / "NeonRingDuel"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            content = (output / "Sources" / "NeonRingDuel" / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (output / "Sources" / "NeonRingDuel" / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (output / "Sources" / "NeonRingDuel" / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var playerEntity: Entity?", scene_controller)
+            self.assertIn("private var opponentEntity: Entity?", scene_controller)
+            self.assertIn("private var hitVfxEntity: Entity?", scene_controller)
+            self.assertIn("private var guardCueEntity: Entity?", scene_controller)
+            self.assertIn("playerEntity = fighterPlayer", scene_controller)
+            self.assertIn("opponentEntity = fighterOpponent", scene_controller)
+            self.assertIn("hitVfxEntity = hitSpark", scene_controller)
+            self.assertIn("guardCueEntity = guardRing", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("opponentEntity?.position = opponentPosition(", scene_controller)
+            self.assertIn("playerEntity?.position.x = state.isDodging ? -0.50 : -0.35", scene_controller)
+            self.assertIn("guardCueEntity?.isEnabled = state.guardMeter > 0", scene_controller)
+            self.assertIn("private func opponentPosition(opponentHealth: Int, comboCount: Int) -> SIMD3<Float>", scene_controller)
 
     def test_init_game_generates_lane_dodger_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

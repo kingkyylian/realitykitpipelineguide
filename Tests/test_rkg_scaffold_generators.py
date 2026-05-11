@@ -89,9 +89,14 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         swift = scaffold._screenshot_state_swift(scene_spec())
 
         self.assertIn("enum ScreenshotState: String, CaseIterable, Identifiable", swift)
+        self.assertIn('static let launchEnvironmentKey = "RKG_SCREENSHOT_STATE"', swift)
+        self.assertIn('static let launchArgumentKey = "--rkg-screenshot-state"', swift)
         self.assertIn('case gameplayStart = "gameplay_start"', swift)
         self.assertIn('case midSession = "mid_session"', swift)
         self.assertIn('case results = "results"', swift)
+        self.assertIn("static var requested: ScreenshotState?", swift)
+        self.assertIn("process.environment[launchEnvironmentKey]", swift)
+        self.assertIn("process.arguments.firstIndex(of: launchArgumentKey)", swift)
         self.assertIn("var evidencePath: String", swift)
         self.assertIn('"Docs/screenshots/\\(rawValue).jpg"', swift)
 

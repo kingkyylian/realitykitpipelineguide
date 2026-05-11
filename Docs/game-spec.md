@@ -73,6 +73,65 @@ python3 Tools/rkg.py validate-spec GameSpec.yaml --json
 
 Role-aware specs are preferred because they let RKG generate role-specific loaders, fallbacks, screenshots, and store checklists. RKP still owns the final asset acceptance state.
 
+## 2.5D Fighter Example
+
+`fighter_2_5d` is the first native duel archetype. It requires `player`, `opponent`, and `arena` roles, can bind optional `hit_vfx`, `guard_cue`, `telegraph`, `ui_prop`, and `environment` roles, and can launch directly into each screenshot state with `--rkg-screenshot-state <state>`.
+
+```yaml
+game:
+  id: neon_ring_duel
+  display_name: Neon Ring Duel
+  archetype: fighter_2_5d
+  session_seconds: 90
+  camera: fixed_non_ar
+  input: tap_swipe
+  monetization: paid
+
+loop:
+  player_action: attack and dodge in a fixed side-view duel
+  fail_condition: player health reaches zero
+  scoring:
+    hit: 10
+    combo_bonus: true
+    perfect_dodge: 5
+
+assets:
+  fighter_player:
+    type: character_proxy
+    role: player
+    budget: "1200 tris / 512 texture"
+    fallback: procedural_capsule
+  fighter_opponent:
+    type: character_proxy
+    role: opponent
+    budget: "1200 tris / 512 texture"
+    fallback: procedural_box
+  duel_arena:
+    type: environment
+    role: arena
+    budget: "900 tris / 512 texture"
+    fallback: procedural_grid
+  hit_spark:
+    type: vfx_proxy
+    role: hit_vfx
+    budget: "300 tris / 256 texture"
+    fallback: procedural_spark
+  guard_ring:
+    type: vfx_proxy
+    role: guard_cue
+    budget: "300 tris / 256 texture"
+    fallback: procedural_guard
+
+release:
+  devices:
+    - iPhone 15
+  screenshots:
+    - round_start
+    - mid_combo
+    - perfect_dodge
+    - knockout
+```
+
 ## Why Fallbacks Are Required
 
 RKG generates playable projects before final art is accepted. Asset fallbacks keep the game loop testable when a USDZ is still planned, failed, or waiting for screenshot acceptance.

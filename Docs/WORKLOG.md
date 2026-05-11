@@ -12,6 +12,81 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 111: RKG Fighter Screenshot Gate Closure
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Sprint 110'da eklenen `fighter_2_5d` archetype'ını gerçek simulator screenshot evidence ve `verify-screenshots` gate'iyle kapatmak.
+
+**Yapılanlar:**
+
+- Generated `ScreenshotState.swift` artık `RKG_SCREENSHOT_STATE` env'i ve `--rkg-screenshot-state <state>` launch arg'ını okuyabiliyor.
+- Fighter runtime'a screenshot-state seed helper eklendi; `round_start`, `mid_combo`, `perfect_dodge`, ve `knockout` state'leri simulator launch sırasında kurulabiliyor.
+- Fighter HUD mobil screenshot için toparlandı: uzun action metni kaldırıldı, kontrol butonları compact hale getirildi ve result state'te gereksiz kontrol satırı gizlendi.
+- `qa-plan --json` fighter screenshot adımlarında launch automation hint'i veriyor.
+- `Build/rkg-fighter-native/NeonRingDuel` yeniden üretildi, iPhone 17 Pro simulator'da dört screenshot state'i capture edildi ve `verify-screenshots` geçti.
+- Public kanıt olarak `Docs/screenshots/rkg_fighter_round_start.jpg`, `Docs/screenshots/rkg_fighter_mid_combo.jpg`, `Docs/screenshots/rkg_fighter_perfect_dodge.jpg`, ve `Docs/screenshots/rkg_fighter_knockout.jpg` eklendi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest discover -s Tests -p 'test_rkg*.py': ok, 95 tests
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+rtk .venv/bin/python Tools/rkg.py qa-plan Build/rkg-fighter-native/GameSpec.json --json: ok, launch_arg automation listed for all fighter screenshot states
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-fighter-native/GameSpec.json --output Build/rkg-fighter-native/NeonRingDuel --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-fighter-native/NeonRingDuel: ok
+rtk xcrun simctl launch --terminate-running-process FF329D84-0179-49E2-AFC4-12D4935845FC com.kyylian.neonringduel --rkg-screenshot-state round_start: ok
+rtk xcrun simctl launch --terminate-running-process FF329D84-0179-49E2-AFC4-12D4935845FC com.kyylian.neonringduel --rkg-screenshot-state mid_combo: ok
+rtk xcrun simctl launch --terminate-running-process FF329D84-0179-49E2-AFC4-12D4935845FC com.kyylian.neonringduel --rkg-screenshot-state perfect_dodge: ok
+rtk xcrun simctl launch --terminate-running-process FF329D84-0179-49E2-AFC4-12D4935845FC com.kyylian.neonringduel --rkg-screenshot-state knockout: ok
+rtk .venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-fighter-native/NeonRingDuel --json: ok, 4/4 JPEG screenshots
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok, CoreSimulator sandbox warnings only
+```
+
+**Öğrenme notu:**
+
+RKG screenshot QA yalnızca dosya varlığını kontrol ederse loop yarım kalıyor. En küçük sağlam kapanış, generated app'in state'i launch argument ile kurması ve simulator screenshot'ın bu state üstünden alınması. Bu, manual tap kırılganlığını azaltırken `verify-screenshots` kapısını gerçek görüntü kanıtıyla besliyor.
+
+**Karar:**
+
+Fighter thread artık archetype + generated gameplay + screenshot evidence açısından kapandı. RKG tarafında devam edilecekse sonraki iş asset art/import veya ürün kalitesi incelemesi olmalı; varsayılan ana ürün yolu yine RKP Module 4 material response.
+
+### Sprint 110: Native RKG 2.5D Fighter Archetype
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-10
+**Amaç:** RKG'nin target shooter fixture'ına sıkışmadığını göstermek için sıfırdan üretilecek 2.5D fighter fikrini native archetype olarak eklemek.
+
+**Yapılanlar:**
+
+- `fighter_2_5d` registry kaydı eklendi: fixed side-view duel, `tap_swipe` input, `player`/`opponent`/`arena` zorunlu rolleri ve `round_start`, `mid_combo`, `perfect_dodge`, `knockout` screenshot state'leri.
+- Generated Swift runtime için fighter state/rules kontratı eklendi: health, combo, guard meter, dodge, hit scoring ve knockout/result transition.
+- `init-game` çıktısına playable fighter loop eklendi: Attack, Dodge, Damage test input, Reset, result overlay ve swipe/tap dodge inputları.
+- Generated RealityKit scene binding fighter rollerine genişletildi: player/opponent pozisyonları, hit VFX visibility, guard cue visibility ve procedural role fallback'leri.
+- `plan-game` runtime entity pozisyonları fighter rolleri için rol-aware hale getirildi.
+- `Build/rkg-fighter-native/NeonRingDuel` scratch projesiyle native spec doğrulandı; `validate-spec`, `plan-game`, `qa-plan`, `init-game`, ve `verify-game` geçti.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkg_archetypes.RkgArchetypeTests.test_registry_lists_seed_archetypes Tests.test_rkg_archetypes.RkgArchetypeTests.test_fighter_2_5d_exposes_duel_roles_input_and_screenshot_proofs Tests.test_rkg_validate_spec.RkgValidateSpecCliTests.test_validate_spec_cli_accepts_fighter_2_5d_spec Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_fighter_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_fighter_content_view_contract_is_outside_scaffold: ok, 5 tests
+rtk .venv/bin/python -m unittest Tests.test_rkg_plan_game.RkgPlanGameTests.test_build_game_plan_exposes_fighter_runtime_entities_and_proofs Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_fighter_state_and_rules Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_playable_fighter_loop Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_binds_fighter_state_to_realitykit_scene: ok, 4 tests
+rtk .venv/bin/python -m unittest Tests/test_rkg_archetypes.py Tests/test_rkg_archetype_runtime.py Tests/test_rkg_content_views.py Tests/test_rkg_validate_spec.py Tests/test_rkg_plan_game.py Tests/test_rkg_init_game.py: ok, 54 tests
+rtk .venv/bin/python Tools/rkg.py validate-spec Build/rkg-fighter-native/GameSpec.json --json: ok
+rtk .venv/bin/python Tools/rkg.py plan-game Build/rkg-fighter-native/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py qa-plan Build/rkg-fighter-native/GameSpec.json: ok
+rtk .venv/bin/python Tools/rkg.py init-game Build/rkg-fighter-native/GameSpec.json --output Build/rkg-fighter-native/NeonRingDuel --force: ok
+rtk .venv/bin/python Tools/rkg.py verify-game Build/rkg-fighter-native/NeonRingDuel: ok
+```
+
+**Öğrenme notu:**
+
+RKG'yi production oyun motoru gibi düşünmeden önce archetype sözleşmesini test etmek daha ucuz. Fighter için doğru ilk slice animasyon sistemi değil; input, state, role fallback, scene binding ve screenshot QA contract'ının uçtan uca çalışması.
+
+**Karar:**
+
+Gerçek simulator screenshot gate'i Sprint 111 ile kapandı. RKP ana ürün yoluna dönülürse Module 4 material slice önceliği korunacak.
+
 ### Sprint 109: Roughness Readability Polish
 
 **Durum:** Tamamlandı

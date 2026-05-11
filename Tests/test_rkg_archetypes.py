@@ -27,7 +27,14 @@ class RkgArchetypeTests(unittest.TestCase):
 
         self.assertEqual(
             ids,
-            ["target_shooter", "lane_dodger", "toss_physics", "stack_puzzle", "wave_defense_lite"],
+            [
+                "target_shooter",
+                "lane_dodger",
+                "toss_physics",
+                "stack_puzzle",
+                "wave_defense_lite",
+                "fighter_2_5d",
+            ],
         )
 
     def test_describe_archetype_exposes_roles_modules_and_screenshots(self) -> None:
@@ -39,6 +46,18 @@ class RkgArchetypeTests(unittest.TestCase):
         self.assertIn("mid_session", record["screenshot_states"])
         self.assertIn("near_miss", record["screenshot_proofs"])
         self.assertIn("state.nearMisses > 0", record["screenshot_proofs"]["near_miss"])
+
+    def test_fighter_2_5d_exposes_duel_roles_input_and_screenshot_proofs(self) -> None:
+        record = describe_archetype("fighter_2_5d")
+
+        self.assertEqual(record["display_name"], "2.5D Fighter")
+        self.assertEqual(record["required_asset_roles"], ["player", "opponent", "arena"])
+        self.assertIn("tap_swipe", record["input"])
+        self.assertIn("hit_vfx", record["optional_asset_roles"])
+        self.assertIn("guard_cue", record["optional_asset_roles"])
+        self.assertEqual(record["screenshot_states"], ["round_start", "mid_combo", "perfect_dodge", "knockout"])
+        self.assertIn("state.comboCount > 0", record["screenshot_proofs"]["mid_combo"])
+        self.assertIn("state.isKnockout == true", record["screenshot_proofs"]["knockout"])
 
     def test_unknown_archetype_raises_clear_error(self) -> None:
         with self.assertRaises(ValueError) as context:

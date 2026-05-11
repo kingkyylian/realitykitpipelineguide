@@ -231,9 +231,27 @@ def _screenshot_state_swift(spec: Mapping[str, Any]) -> str:
     return f"""import Foundation
 
 enum ScreenshotState: String, CaseIterable, Identifiable {{
+    static let launchEnvironmentKey = "RKG_SCREENSHOT_STATE"
+    static let launchArgumentKey = "--rkg-screenshot-state"
+
 {cases}
 
     var id: String {{ rawValue }}
+
+    static var requested: ScreenshotState? {{
+        let process = ProcessInfo.processInfo
+        if let rawValue = process.environment[launchEnvironmentKey],
+           let state = ScreenshotState(rawValue: rawValue) {{
+            return state
+        }}
+        if let keyIndex = process.arguments.firstIndex(of: launchArgumentKey) {{
+            let valueIndex = process.arguments.index(after: keyIndex)
+            if valueIndex < process.arguments.endIndex {{
+                return ScreenshotState(rawValue: process.arguments[valueIndex])
+            }}
+        }}
+        return nil
+    }}
 
     var evidencePath: String {{
         "Docs/screenshots/\\(rawValue).jpg"
@@ -302,6 +320,7 @@ def _primary_action_title(archetype_id: str) -> str:
         "toss_physics": "Throw",
         "stack_puzzle": "Place",
         "wave_defense_lite": "Fire",
+        "fighter_2_5d": "Attack",
     }.get(archetype_id, "Start")
 
 
@@ -368,6 +387,21 @@ enum FallbackFactory {
                 mesh: .generateSphere(radius: 0.12),
                 materials: [SimpleMaterial(color: .systemGreen, roughness: 0.35, isMetallic: false)]
             )
+        case "opponent":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.24, 0.46, 0.16]),
+                materials: [SimpleMaterial(color: .systemPurple, roughness: 0.45, isMetallic: false)]
+            )
+        case "hit_vfx":
+            return ModelEntity(
+                mesh: .generateSphere(radius: 0.07),
+                materials: [SimpleMaterial(color: .systemYellow, roughness: 0.25, isMetallic: false)]
+            )
+        case "guard_cue", "telegraph":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.36, 0.04, 0.04]),
+                materials: [SimpleMaterial(color: .systemTeal, roughness: 0.25, isMetallic: false)]
+            )
         case "projectile":
             return ModelEntity(
                 mesh: .generateSphere(radius: 0.08),
@@ -395,6 +429,8 @@ def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
         return _wave_defense_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "stack_puzzle":
         return _stack_puzzle_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "fighter_2_5d":
+        return _fighter_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
     return f"""import RealityKit
 
@@ -620,6 +656,54 @@ final class GameSceneController {{
 """
 
 
+def _fighter_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("playerEntity", {"player"}),
+            ("opponentEntity", {"opponent"}),
+            ("hitVfxEntity", {"hit_vfx"}),
+            ("guardCueEntity", {"guard_cue", "telegraph"}),
+        ],
+    )
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var playerEntity: Entity?
+    private var opponentEntity: Entity?
+    private var hitVfxEntity: Entity?
+    private var guardCueEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        playerEntity?.position.x = state.isDodging ? -0.50 : -0.35
+        playerEntity?.position.y = state.playerHealth <= 1 ? -0.04 : 0
+        playerEntity?.scale = state.playerHealth <= 1 ? [0.90, 0.90, 0.90] : [1, 1, 1]
+        opponentEntity?.position = opponentPosition(opponentHealth: state.opponentHealth, comboCount: state.comboCount)
+        opponentEntity?.scale = state.isKnockout ? [0.70, 0.70, 0.70] : [1, 1, 1]
+        hitVfxEntity?.isEnabled = state.comboCount > 0
+        hitVfxEntity?.position = [0.03, 0.18, -0.86]
+        let hitScale = Float(max(1, state.comboCount)) * 0.18
+        hitVfxEntity?.scale = [hitScale, hitScale, hitScale]
+        guardCueEntity?.isEnabled = state.guardMeter > 0
+        guardCueEntity?.position = state.isDodging ? [-0.50, 0.24, -0.85] : [-0.35, 0.24, -0.85]
+    }}
+
+    private func opponentPosition(opponentHealth: Int, comboCount: Int) -> SIMD3<Float> {{
+        let damageRecoil = Float(max(0, GameRules.fighterMaxHealth - opponentHealth)) * 0.03
+        let comboPulse = Float(comboCount % 2) * 0.04
+        return [0.35 + damageRecoil + comboPulse, 0, -0.85]
+    }}
+}}
+"""
+
+
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
     if str(spec["game"]["archetype"]) in {
         "target_shooter",
@@ -627,6 +711,7 @@ def _game_view_swift(spec: Mapping[str, Any]) -> str:
         "toss_physics",
         "wave_defense_lite",
         "stack_puzzle",
+        "fighter_2_5d",
     }:
         return _state_bound_game_view_swift()
     return """import RealityKit

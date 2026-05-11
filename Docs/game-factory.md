@@ -122,7 +122,7 @@ python3 Tools/rkg.py qa-plan GameSpec.yaml
 
 `plan-game` is a dry run. It lists generated files, asset roles, and screenshot states without creating the output directory. Generated projects include `SessionControl.swift` for shared playing/reset/result primitives, `FeedbackState.swift` for last-event display text, `InputIntent.swift` for primary/reset button labels, and `ScreenshotState.swift`, which turns `release.screenshots` into typed Swift cases and evidence paths for future capture automation. The seed archetypes, including `target_shooter`, use the same shared state/result surface before adding deeper mechanics. Archetype rules should use `SessionControl.markResult` for result/fail transitions after setting their own gameplay-specific flags.
 
-`qa-plan` is the dry-run screenshot capture plan. It sequences `release.screenshots` with the generated proof cue, visible roles, Swift screenshot state case, and target evidence path. Use `--json` when another tool or future simulator automation needs to consume the plan.
+`qa-plan` is the dry-run screenshot capture plan. It sequences `release.screenshots` with the generated proof cue, visible roles, Swift screenshot state case, target evidence path, and capture automation hint. Use `--json` when another tool or future simulator automation needs to consume the plan. `fighter_2_5d` generated apps can be launched directly into a screenshot state with `--rkg-screenshot-state <state>`.
 
 After capture, verify the generated screenshot evidence:
 
@@ -132,7 +132,7 @@ python3 Tools/rkg.py qa-plan GameSpec.yaml --json > qa-plan.json
 python3 Tools/rkg.py verify-screenshots GeneratedGame --plan qa-plan.json --json
 ```
 
-`verify-screenshots` checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image header. It does not drive the simulator yet; it is the evidence gate that future capture automation should satisfy.
+`verify-screenshots` checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image header. It does not drive the simulator yet; it is the evidence gate that capture automation must satisfy.
 
 ### 2. Vertical Slice
 
@@ -200,6 +200,7 @@ Start with small, replayable game shapes. The order below is not product priorit
 | Toss physics | RealityKit physics can create feel with few assets. |
 | Stack puzzle | Short sessions and strong screenshot clarity. |
 | Wave defense lite | Reuses target/spawn/scoring systems, but has higher scope. |
+| 2.5D fighter | Fixed side-view duel loop with attack, dodge, health, combo, and knockout states. |
 
 Avoid first-wave games that require multiplayer, large maps, complex animation, or moderation.
 
@@ -208,7 +209,7 @@ Before deepening one archetype, define the shared template contract:
 | Contract | Required output |
 | --- | --- |
 | Runtime loop | Start, core action, feedback, fail/miss, reset, result. |
-| Asset roles | Gameplay target, obstacle, player piece, arena, pickup, projectile, UI prop, or environment. |
+| Asset roles | Gameplay target, opponent, obstacle, player piece, arena, pickup, hit VFX, guard cue, UI prop, or environment. |
 | Fallbacks | Every role has a procedural fallback until RKP accepts imported art. |
 | Verification | Generated project can run tests, build, and capture the required screenshot states. |
 | Store pack | Metadata and screenshots describe actual generated gameplay. |

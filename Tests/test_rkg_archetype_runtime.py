@@ -32,6 +32,25 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("static func applyThreatDamage(_ state: GameSessionState) -> GameSessionState", rules)
         self.assertIn('next = SessionControl.markResult(next, event: "base breached")', rules)
 
+    def test_fighter_runtime_contract_is_exposed_outside_scaffold(self) -> None:
+        fields = archetype_state_fields("fighter_2_5d")
+        rules = "\n".join(archetype_rule_members("fighter_2_5d"))
+
+        self.assertIn("var playerHealth: Int = GameRules.fighterMaxHealth", fields)
+        self.assertIn("var opponentHealth: Int = GameRules.fighterMaxHealth", fields)
+        self.assertIn("var comboCount: Int = 0", fields)
+        self.assertIn("var guardMeter: Int = GameRules.startingGuardMeter", fields)
+        self.assertIn("var isDodging: Bool = false", fields)
+        self.assertIn("var isKnockout: Bool = false", fields)
+        self.assertIn("static func startFighterDuelSession(sessionSeconds: Int) -> GameSessionState", rules)
+        self.assertIn("static func recordFighterAttack(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func performPerfectDodge(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func applyFighterDamage(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func fighterScreenshotSession(for screenshotState: ScreenshotState?", rules)
+        self.assertIn('case "mid_combo":', rules)
+        self.assertIn("while state.opponentHealth > 0", rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "knockout")', rules)
+
     def test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold(self) -> None:
         fields = archetype_state_fields("stack_puzzle")
         rules = "\n".join(archetype_rule_members("stack_puzzle"))

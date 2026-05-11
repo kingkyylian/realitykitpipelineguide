@@ -6,6 +6,7 @@
 
 - Started Module 4 material response with `material_response_targets`, an opt-in RealityKit showcase mode, and simulator screenshot evidence.
 - Added configured material-map reporting to `rkp inspect-usdz --json` while keeping `baseColorTexture` as a compatibility alias.
+- Added native RKG `fighter_2_5d` archetype support with fixed side-view duel validation, generated Swift gameplay state/rules, RealityKit role binding, launch-state screenshot automation, and simulator screenshot evidence.
 
 ### Changed
 

@@ -111,7 +111,7 @@ class StorePackTests(unittest.TestCase):
         self.assertIn("| Order | State | Drive the game to this state | Expected evidence | Capture path |", runbook)
         self.assertIn("| 1 | gameplay_start | Tap Start; state.phase == .playing;", runbook)
         self.assertIn("| 3 | near_miss | Swipe next to the obstacle, then tap Dodge; state.nearMisses > 0.", runbook)
-        self.assertIn("Required roles visible: player, obstacle, arena", runbook)
+        self.assertIn("Declared roles available: player, obstacle, arena", runbook)
 
 
 if __name__ == "__main__":

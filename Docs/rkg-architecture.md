@@ -62,6 +62,7 @@ Initial registry ids:
 | `toss_physics` | Throw or toss objects. | Drag/release, physics arc, landing score. |
 | `stack_puzzle` | Place pieces. | Spawn piece, stack/collapse rule, height/result score. |
 | `wave_defense_lite` | Survive waves. | Spawn wave, target priority, health/result state. |
+| `fighter_2_5d` | Fixed side-view duel. | Attack, dodge, health, combo, guard cue, knockout/result state. |
 
 ## Asset Role Taxonomy
 
@@ -71,11 +72,15 @@ RKG should reason in roles. RKP can still store asset `type`, but generated game
 | --- | --- | --- |
 | `player` | Player-controlled entity or avatar proxy. | Capsule, cube, or sphere with readable material. |
 | `target` | Entity that can be hit, tapped, collected, or cleared. | Sphere, ring, or billboard target. |
+| `opponent` | Opposing character, enemy proxy, or duel target. | Readable box or capsule with contrasting material. |
 | `obstacle` | Entity that causes miss, damage, or blocked movement. | Box, wall, cone, or lane marker. |
 | `pickup` | Positive collectible or bonus. | Small sphere or gem-like primitive. |
 | `projectile` | Launched or moving object. | Small sphere with trail-ready material. |
 | `arena` | Floor, lane grid, board, or playfield. | Plane with grid/lane markings. |
 | `hazard` | Timed or environmental danger. | Red translucent primitive. |
+| `hit_vfx` | Short-lived contact, hit, or score feedback entity. | Small bright sphere or spark proxy. |
+| `guard_cue` | Defensive timing, block, or parry readability cue. | Thin panel, ring, or translucent guard marker. |
+| `telegraph` | Pre-attack warning or timing lane. | Thin colored strip or warning block. |
 | `ui_prop` | 3D score marker, sign, timer prop, or button-like object. | Flat panel or text-safe block. |
 | `environment` | Decorative but screenshot-visible set dressing. | Simple backdrop/floor primitive. |
 
@@ -152,7 +157,7 @@ Responsibilities:
 | `SessionControl.swift` | Shared playing, reset, and result helpers for generated session lifecycle. |
 | `FeedbackState.swift` | Shared last-event display text helper for generated overlays. |
 | `InputIntent.swift` | Shared start/reset and primary action button labels for generated overlays. |
-| `ScreenshotState.swift` | Typed release screenshot states and evidence paths derived from `release.screenshots`. |
+| `ScreenshotState.swift` | Typed release screenshot states, launch-state request parsing, and evidence paths derived from `release.screenshots`. |
 | `GameRules.swift` | Pure scoring, session, spawn, and fail/win rules. |
 | `GameSceneController.swift` | RealityKit scene lifecycle and per-archetype loop glue. |
 | `GameView.swift` | SwiftUI/RealityKit bridge only. |
@@ -160,7 +165,7 @@ Responsibilities:
 | `FallbackFactory.swift` | Role-based procedural primitives. |
 | `ResultView.swift` | Result summary UI with reset action. |
 
-Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `target_shooter` has a playable SwiftUI overlay loop and RealityKit state binding for start, hit scoring, perfect-hit feedback, finish/result, reset, target movement, result overlay, and scoring. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring.
+Current `init-game` writes this module layout. The first implementation keeps gameplay simple, but the ownership boundaries are in place: `GameView` no longer loads assets directly, `GameSceneController` wires all declared asset roles into the scene, `SessionControl` owns shared playing/reset/result primitives plus generated result visibility, and generated result/fail transitions route through `markResult`. `FeedbackState` owns generated last-event display text, `InputIntent` owns generated primary/reset button labels, `ScreenshotState` owns the typed release screenshot state ids, launch argument/env parsing, and evidence paths, `ResultView` owns the generated result summary/reset overlay, `AssetLoader` owns USDZ loading, and `FallbackFactory` owns role-based procedural primitives. `target_shooter` has a playable SwiftUI overlay loop and RealityKit state binding for start, hit scoring, perfect-hit feedback, finish/result, reset, target movement, result overlay, and scoring. `stack_puzzle` has a playable SwiftUI overlay loop and RealityKit state binding for start, stable/unstable placement, collapse/result, reset, piece count, stable count, piece height/offset feedback, obstacle collapse feedback, result overlay, and scoring. `lane_dodger` has a minimal playable generated loop in SwiftUI and RealityKit state binding: start, drag lane change, dodge frame advance, player/obstacle lane movement, collision/result, reset, score, result overlay, and near-miss state. `wave_defense_lite` has a playable SwiftUI overlay loop and RealityKit state binding for start, fire, damage, wave progression, health/result, threat movement, low-health defender feedback, reset, result overlay, and scoring. `toss_physics` has a playable SwiftUI overlay loop and RealityKit state binding for start, power selection, throw resolution, projectile position, landing/result feedback, attempts, reset, result overlay, and scoring. `fighter_2_5d` has a playable generated side-view duel loop with attack, swipe/tap dodge, damage test input, health, combo, guard meter, knockout/result state, hit VFX role binding, guard cue role binding, compact mobile HUD controls, and launch-state screenshot seeding for `round_start`, `mid_combo`, `perfect_dodge`, and `knockout`.
 
 The state-bound scene generators share one entity setup helper for the repeated `AssetLoader.loadPrimaryEntity`, initial position, anchor attachment, and first matching role-to-entity-reference binding. Archetype-specific scene controllers now own only their state update formulas and entity reference names.
 
@@ -255,13 +260,15 @@ Current `qa-plan --json` shape:
       "screenshot_state_case": "gameplayStart",
       "drive": "Tap Start; state.phase == .playing; runner, obstacle, and arena are visible.",
       "visible_roles": ["player", "obstacle", "arena"],
-      "expected_evidence": "Required roles visible: player, obstacle, arena",
+      "expected_evidence": "Declared roles available: player, obstacle, arena",
       "capture_path": "Docs/screenshots/gameplay_start.jpg",
       "automation": "manual_capture"
     }
   ]
 }
 ```
+
+For `fighter_2_5d`, the automation field is `launch_arg --rkg-screenshot-state <state>` because generated fighter apps can seed release screenshot states during launch.
 
 Current `verify-screenshots --json` shape:
 
@@ -294,7 +301,7 @@ Every new RKG feature should prove the smallest useful behavior.
 | Required roles | Every selected archetype `required_asset_roles` entry must appear in `assets.<id>.role`. |
 | Planning | `plan-game` prints files, modules, assets, screenshots without writing output. |
 | Scaffolding | Generated files exist, Swift literals escape correctly, screenshot states become typed Swift cases, every declared asset role gets a generated load attempt with fallback. |
-| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, and `stack_puzzle`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
+| Generated modules | Pure rule tests for state transitions, scoring, archetype-specific state/rules, playable overlay loops for `target_shooter`, `lane_dodger`, `wave_defense_lite`, `toss_physics`, `stack_puzzle`, and `fighter_2_5d`, plus scene binding tests for archetypes that move RealityKit entities from SwiftUI state. |
 | Verification | Missing generated project fails clearly; valid project runs configured checks. |
 | Screenshot evidence | `verify-screenshots` reports missing/empty/invalid evidence and accepts captured JPEG/PNG files at planned paths. |
 

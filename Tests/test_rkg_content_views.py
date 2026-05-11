@@ -57,6 +57,29 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("stablePlacement = true", content)
         self.assertIn("state = GameRules.placeStackPiece(state, stable: stablePlacement)", content)
 
+    def test_fighter_content_view_contract_is_outside_scaffold(self) -> None:
+        content = content_view_swift("Neon Ring Duel", spec_for("fighter_2_5d"))
+
+        self.assertIn("@State private var state = GameRules.fighterScreenshotSession(", content)
+        self.assertIn("for: ScreenshotState.requested", content)
+        self.assertIn("fallback: GameSessionState()", content)
+        self.assertIn("SessionControl.isPlaying(state)", content)
+        self.assertIn("GameView(state: state)", content)
+        self.assertIn('Text("HP \\(state.playerHealth)")', content)
+        self.assertIn('Text("Opponent \\(state.opponentHealth)")', content)
+        self.assertIn('Text("Combo \\(state.comboCount)")', content)
+        self.assertIn('Text("Guard \\(state.guardMeter)")', content)
+        self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
+        self.assertIn('Button("Dodge")', content)
+        self.assertIn("if !SessionControl.isResult(state)", content)
+        self.assertIn('Button("Damage")', content)
+        self.assertIn(".controlSize(.small)", content)
+        self.assertIn("DragGesture(minimumDistance: 20).onEnded", content)
+        self.assertIn("state = GameRules.startFighterDuelSession(sessionSeconds: state.sessionSeconds)", content)
+        self.assertIn("state = GameRules.recordFighterAttack(state)", content)
+        self.assertIn("state = GameRules.performPerfectDodge(state)", content)
+        self.assertIn("state = GameRules.applyFighterDamage(state)", content)
+
     def test_generic_content_view_contract_remains_available_for_unknown_archetype(self) -> None:
         content = content_view_swift('Ring "Dash"', spec_for("prototype"))
 

@@ -103,6 +103,24 @@ ARCHETYPES: list[JsonDict] = [
         },
         "scope_risk": "medium",
     },
+    {
+        "id": "fighter_2_5d",
+        "display_name": "2.5D Fighter",
+        "mechanic": "fight a fixed side-view duel with attack, dodge, health, combo, and knockout states",
+        "input": ["tap", "tap_swipe"],
+        "camera": ["fixed_non_ar"],
+        "required_asset_roles": ["player", "opponent", "arena"],
+        "optional_asset_roles": ["hit_vfx", "guard_cue", "telegraph", "ui_prop", "environment"],
+        "runtime_modules": RUNTIME_MODULES,
+        "screenshot_states": ["round_start", "mid_combo", "perfect_dodge", "knockout"],
+        "screenshot_proofs": {
+            "round_start": "Tap Attack; state.phase == .playing; player, opponent, and arena are visible.",
+            "mid_combo": "Tap Attack after the round starts; state.comboCount > 0 and opponent health is reduced.",
+            "perfect_dodge": "Swipe or tap Dodge during play; state.isDodging == true and state.guardMeter > 0.",
+            "knockout": "Tap Attack until opponent health reaches zero; state.isKnockout == true and result UI is visible.",
+        },
+        "scope_risk": "medium",
+    },
 ]
 
 

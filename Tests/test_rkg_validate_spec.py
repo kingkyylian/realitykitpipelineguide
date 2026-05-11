@@ -46,6 +46,52 @@ def valid_spec() -> dict:
     }
 
 
+def fighter_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "neon_ring_duel"
+    spec["game"]["display_name"] = "Neon Ring Duel"
+    spec["game"]["archetype"] = "fighter_2_5d"
+    spec["game"]["input"] = "tap_swipe"
+    spec["game"]["session_seconds"] = 90
+    spec["loop"]["player_action"] = "tap attack, swipe dodge, and time guard windows"
+    spec["loop"]["fail_condition"] = "fighter health reaches zero"
+    spec["loop"]["scoring"] = {"hit": 10, "perfect": 25, "knockout": 100}
+    spec["assets"] = {
+        "fighter_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "fighter_opponent": {
+            "type": "gameplay_actor",
+            "role": "opponent",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "duel_arena": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_lane",
+        },
+        "hit_spark": {
+            "type": "vfx",
+            "role": "hit_vfx",
+            "budget": "300 tris / procedural material",
+            "fallback": "procedural_spark",
+        },
+        "guard_ring": {
+            "type": "gameplay_cue",
+            "role": "guard_cue",
+            "budget": "400 tris / 512 texture",
+            "fallback": "procedural_ring",
+        },
+    }
+    spec["release"]["screenshots"] = ["round_start", "mid_combo", "perfect_dodge", "knockout"]
+    return spec
+
+
 class RkgValidateSpecCliTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -64,6 +110,18 @@ class RkgValidateSpecCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             spec_path = self.write_spec(root, valid_spec())
+
+            result = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["issues"], [])
+
+    def test_validate_spec_cli_accepts_fighter_2_5d_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, fighter_spec())
 
             result = self.run_rkg(root, "validate-spec", str(spec_path), "--json")
 

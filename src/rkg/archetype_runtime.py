@@ -35,6 +35,15 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
             "var clearedThreats: Int = 0",
             "var isDefeated: Bool = false",
         ]
+    if archetype_id == "fighter_2_5d":
+        return [
+            "var playerHealth: Int = GameRules.fighterMaxHealth",
+            "var opponentHealth: Int = GameRules.fighterMaxHealth",
+            "var comboCount: Int = 0",
+            "var guardMeter: Int = GameRules.startingGuardMeter",
+            "var isDodging: Bool = false",
+            "var isKnockout: Bool = false",
+        ]
     return []
 
 
@@ -269,6 +278,97 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
         next.lastEvent = "took damage"
     }
     return next
+}""",
+        ]
+    if archetype_id == "fighter_2_5d":
+        return [
+            "static let fighterMaxHealth = 5",
+            "static let startingGuardMeter = 1",
+            "static let maxGuardMeter = 3",
+            "static let comboBonus = 3",
+            """static func fighterHealthAfterHit(_ health: Int) -> Int {
+    max(0, health - 1)
+}""",
+            """static func scoreForFighterHit(comboCount: Int) -> Int {
+    hitScore + comboCount * comboBonus
+}""",
+            """static func startFighterDuelSession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.playerHealth = fighterMaxHealth
+    state.opponentHealth = fighterMaxHealth
+    state.guardMeter = startingGuardMeter
+    state.lastEvent = "round started"
+    return state
+}""",
+            """static func recordFighterAttack(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startFighterDuelSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.isDodging = false
+    next.comboCount += 1
+    next.opponentHealth = fighterHealthAfterHit(next.opponentHealth)
+    next.score += scoreForFighterHit(comboCount: next.comboCount)
+    if next.opponentHealth <= 0 {
+        next.isKnockout = true
+        next = SessionControl.markResult(next, event: "knockout")
+    } else {
+        next.lastEvent = "hit landed"
+    }
+    return next
+}""",
+            """static func performPerfectDodge(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startFighterDuelSession(sessionSeconds: next.sessionSeconds)
+    }
+    next.isDodging = true
+    next.guardMeter = min(maxGuardMeter, next.guardMeter + 1)
+    next.score += perfectScore
+    next.lastEvent = "perfect dodge"
+    return next
+}""",
+            """static func applyFighterDamage(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return next
+    }
+    if next.isDodging {
+        return performPerfectDodge(next)
+    }
+    next.playerHealth = fighterHealthAfterHit(next.playerHealth)
+    next.comboCount = 0
+    next.guardMeter = max(0, next.guardMeter - 1)
+    if next.playerHealth <= 0 {
+        next = SessionControl.markResult(next, event: "defeated")
+    } else {
+        next.lastEvent = "took hit"
+    }
+    return next
+}""",
+            """static func fighterScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "round_start":
+        return startFighterDuelSession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_combo":
+        var state = startFighterDuelSession(sessionSeconds: fallback.sessionSeconds)
+        state = recordFighterAttack(state)
+        state = recordFighterAttack(state)
+        return state
+    case "perfect_dodge":
+        let state = startFighterDuelSession(sessionSeconds: fallback.sessionSeconds)
+        return performPerfectDodge(state)
+    case "knockout":
+        var state = startFighterDuelSession(sessionSeconds: fallback.sessionSeconds)
+        while state.opponentHealth > 0 {
+            state = recordFighterAttack(state)
+        }
+        return state
+    default:
+        return fallback
+    }
 }""",
         ]
     return []

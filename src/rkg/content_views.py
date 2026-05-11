@@ -21,6 +21,8 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
         return _toss_physics_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "stack_puzzle":
         return _stack_puzzle_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "fighter_2_5d":
+        return _fighter_content_view_swift(title, subtitle, player_action)
     return f"""import SwiftUI
 
 struct ContentView: View {{
@@ -322,6 +324,119 @@ struct ContentView: View {{
             return
         }}
         state = GameRules.resolveToss(state, power: throwPower)
+    }}
+}}
+"""
+
+
+def _fighter_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameRules.fighterScreenshotSession(
+        for: ScreenshotState.requested,
+        fallback: GameSessionState()
+    )
+
+    private var isPlaying: Bool {{
+        SessionControl.isPlaying(state)
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView(state: state)
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("HP \\(state.playerHealth)")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Opponent \\(state.opponentHealth)")
+                        .font(.caption.monospacedDigit())
+                    Text("Combo \\(state.comboCount)")
+                        .font(.caption.monospacedDigit())
+                    Text("Guard \\(state.guardMeter)")
+                        .font(.caption.monospacedDigit())
+                    Spacer()
+                    Text(FeedbackState.message(for: state))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }}
+
+                if !SessionControl.isResult(state) {{
+                    HStack(spacing: 8) {{
+                        Spacer()
+                        Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
+                            attackFighter()
+                        }}
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        Button("Dodge") {{
+                            dodgeFighter()
+                        }}
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        Button("Damage") {{
+                            state = GameRules.applyFighterDamage(state)
+                        }}
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        Button(InputIntent.resetTitle) {{
+                            state = SessionControl.reset()
+                        }}
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }}
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                }}
+
+                if SessionControl.isResult(state) {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+            .gesture(
+                DragGesture(minimumDistance: 20).onEnded {{ _ in
+                    dodgeFighter()
+                }}
+            )
+        }}
+    }}
+
+    private func attackFighter() {{
+        if !isPlaying {{
+            state = GameRules.startFighterDuelSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.recordFighterAttack(state)
+    }}
+
+    private func dodgeFighter() {{
+        if !isPlaying {{
+            state = GameRules.startFighterDuelSession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.performPerfectDodge(state)
     }}
 }}
 """

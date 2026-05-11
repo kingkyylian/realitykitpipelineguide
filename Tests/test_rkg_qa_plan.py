@@ -57,6 +57,38 @@ def lane_dodger_spec() -> dict:
     }
 
 
+def fighter_spec() -> dict:
+    spec = lane_dodger_spec()
+    spec["game"]["id"] = "neon_ring_duel"
+    spec["game"]["display_name"] = "Neon Ring Duel"
+    spec["game"]["archetype"] = "fighter_2_5d"
+    spec["game"]["input"] = "tap_swipe"
+    spec["loop"]["player_action"] = "tap attack and swipe dodge"
+    spec["loop"]["fail_condition"] = "fighter health reaches zero"
+    spec["assets"] = {
+        "fighter_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "fighter_opponent": {
+            "type": "gameplay_actor",
+            "role": "opponent",
+            "budget": "1800 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "duel_arena": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_lane",
+        },
+    }
+    spec["release"]["screenshots"] = ["round_start", "mid_combo", "perfect_dodge", "knockout"]
+    return spec
+
+
 class RkgQaPlanTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -87,6 +119,15 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertIn("state.nearMisses > 0", payload["steps"][2]["drive"])
         self.assertEqual(payload["steps"][2]["visible_roles"], ["player", "obstacle", "arena"])
         self.assertEqual(payload["steps"][2]["capture_path"], "Docs/screenshots/near_miss.jpg")
+        self.assertEqual(payload["steps"][2]["automation"], "manual_capture")
+
+    def test_fighter_qa_plan_exposes_launch_state_automation(self) -> None:
+        payload = build_qa_plan(fighter_spec())
+
+        self.assertEqual(payload["archetype"], "fighter_2_5d")
+        self.assertEqual(payload["steps"][1]["state"], "mid_combo")
+        self.assertEqual(payload["steps"][1]["automation"], "launch_arg --rkg-screenshot-state mid_combo")
+        self.assertEqual(payload["steps"][3]["automation"], "launch_arg --rkg-screenshot-state knockout")
 
     def test_qa_plan_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -113,6 +154,7 @@ class RkgQaPlanTests(unittest.TestCase):
             self.assertIn("preflight: rkg verify-game <generated-project>", result.stdout)
             self.assertIn("3. near_miss -> Docs/screenshots/near_miss.jpg", result.stdout)
             self.assertIn("drive: Swipe next to the obstacle, then tap Dodge; state.nearMisses > 0.", result.stdout)
+            self.assertIn("automation: manual_capture", result.stdout)
 
     def test_qa_plan_cli_rejects_invalid_spec(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

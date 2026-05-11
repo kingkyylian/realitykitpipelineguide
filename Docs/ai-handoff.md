@@ -57,7 +57,7 @@ Do not expand RKG while doing product-focus cleanup unless a test or doc boundar
 | Arena floor import | Complete | `Assets/Imported/arena_floor.usdz`, `Docs/screenshots/arena_floor_imported.jpg` |
 | Teaching guide | Strong first version | `Docs/guide.md`, `Docs/pdf/realitykit-pipeline-guide.pdf` |
 | Pipeline CLI | Active product surface | `src/rkp/cli.py`, `Tools/rkp.py`, `Docs/cli-tool.md`, `Tests/test_rkp_cli.py`, `Tests/test_rkp_init.py`, `Tests/test_rkp_package.py`; `verify-asset`, `inspect-usdz`, `release-check --assets`, explicit `--generator claude`, and `--backend meshy` draft paths are documented |
-| Game Factory CLI | Experimental first batch | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `src/rkg/archetype_runtime.py`, `src/rkg/content_views.py`, `src/rkg/qa_plan.py`, `src/rkg/screenshot_status.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`, `Tests/test_rkg_archetype_runtime.py`, `Tests/test_rkg_content_views.py`, `Tests/test_rkg_scaffold_generators.py`, `Tests/test_rkg_qa_plan.py`, `Tests/test_rkg_screenshot_status.py`; `score-idea`, `list-archetypes`, `describe-archetype`, `plan-game`, `qa-plan`, `verify-screenshots`, `init-game`, and `verify-game` are active RKG surfaces, but generated games still need human product review and visual QA before any shipping claim |
+| Game Factory CLI | Experimental first batch | `src/rkg/cli.py`, `src/rkg/archetypes.py`, `src/rkg/archetype_runtime.py`, `src/rkg/content_views.py`, `src/rkg/qa_plan.py`, `src/rkg/screenshot_status.py`, `Tools/rkg.py`, `Docs/game-factory.md`, `Docs/game-spec.md`, `Docs/rkg-architecture.md`, `Tests/test_rkg_spec.py`, `Tests/test_rkg_init_game.py`, `Tests/test_rkg_score_idea.py`, `Tests/test_rkg_archetypes.py`, `Tests/test_rkg_archetype_runtime.py`, `Tests/test_rkg_content_views.py`, `Tests/test_rkg_scaffold_generators.py`, `Tests/test_rkg_qa_plan.py`, `Tests/test_rkg_screenshot_status.py`; `score-idea`, `list-archetypes`, `describe-archetype`, `plan-game`, `qa-plan`, `verify-screenshots`, `init-game`, and `verify-game` are active RKG surfaces. Native playable archetypes now include `target_shooter`, `lane_dodger`, `toss_physics`, `stack_puzzle`, `wave_defense_lite`, and `fighter_2_5d`; fighter screenshot evidence exists at `Docs/screenshots/rkg_fighter_*.jpg`, but generated games still need human product review before any shipping claim |
 | Fresh external project walkthrough | Verified | GitHub `pipx install`, `rkp init`, `doctor`, `make-asset`, fallback `build-asset`, and `release-check` recorded in `Docs/WORKLOG.md` Sprint 40 |
 | Codebase audit route | Current | `Docs/codebase-audit.md` records dead-code scan, optimization findings, and prioritized cleanup plan |
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
@@ -85,11 +85,12 @@ Post-release state: `v0.2.1` is published and GitHub Actions passed on the relea
 
 Recommended next path:
 
-1. Continue Module 4: Texture Maps and Material Response.
+1. Default back to the RKP product path and continue Module 4: Texture Maps and Material Response.
 2. Pick exactly one next material slice: metallic value comparison or normal-map export behavior.
-3. Keep screenshot evidence required before marking any visual asset imported.
-4. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
-5. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
+3. If deliberately continuing RKG, move past the fighter screenshot gate into asset art/import or a human product-quality review; do not repeat the already-captured screenshot task.
+4. Keep screenshot evidence required before marking any visual asset imported.
+5. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
+6. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.
 
 ## Key Files to Read First
 

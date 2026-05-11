@@ -169,6 +169,7 @@ def main() -> int:
             for step in payload["steps"]:
                 print(f"{step['order']}. {step['state']} -> {step['capture_path']}")
                 print(f"   drive: {step['drive']}")
+                print(f"   automation: {step['automation']}")
                 print(f"   evidence: {step['expected_evidence']}")
         return 0
 

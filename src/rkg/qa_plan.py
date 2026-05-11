@@ -37,9 +37,9 @@ def qa_steps_for(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> list[
                 "screenshot_state_case": swift_identifier_for(state_name),
                 "drive": _screenshot_proof(state_name, archetype),
                 "visible_roles": roles,
-                "expected_evidence": "Required roles visible: " + ", ".join(roles),
+                "expected_evidence": "Declared roles available: " + ", ".join(roles),
                 "capture_path": f"Docs/screenshots/{state_name}.jpg",
-                "automation": "manual_capture",
+                "automation": _capture_automation(str(spec["game"]["archetype"]), state_name),
             }
         )
     return steps
@@ -64,3 +64,9 @@ def _screenshot_proof(state: str, archetype: Mapping[str, Any]) -> str:
         if isinstance(proof, str):
             return proof
     return "Capture after driving the generated game into this release state."
+
+
+def _capture_automation(archetype_id: str, state: str) -> str:
+    if archetype_id == "fighter_2_5d":
+        return f"launch_arg --rkg-screenshot-state {state}"
+    return "manual_capture"

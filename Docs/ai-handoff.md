@@ -68,6 +68,8 @@ Do not expand RKG while doing product-focus cleanup unless a test or doc boundar
 | Roughness readability polish | Complete | Neutral curved witness patch, stronger roughness values, grazing comparison lights |
 | Metallic value comparison | Complete | Fourth `material_response_targets` panel; metallic remains a material value, not a texture map |
 
+RKG latest note: `rkg start-game` now scores an idea, chooses native fighter or custom RealityKit camera/input/systems from idea keywords, scaffolds the project, and returns the QA plan in one command. The dogfood proof is `Build/rkg-start-game-dogfood/ShardVolleyStart` with generated build, capture, sidecars, scene snapshots, and `verify-screenshots` passing.
+
 ## Planned Learning Modules
 
 Recommended order:
@@ -91,7 +93,7 @@ Recommended next path:
 
 1. Default back to the RKP product path and continue Module 4: Texture Maps and Material Response.
 2. Pick exactly one next material slice: metallic map need assessment or normal-map export behavior.
-3. If deliberately continuing RKG, use `Docs/rkg-shard-volley-dogfood.md` as the current gap list. Adapter-specific `qa-plan` proof text, blank/solid PNG/JPEG guardrails, malformed JPEG rejection, duplicate visual evidence detection, capture-contract sidecars, and runtime scene-role snapshots are done; the next useful slice is idea-to-project orchestration, text-overlap visual QA, or the generated asset-brief to RKP asset-command bridge.
+3. If deliberately continuing RKG, use `Docs/rkg-shard-volley-dogfood.md` as the current gap list. Adapter-specific `qa-plan` proof text, blank/solid PNG/JPEG guardrails, malformed JPEG rejection, duplicate visual evidence detection, capture-contract sidecars, runtime scene-role snapshots, and idea-to-project orchestration are done; the next useful slice is text-overlap visual QA or the generated asset-brief to RKP asset-command bridge.
 4. Keep screenshot evidence required before marking any visual asset imported.
 5. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.
 6. Use `Docs/first-good-issues.md` when creating learner-friendly issue candidates.

@@ -112,7 +112,15 @@ Minimum idea file:
 
 `score-idea` returns `pass`, `revise`, or `reject`. Rejected ideas should not reach `rkg init-game`.
 
-Before writing a generated project, either start from a native archetype template or compose a generic RealityKit skeleton:
+For the shortest zero-to-skeleton path, let RKG score the idea, infer the starting runtime shape, scaffold the project, and return the QA plan:
+
+```bash
+python3 Tools/rkg.py start-game idea.json --output GeneratedGame --json
+```
+
+`start-game` refuses `revise` or `reject` ideas without writing a project. For `pass` ideas it chooses a native archetype or `custom_realitykit` camera/input/systems recommendation from the idea text, writes `GameSpec.json`, initializes the generated project, and prints score, recommendation, paths, and `qa_plan` in one JSON payload.
+
+For lower-level control, either start from a native archetype template or compose a generic RealityKit skeleton manually:
 
 ```bash
 python3 Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output GameSpec.json

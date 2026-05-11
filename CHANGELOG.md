@@ -10,6 +10,7 @@
 - Added a fourth `material_response_targets` comparison panel for metallic material-value behavior.
 - Added the zero-to-skeleton RKG fighter walkthrough and screenshot capture path.
 - Added `rkg new-game` and the `custom_realitykit` skeleton path for generic racing, FPS/shooter, and other composable RealityKit starts.
+- Added `rkg start-game` to score an idea, infer camera/input/systems, scaffold the generated project, and return the QA plan in one command.
 - Added generated `CameraRig.swift`, `InputController.swift`, and `SystemFlags.swift` runtime core files for RKG game skeletons.
 - Added the first `custom_realitykit` system adapter for racing with lane steering, lap/checkpoint state, collision/result proof, camera rig entity binding, and screenshot-state seeding.
 - Added a `custom_realitykit` FPS/shooter system adapter with aim/fire/health/cover/enemy state, controls, RealityKit scene binding, and screenshot-state seeding.

@@ -12,6 +12,46 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 127: RKG Idea-To-Project Start Command
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Sıfırdan oyun başlatma yolundaki en büyük ürün açığını kapatmak: kullanıcı `score-idea`, `new-game`, `init-game`, `qa-plan` sırasını bilmeden bir fikir dosyasından generated RealityKit skeleton alabilmeli.
+
+**Yapılanlar:**
+
+- `rkg start-game <idea> --output <dir>` komutu eklendi.
+- Yeni `src/rkg/start_game.py` modülü fikir metninden deterministic öneri çıkarıyor:
+  - fighter/duel kelimeleri -> native `fighter_2_5d`
+  - racing/lap/vehicle kelimeleri -> `custom_realitykit` racing/lap/collision
+  - projectile/charge/launch kelimeleri -> projectile/shooting/score
+  - FPS/shooter/weapon/enemy/cover kelimeleri -> shooter/FPS systems
+  - collect/pickup/timer kelimeleri -> collector/score/timer
+- Komut önce `score-idea` sonucunu kullanıyor; verdict `pass` değilse proje yazmıyor.
+- Pass olan fikir için GameSpec, generated project, store docs, asset briefs, runtime snapshot module, ve QA plan tek akışta üretiliyor.
+- JSON çıktı score, recommendation, project/spec path ve QA planı içeriyor.
+- Shard Volley Start dogfood: fikir dosyasından tek komutla projectile skeleton üretildi, Xcode project generate/build edildi, simulator screenshot capture ve runtime scene-backed verification geçti.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_start_game: expected red before implementation; then ok, 3 tests
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_start_game Tests.test_rkg_score_idea Tests.test_rkg_new_game Tests.test_rkg_init_game Tests.test_rkg_qa_plan Tests.test_rkg_plan_game: ok, 59 tests
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-start-game-dogfood/idea.json --output Build/rkg-start-game-dogfood/ShardVolleyStart --json: ok, score 100 pass, projectile/shooting/score recommendation
+rtk xcodegen generate: ok for Build/rkg-start-game-dogfood/ShardVolleyStart
+rtk xcodebuild -quiet -project ShardVolleyStart.xcodeproj -scheme ShardVolleyStart -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-start-game-dogfood/ShardVolleyStart --device booted: ok, 4 JPEG screenshots + 4 sidecars + 4 scene snapshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-start-game-dogfood/ShardVolleyStart --json: ok, 4 runtime-scene-backed screenshots
+```
+
+**Öğrenme notu:**
+
+Bu artık "RKG bilen operatör" gereksinimini azaltıyor. Hâlâ production game değil; ama fikirden generated RealityKit skeleton + QA plan + simulator proof zinciri tek komuta indi.
+
+**Karar:**
+
+Bir sonraki kapsamlı-tool açığı asset bridge veya visual text-overlap QA. Orchestrator açığı kapandı; gerçek 0-to-first-playable için generated asset brief'lerini RKP asset command planına çevirmek daha değerli olacak.
+
 ### Sprint 126: RKG Runtime Scene Snapshot Evidence
 
 **Durum:** Tamamlandı

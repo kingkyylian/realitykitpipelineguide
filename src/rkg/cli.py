@@ -15,6 +15,7 @@ from rkg.scaffold import init_game
 from rkg.screenshot_status import build_screenshot_status, build_screenshot_status_for_project, load_qa_plan
 from rkg.spec import GameSpecError, load_game_spec, validate_game_spec
 from rkg.spec_templates import build_game_template, build_spec_template
+from rkg.start_game import result_to_json, start_game_from_idea
 from rkg.verify import verify_game
 
 
@@ -41,6 +42,12 @@ def main() -> int:
     new_game.add_argument("--input", required=True, dest="input_model", help="Input model such as tap, drag, dual_stick, or tilt_tap")
     new_game.add_argument("--systems", required=True, help="Comma-separated gameplay systems")
     new_game.add_argument("--output", required=True, help="Output GameSpec.json path")
+
+    start_game = subparsers.add_parser("start-game", help="Score an idea and generate a RealityKit game project")
+    start_game.add_argument("idea", help="Path to idea JSON or YAML")
+    start_game.add_argument("--output", required=True, help="Output generated project directory")
+    start_game.add_argument("--force", action="store_true", help="Overwrite known generated files in the output directory")
+    start_game.add_argument("--json", action="store_true", help="Print machine-readable orchestration result")
 
     score_idea = subparsers.add_parser("score-idea", help="Evaluate a game idea before scaffolding")
     score_idea.add_argument("idea", help="Path to idea JSON or YAML")
@@ -106,6 +113,28 @@ def main() -> int:
             print(f"error: {exc}", file=sys.stderr)
             return 1
         print(f"wrote GameSpec: {Path(args.output)}")
+        return 0
+
+    if args.command == "start-game":
+        try:
+            result = start_game_from_idea(load_idea(Path(args.idea)), Path(args.output), force=args.force)
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.json:
+            print(result_to_json(result), end="")
+        else:
+            score = result["score"]
+            recommendation = result["recommendation"]
+            print(f"score: {score['score']} ({score['verdict']})")
+            print(f"recommendation: {recommendation['archetype']} / {recommendation['camera']} / {recommendation['input']}")
+            if recommendation["systems"]:
+                print("systems: " + ", ".join(recommendation["systems"]))
+            if result["ok"]:
+                print(f"initialized rkg game: {result['paths']['project']}")
+        if not result["ok"]:
+            print(f"error: idea verdict {result['score']['verdict']} does not start a project", file=sys.stderr)
+            return 1
         return 0
 
     if args.command == "init-game":

@@ -20,8 +20,8 @@ RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot
 
 ```text
 idea.json
--> rkg score-idea
--> rkg new-spec or rkg new-game
+-> rkg start-game
+   or: rkg score-idea -> rkg new-spec/rkg new-game
 -> GameSpec.yaml
 -> rkg validate-spec
 -> rkg plan-game
@@ -189,6 +189,7 @@ The state-bound scene generators share one entity setup helper for the repeated 
 
 | Command | Purpose | First behavior |
 | --- | --- | --- |
+| `rkg start-game <idea>` | Score an idea, infer a starting archetype/camera/input/systems set, scaffold the project, and return the QA plan. | Implemented for fighter, racing, projectile, shooter/FPS-like, and collector keyword routing; refuses non-pass ideas without writing a project. |
 | `rkg new-spec <archetype>` | Write a starter GameSpec from a native archetype template. | Implemented for `fighter_2_5d`. |
 | `rkg new-game` | Write a composable `custom_realitykit` GameSpec from title, camera, input, and gameplay systems. | Implemented for racing, projectile, shooter/FPS-like, and collector skeletons with early validation. |
 | `rkg list-adapters` | Show `custom_realitykit` adapter capability records. | Text and `--json`; exposes systems, generated state/rules, scene properties, and roles. |

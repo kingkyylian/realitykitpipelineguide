@@ -140,7 +140,7 @@ python3 Tools/rkg.py qa-plan GameSpec.yaml --json > qa-plan.json
 python3 Tools/rkg.py verify-screenshots GeneratedGame --plan qa-plan.json --json
 ```
 
-`capture-screenshots` builds the generated project, installs it on a simulator, launches each screenshot state, and writes the capture files. `verify-screenshots` then checks that every QA plan capture path exists under the generated project and has a supported JPEG or PNG image with readable dimensions. PNG captures are sampled directly, and JPEG captures are sampled through the macOS `sips` rasterizer when available. Near-solid or blank evidence is rejected as `blank_or_solid`; repeated visual evidence across different release states is rejected as `duplicate_visual_evidence`.
+`capture-screenshots` builds the generated project, installs it on a simulator, launches each screenshot state, and writes the capture files. It also writes `Docs/screenshots/<state>.json` sidecars that record the game id, state, screenshot-state case, expected visible roles, proof cue, automation hint, and screenshot path. `verify-screenshots` then checks that every QA plan capture path exists under the generated project, has a supported JPEG or PNG image with readable dimensions, and has a matching sidecar. PNG captures are sampled directly, and JPEG captures are sampled through the macOS `sips` rasterizer when available. Near-solid or blank evidence is rejected as `blank_or_solid`; repeated visual evidence across different release states is rejected as `duplicate_visual_evidence`.
 
 ### 2. Vertical Slice
 

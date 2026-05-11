@@ -165,6 +165,7 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertIn("state.nearMisses > 0", payload["steps"][2]["drive"])
         self.assertEqual(payload["steps"][2]["visible_roles"], ["player", "obstacle", "arena"])
         self.assertEqual(payload["steps"][2]["capture_path"], "Docs/screenshots/near_miss.jpg")
+        self.assertEqual(payload["steps"][2]["sidecar_path"], "Docs/screenshots/near_miss.json")
         self.assertEqual(payload["steps"][2]["automation"], "manual_capture")
 
     def test_fighter_qa_plan_exposes_launch_state_automation(self) -> None:

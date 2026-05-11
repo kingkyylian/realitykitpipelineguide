@@ -77,6 +77,9 @@ class RkgCaptureTests(unittest.TestCase):
             self.assertEqual(payload["steps"][1]["state"], "mid_combo")
             self.assertIn("--rkg-screenshot-state", payload["steps"][1]["launch"])
             self.assertTrue(payload["steps"][1]["screenshot"].endswith("Docs/screenshots/mid_combo.jpg"))
+            self.assertTrue(payload["steps"][1]["sidecar"].endswith("Docs/screenshots/mid_combo.json"))
+            self.assertEqual(payload["steps"][1]["visible_roles"], ["player", "opponent", "arena"])
+            self.assertIn("state.comboCount", payload["steps"][1]["drive"])
 
     def test_capture_execution_runs_build_install_launch_and_screenshot_steps(self) -> None:
         from rkg.capture import execute_capture_plan
@@ -119,6 +122,59 @@ class RkgCaptureTests(unittest.TestCase):
             calls[3][0],
             ["xcrun", "simctl", "io", "booted", "screenshot", "/tmp/Generated/Docs/screenshots/round_start.jpg"],
         )
+
+    def test_capture_execution_writes_sidecar_after_successful_screenshot(self) -> None:
+        from rkg.capture import execute_capture_plan
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "Generated"
+            project.mkdir()
+            sidecar = project / "Docs" / "screenshots" / "round_start.json"
+            plan = {
+                "project": str(project),
+                "device": "booted",
+                "game_id": "neon_ring_duel",
+                "display_name": "Neon Ring Duel",
+                "archetype": "fighter_2_5d",
+                "build": ["xcodebuild", "build"],
+                "install": ["xcrun", "simctl", "install", "booted", "App.app"],
+                "steps": [
+                    {
+                        "order": 1,
+                        "state": "round_start",
+                        "screenshot_state_case": "roundStart",
+                        "visible_roles": ["player", "opponent", "arena"],
+                        "drive": "Launch with round_start; state.phase == .playing.",
+                        "expected_evidence": "Declared roles available: player, opponent, arena",
+                        "automation": "launch_arg --rkg-screenshot-state round_start",
+                        "launch": [
+                            "xcrun",
+                            "simctl",
+                            "launch",
+                            "booted",
+                            "com.example.game",
+                            "--rkg-screenshot-state",
+                            "round_start",
+                        ],
+                        "screenshot": str(project / "Docs" / "screenshots" / "round_start.jpg"),
+                        "sidecar": str(sidecar),
+                    }
+                ],
+            }
+
+            def fake_runner(command: list[str], cwd: Path) -> int:
+                return 0
+
+            result = execute_capture_plan(plan, runner=fake_runner, sleep_seconds=0)
+
+            self.assertTrue(result["ok"])
+            payload = json.loads(sidecar.read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema_version"], 1)
+            self.assertEqual(payload["game_id"], "neon_ring_duel")
+            self.assertEqual(payload["state"], "round_start")
+            self.assertEqual(payload["drive"], "Launch with round_start; state.phase == .playing.")
+            self.assertEqual(payload["visible_roles"], ["player", "opponent", "arena"])
+            self.assertEqual(payload["automation"], "launch_arg --rkg-screenshot-state round_start")
 
     def test_capture_execution_waits_long_enough_after_launch_by_default(self) -> None:
         from rkg.capture import execute_capture_plan

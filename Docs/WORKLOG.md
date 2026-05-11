@@ -12,6 +12,42 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 125: RKG Screenshot Evidence Sidecars
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** Semantic QA için ilk sağlam kanıt kontratını eklemek: screenshot dosyası yanında hangi game/state/roles/proof cue ile yakalandığını gösteren JSON sidecar üretilmeli ve `verify-screenshots` bunu zorunlu olarak doğrulamalı.
+
+**Yapılanlar:**
+
+- `qa-plan --json` artık her screenshot state için `sidecar_path` veriyor.
+- `capture-screenshots` her başarılı screenshot capture sonrasında `Docs/screenshots/<state>.json` sidecar yazıyor.
+- Sidecar içinde `game_id`, `archetype`, `state`, `screenshot_state_case`, `visible_roles`, `drive`, `expected_evidence`, `automation`, ve screenshot path tutuluyor.
+- `verify-screenshots` geçerli image dosyası için sidecar'ı zorunlu hale getirdi.
+- Eksik sidecar `missing_sidecar`, bozuk sidecar `invalid_sidecar`, rol uyuşmazlığı `role_evidence_mismatch` olarak raporlanıyor.
+- Shard Volley yeniden capture edildi; dört JPEG ve dört sidecar birlikte doğrulandı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_screenshots_dry_run_lists_fighter_launch_commands Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_writes_sidecar_after_successful_screenshot Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_requires_sidecar_for_valid_image_capture Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_sidecar_role_mismatch: expected red before implementation; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture: expected red before sidecar_path; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture Tests.test_rkg_screenshot_status Tests.test_rkg_qa_plan: ok, 23 tests
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-qa-proof/ShardVolley --device booted: ok, 4 JPEG screenshots + 4 sidecars
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-qa-proof/ShardVolley --json: ok, 4 sidecar-backed screenshots
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 218 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Sidecar gerçek OCR/vision yerine geçmez; screenshot içindeki target/weapon mesh'ini pikselden kanıtlamaz. Ama capture pipeline artık hangi state ve role contract'ı için kanıt üretildiğini makine-readable şekilde taşıyor. Bu, yanlış dosya/eksik sidecar/manual copy hatalarını yakalayan semantic QA tabanı.
+
+**Karar:**
+
+Bir sonraki semantik seviye generated app'in runtime state snapshot'ını veya scene-role visibility export'unu üretmesi olmalı. Sadece capture script'in QA planından yazdığı sidecar, görselin içeriğini değil capture contract'ını kanıtlar.
+
 ### Sprint 124: RKG JPEG Visual Evidence Guardrail
 
 **Durum:** Tamamlandı

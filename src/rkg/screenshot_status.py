@@ -36,7 +36,7 @@ def build_screenshot_status(project: Path, qa_plan: Mapping[str, Any]) -> JsonDi
     if not project.exists() or not project.is_dir():
         raise ValueError(f"generated project does not exist: {project}")
 
-    checks = [_check_step(project, step) for step in _qa_steps(qa_plan)]
+    checks = [_check_step(project, qa_plan, step) for step in _qa_steps(qa_plan)]
     _mark_duplicate_visual_evidence(checks)
     for check in checks:
         check.pop("_visual_fingerprint", None)
@@ -59,10 +59,12 @@ def _qa_steps(qa_plan: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return steps
 
 
-def _check_step(project: Path, step: Mapping[str, Any]) -> JsonDict:
+def _check_step(project: Path, qa_plan: Mapping[str, Any], step: Mapping[str, Any]) -> JsonDict:
     capture_path = str(step.get("capture_path", ""))
     path = project / capture_path
     status, size, visual_fingerprint = _image_file_status(path)
+    if status == "ok":
+        status = _sidecar_status(project, qa_plan, step, path)
     return {
         "order": int(step.get("order", 0)),
         "state": str(step.get("state", "")),
@@ -71,6 +73,41 @@ def _check_step(project: Path, step: Mapping[str, Any]) -> JsonDict:
         "bytes": size,
         "_visual_fingerprint": visual_fingerprint,
     }
+
+
+def _sidecar_status(project: Path, qa_plan: Mapping[str, Any], step: Mapping[str, Any], capture_path: Path) -> str:
+    sidecar = _sidecar_path(project, step, capture_path)
+    if not sidecar.exists():
+        return "missing_sidecar"
+    if not sidecar.is_file():
+        return "invalid_sidecar"
+    try:
+        payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return "invalid_sidecar"
+    if not isinstance(payload, Mapping):
+        return "invalid_sidecar"
+    if payload.get("schema_version") != 1:
+        return "invalid_sidecar"
+    if str(payload.get("game_id", "")) != str(qa_plan.get("game_id", "")):
+        return "invalid_sidecar"
+    if str(payload.get("state", "")) != str(step.get("state", "")):
+        return "invalid_sidecar"
+    if str(payload.get("automation", "")) != str(step.get("automation", "")):
+        return "invalid_sidecar"
+
+    expected_roles = {str(role) for role in step.get("visible_roles", [])}
+    actual_roles = payload.get("visible_roles")
+    if not isinstance(actual_roles, list) or {str(role) for role in actual_roles} != expected_roles:
+        return "role_evidence_mismatch"
+    return "ok"
+
+
+def _sidecar_path(project: Path, step: Mapping[str, Any], capture_path: Path) -> Path:
+    sidecar_path = step.get("sidecar_path")
+    if isinstance(sidecar_path, str) and sidecar_path:
+        return project / sidecar_path
+    return capture_path.with_suffix(".json")
 
 
 def _mark_duplicate_visual_evidence(checks: list[JsonDict]) -> None:

@@ -61,7 +61,7 @@
         "baseColor",
         "roughness"
       ],
-      "notes": "Module 4 comparison asset for roughness value versus roughness map behavior. Three small target panels show matte value, glossy value, and roughness-map variation with a neutral curved witness patch and grazing lights. Accepted with screenshot Docs/screenshots/material_response_targets.png."
+      "notes": "Module 4 comparison asset for material response behavior. Four small target panels show matte value, glossy value, roughness-map variation, and metallic value with a neutral curved witness patch and grazing lights. Metallic is intentionally a material value here, not a texture map. Accepted with screenshot Docs/screenshots/material_response_targets.png."
     }
   ]
 }

@@ -51,6 +51,12 @@ class FixtureRefactorTests(unittest.TestCase):
         self.assertIn("grazingLight", showcase)
         self.assertIn("rimLight", showcase)
 
+    def test_material_response_showcase_keeps_metallic_as_material_value(self) -> None:
+        showcase = (SOURCE_DIR / "MaterialResponseShowcase.swift").read_text(encoding="utf-8")
+
+        self.assertIn("(0.72, 0.18, 1.0", showcase)
+        self.assertIn("metallic: metallic", showcase)
+
 
 if __name__ == "__main__":
     unittest.main()

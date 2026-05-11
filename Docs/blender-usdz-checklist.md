@@ -32,6 +32,7 @@
 - Roughness value ile roughness map'i aynı ışık ve aynı kamera altında karşılaştır.
 - Roughness map dosya adı asset prefix'i taşımalı: `<asset_id>_roughness.png`.
 - Roughness farkı simulator screenshot'ta okunmuyorsa önce ışık/surface açısını düzelt; normal/metallic map ekleme.
+- Metallic'i önce material value olarak karşılaştır; metallic texture map ancak screenshot ve asset brief gerçek per-pixel metal/non-metal ayrımı istiyorsa eklenmeli.
 - For USD export, match the shader UV Map node's `uv_map` field to the UV primvar name. The active Blender UV layer alone is not enough.
 - If the source USDZ uses the `st` primvar, write the corrected UVs back to `st` before export.
 

@@ -59,6 +59,7 @@ def make_material(
     base_image: bpy.types.Image,
     roughness_value: float,
     roughness_image: bpy.types.Image | None = None,
+    metallic_value: float = 0.0,
 ) -> bpy.types.Material:
     material = bpy.data.materials.new(name)
     material.use_nodes = True
@@ -72,7 +73,7 @@ def make_material(
     links.new(uv_map.outputs["UV"], texture.inputs["Vector"])
     links.new(texture.outputs["Color"], principled.inputs["Base Color"])
     principled.inputs["Roughness"].default_value = roughness_value
-    principled.inputs["Metallic"].default_value = 0.0
+    principled.inputs["Metallic"].default_value = metallic_value
 
     if roughness_image is not None:
         roughness = nodes.new(type="ShaderNodeTexImage")
@@ -113,11 +114,13 @@ def main() -> None:
     matte = make_material("matte_value_roughness_088", base_image, 0.88)
     glossy = make_material("glossy_value_roughness_018", base_image, 0.18)
     mapped = make_material("mapped_roughness_bands", base_image, 0.50, roughness_image)
+    metallic = make_material("metallic_value_roughness_018", base_image, 0.18, metallic_value=1.0)
 
     panels = [
-        create_panel("matte_value_panel", -0.62, matte),
-        create_panel("glossy_value_panel", 0.0, glossy),
-        create_panel("roughness_map_panel", 0.62, mapped),
+        create_panel("matte_value_panel", -0.72, matte),
+        create_panel("glossy_value_panel", -0.24, glossy),
+        create_panel("roughness_map_panel", 0.24, mapped),
+        create_panel("metallic_value_panel", 0.72, metallic),
     ]
 
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_PATH))

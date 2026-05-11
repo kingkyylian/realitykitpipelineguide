@@ -236,9 +236,10 @@ def target_mesh() -> MeshBuilder:
 def material_response_meshes() -> list[tuple[str, MeshBuilder, str]]:
     meshes: list[tuple[str, MeshBuilder, str]] = []
     for name, x_offset, material_name in [
-        ("matte_value_panel", -0.62, "mat_matte_value"),
-        ("glossy_value_panel", 0.0, "mat_glossy_value"),
-        ("roughness_map_panel", 0.62, "mat_roughness_map"),
+        ("matte_value_panel", -0.72, "mat_matte_value"),
+        ("glossy_value_panel", -0.24, "mat_glossy_value"),
+        ("roughness_map_panel", 0.24, "mat_roughness_map"),
+        ("metallic_value_panel", 0.72, "mat_metallic_value"),
     ]:
         mesh = MeshBuilder()
         mesh.add_cylinder(x_offset, 0, 0, 0.28, 0.035, 48)
@@ -292,7 +293,13 @@ def mesh_block(name: str, mesh: MeshBuilder, material_name: str) -> str:
         }}'''
 
 
-def material_block(name: str, basecolor_texture: str, roughness_value: float, roughness_texture: str | None = None) -> str:
+def material_block(
+    name: str,
+    basecolor_texture: str,
+    roughness_value: float,
+    roughness_texture: str | None = None,
+    metallic_value: float = 0.0,
+) -> str:
     roughness_input = (
         f"float inputs:roughness.connect = </root/_materials/{name}/Roughness_Texture.outputs:r>"
         if roughness_texture
@@ -320,7 +327,7 @@ def material_block(name: str, basecolor_texture: str, roughness_value: float, ro
             {{
                 uniform token info:id = "UsdPreviewSurface"
                 color3f inputs:diffuseColor.connect = </root/_materials/{name}/Image_Texture.outputs:rgb>
-                float inputs:metallic = 0
+                float inputs:metallic = {metallic_value}
                 {roughness_input}
                 token outputs:surface
             }}
@@ -354,6 +361,7 @@ def write_material_response_usda(asset: dict, texture_names: dict[str, str], out
             material_block("mat_matte_value", basecolor, 0.98),
             material_block("mat_glossy_value", basecolor, 0.04),
             material_block("mat_roughness_map", basecolor, 0.50, roughness),
+            material_block("mat_metallic_value", basecolor, 0.18, metallic_value=1.0),
         ]
     )
     output.write_text(

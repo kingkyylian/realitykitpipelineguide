@@ -36,14 +36,15 @@ enum MaterialResponseShowcase {
     }
 
     private static func addProceduralFallback(to worldAnchor: Entity) {
-        let panels: [(Float, Float, UIColor)] = [
-            (-0.62, 0.98, UIColor(red: 0.72, green: 0.08, blue: 0.06, alpha: 1)),
-            (0.0, 0.04, UIColor(red: 0.88, green: 0.10, blue: 0.07, alpha: 1)),
-            (0.62, 0.52, UIColor(red: 0.78, green: 0.18, blue: 0.12, alpha: 1))
+        let panels: [(Float, Float, Float, UIColor)] = [
+            (-0.72, 0.98, 0.0, UIColor(red: 0.72, green: 0.08, blue: 0.06, alpha: 1)),
+            (-0.24, 0.04, 0.0, UIColor(red: 0.88, green: 0.10, blue: 0.07, alpha: 1)),
+            (0.24, 0.52, 0.0, UIColor(red: 0.78, green: 0.18, blue: 0.12, alpha: 1)),
+            (0.72, 0.18, 1.0, UIColor(red: 0.78, green: 0.18, blue: 0.12, alpha: 1))
         ]
 
-        for (x, roughness, color) in panels {
-            let material = RealityMaterials.pbr(color: color, roughness: roughness, metallic: 0.0)
+        for (x, roughness, metallic, color) in panels {
+            let material = RealityMaterials.pbr(color: color, roughness: roughness, metallic: metallic)
             let panel = ModelEntity(mesh: .generateBox(size: [0.34, 0.34, 0.035]), materials: [material])
             let witness = ModelEntity(mesh: .generateSphere(radius: 0.045), materials: [material])
             witness.position = [0.09, 0.09, 0.045]

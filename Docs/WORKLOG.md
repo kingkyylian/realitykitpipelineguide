@@ -12,6 +12,46 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 112: Module 4 Metallic Value Comparison
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-11
+**Amaç:** `material_response_targets` asset'ini roughness value/map karşılaştırmasından dört panelli material-response dersine genişletmek; metallic'i önce texture map değil material value olarak kanıtlamak.
+
+**Yapılanlar:**
+
+- Direct USDZ fallback builder dördüncü `metallic_value_panel` mesh'ini üretir hale getirildi.
+- Material block sözleşmesine `metallic_value` parametresi eklendi; yeni panel `metallic=1.0`, `roughness=0.18` kullanıyor.
+- Blender starter script'i ve RealityKit procedural fallback'i aynı dört panel düzenine hizalandı.
+- Manifest, asset brief, guide, checklist, handoff, changelog ve guide PDF güncellendi.
+- `material_response_targets.usdz` yeniden üretildi, simulator screenshot yenilendi ve asset tekrar accepted edildi.
+
+**Verification:**
+
+```text
+rtk .venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_material_response_fallback_uses_readable_roughness_values Tests.test_rkp_project.RkpProjectTests.test_material_response_fallback_meshes_include_curved_specular_witnesses Tests.test_fixture_refactor.FixtureRefactorTests.test_material_response_showcase_keeps_metallic_as_material_value: ok, 3 tests
+rtk .venv/bin/python Tools/rkp.py build-asset material_response_targets --fallback-only: ok, 28730-byte USDZ
+rtk .venv/bin/python Tools/rkp.py inspect-usdz material_response_targets --json: ok, 1664 triangles, baseColor 512x512, roughness 512x512, st UV present
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok, CoreSimulator sandbox warnings only
+rtk xcrun simctl install FF329D84-0179-49E2-AFC4-12D4935845FC Build/DerivedData/Build/Products/Debug-iphonesimulator/RealityKitPipelineDemo.app: ok
+rtk xcrun simctl launch --terminate-running-process FF329D84-0179-49E2-AFC4-12D4935845FC com.kyylian.RealityKitPipelineDemo --material-response-mode: ok
+rtk xcrun simctl io FF329D84-0179-49E2-AFC4-12D4935845FC screenshot /Users/kyylian/Developer/RealityKitPipelineDemo/Docs/screenshots/material_response_targets.png: ok
+rtk .venv/bin/python Tools/rkp.py accept-asset material_response_targets --screenshot Docs/screenshots/material_response_targets.png: ok
+rtk make guide: ok, PDF regenerated with Fontconfig/CSS warnings only
+rtk .venv/bin/python -m unittest discover -s Tests: ok, 176 tests
+rtk .venv/bin/python Tools/rkp.py release-check: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+rtk pdfinfo Docs/pdf/realitykit-pipeline-guide.pdf: ok, 31 pages, 717737 bytes
+```
+
+**Öğrenme notu:**
+
+Metallic öğrenimi map eklemekle başlamak zorunda değil. Yeni başlayan için daha iyi ilk adım aynı ışık/kamera/mesh altında tek material value değişikliğini görsel olarak kanıtlamak; per-pixel metallic map ancak asset brief gerçek metal/non-metal ayrımı istediğinde ayrı slice olmalı.
+
+**Karar:**
+
+Module 4'te sıradaki anlamlı konu ya gerçek metallic map ihtiyacı değerlendirmesi ya da normal-map export behavior olmalı. Aynı sprintte birden fazla yeni material map açılmayacak.
+
 ### Sprint 111: RKG Fighter Screenshot Gate Closure
 
 **Durum:** Tamamlandı

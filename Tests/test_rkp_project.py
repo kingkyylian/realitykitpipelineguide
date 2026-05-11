@@ -884,6 +884,7 @@ with zipfile.ZipFile(output, "w") as zf:
 
         self.assertIn("float inputs:roughness = 0.98", text)
         self.assertIn("float inputs:roughness = 0.04", text)
+        self.assertIn("float inputs:metallic = 1.0", text)
         self.assertIn(
             "float inputs:roughness.connect = </root/_materials/mat_roughness_map/Roughness_Texture.outputs:r>",
             text,
@@ -894,7 +895,7 @@ with zipfile.ZipFile(output, "w") as zf:
 
         meshes = usdz_fallback_builder.material_response_meshes()
 
-        self.assertEqual(len(meshes), 3)
+        self.assertEqual(len(meshes), 4)
         for _, mesh, _ in meshes:
             self.assertGreaterEqual(len(mesh.triangles), 240)
 

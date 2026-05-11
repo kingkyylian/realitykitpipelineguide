@@ -6,10 +6,11 @@ Teach Module 4 material response with one compact comparison asset that can be l
 
 ## Visual Contract
 
-- Three target-like panels are visible side by side.
+- Four target-like panels are visible side by side.
 - Left panel: high roughness material value, matte response.
-- Center panel: low roughness material value, glossier response.
-- Right panel: roughness map variation with a mixed response on the neutral witness patch.
+- Left-center panel: low roughness material value, glossier response.
+- Right-center panel: roughness map variation with a mixed response on the neutral witness patch.
+- Right panel: metallic material value with low roughness, proving metallic response without adding a metallic texture map.
 - All panels use the same readable base color ring language as `target_basic_textured`, plus a small neutral curved witness patch so roughness differences are visible in the fixture screenshot.
 - Texture size starts at 512x512.
 
@@ -20,6 +21,7 @@ Teach Module 4 material response with one compact comparison asset that can be l
 - Source script: `Tools/blender/create_material_response_targets.py`
 - Base color texture: `material_response_targets_basecolor.png`
 - Roughness texture: `material_response_targets_roughness.png`
+- Metallic: material value only, no metallic texture map in this slice
 - UV primvar: `st`
 - Max triangles: 1800
 - Max texture size: 1024
@@ -31,7 +33,7 @@ Teach Module 4 material response with one compact comparison asset that can be l
 - [x] RealityKit fixture launched with `--material-response-mode`.
 - [x] Simulator screenshot captured at `Docs/screenshots/material_response_targets.png`.
 - [x] `rkp accept-asset material_response_targets --screenshot Docs/screenshots/material_response_targets.png` passes.
-- [x] `Docs/WORKLOG.md` records the roughness readability polish and verification evidence.
+- [x] `Docs/WORKLOG.md` records the roughness and metallic value comparison verification evidence.
 
 ## Evidence
 

@@ -440,7 +440,7 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 | USDZ inspection gate | Complete | `rkp inspect-usdz`, tests | Texture presence, texture dimension, UV signal ve known triangle budget raporlanıyor. |
 | Asset verification gate | Complete | `rkp verify-asset`, tests | Build, inspect, acceptance ve release kapıları tek akışta birleşti. |
 | Roughness maps | Started | `material_response_targets`, `Docs/screenshots/material_response_targets.png` | Roughness value vs roughness map comparison is now readable through a neutral curved witness patch. |
-| Metallic maps | Planned | yok | Metallic map gerekliliği ayrı egzersizde değerlendirilecek. |
+| Metallic response | Started | `material_response_targets`, `Docs/screenshots/material_response_targets.png` | Metallic value comparison eklendi; metallic map gerekliliği ayrı kanıtla değerlendirilecek. |
 | Normal map | Planned | yok | Tangent-space normal ve export davranışı test edilecek. |
 | Texture resolution comparison | Planned | yok | 512 vs 1024 simulator/device karşılaştırması yapılacak. |
 | Mobile performance | Planned | `Docs/asset-budget.md` başlangıç | Triangle, texture memory, material slot, draw call anlatılacak. |
@@ -465,11 +465,12 @@ Bu rehber şu anda Sprint 1-3 kapsamını production seviyesinde anlatıyor: ilk
 
 İlk egzersiz sonucu:
 
-1. `material_response_targets` asset'i üç panelle roughness value ve roughness map davranışını karşılaştırır.
+1. `material_response_targets` asset'i dört panelle roughness value, roughness map ve metallic value davranışını karşılaştırır.
 2. `rkp inspect-usdz material_response_targets --json` baseColor ve roughness texture varlığını doğrular.
 3. Simulator screenshot `Docs/screenshots/material_response_targets.png` olarak saklanır.
-4. Roughness farkı düz hedef yüzeyinde zayıf okunur; bu yüzden asset küçük nötr curved witness patch kullanır. Sol panelde matte cevap yumuşak kalır, orta panelde glossy highlight daha keskin görünür, sağ panelde roughness map karışık tepki üretir.
-5. Sonraki Module 4 slice'ı yeni map eklemekse tek konu seçilmeli: metallic value comparison veya normal-map export behavior.
+4. Roughness farkı düz hedef yüzeyinde zayıf okunur; bu yüzden asset küçük nötr curved witness patch kullanır. Sol panelde matte cevap yumuşak kalır, sol-orta panelde glossy highlight daha keskin görünür, sağ-orta panelde roughness map karışık tepki üretir, sağ panel metallic value ile ışığa farklı cevap verir.
+5. Metallic burada texture map değil material value'dur. Yeni map eklemeden önce tek value değişikliğinin screenshot'ta okunup okunmadığı kanıtlanır.
+6. Sonraki Module 4 slice'ı yeni map eklemekse tek konu seçilmeli: metallic map ihtiyacı veya normal-map export behavior.
 
 ### Planned Module 5: Performance and Mobile Asset Budget
 

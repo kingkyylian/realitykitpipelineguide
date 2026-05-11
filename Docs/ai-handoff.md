@@ -63,6 +63,7 @@ Do not expand RKG while doing product-focus cleanup unless a test or doc boundar
 | CLI smoke tests | Started | `Tests/test_rkp_cli.py`, `make test` |
 | Material response first slice | Complete | `Assets/Imported/material_response_targets.usdz`, `Docs/screenshots/material_response_targets.png`, `rkp inspect-usdz` textureMaps output |
 | Roughness readability polish | Complete | Neutral curved witness patch, stronger roughness values, grazing comparison lights |
+| Metallic value comparison | Complete | Fourth `material_response_targets` panel; metallic remains a material value, not a texture map |
 
 ## Planned Learning Modules
 
@@ -86,7 +87,7 @@ Post-release state: `v0.2.1` is published and GitHub Actions passed on the relea
 Recommended next path:
 
 1. Default back to the RKP product path and continue Module 4: Texture Maps and Material Response.
-2. Pick exactly one next material slice: metallic value comparison or normal-map export behavior.
+2. Pick exactly one next material slice: metallic map need assessment or normal-map export behavior.
 3. If deliberately continuing RKG, move past the fighter screenshot gate into asset art/import or a human product-quality review; do not repeat the already-captured screenshot task.
 4. Keep screenshot evidence required before marking any visual asset imported.
 5. Use `Docs/blender-support.md` when answering Blender/fallback setup questions.

@@ -6,8 +6,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from rkg.asset_briefs import asset_brief
 from rkg.archetype_runtime import archetype_rule_members, archetype_state_fields, indent_swift_block
+from rkg.asset_briefs import asset_brief
 from rkg.content_views import content_view_swift
 from rkg.plan import runtime_entities_for, swift_identifier_for, swift_name_for
 from rkg.spec import assert_valid_game_spec

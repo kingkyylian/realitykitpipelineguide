@@ -5,7 +5,6 @@ from typing import Any
 
 from rkg.archetypes import describe_archetype
 
-
 JsonDict = dict[str, Any]
 ALLOWED_SYSTEMS = {
     "racing",

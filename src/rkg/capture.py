@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import subprocess
 import shutil
+import subprocess
 import time
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -9,7 +9,6 @@ from typing import Any
 
 from rkg.qa_plan import build_qa_plan
 from rkg.spec import load_game_spec
-
 
 JsonDict = dict[str, Any]
 CommandRunner = Callable[[list[str], Path], int]

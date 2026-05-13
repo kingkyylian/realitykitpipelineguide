@@ -742,6 +742,7 @@ enum RuntimeSceneSnapshotWriter {
                 return nil
             }
             let position = child.position
+            let bounds = child.visualBounds(relativeTo: anchor)
             return [
                 "asset_id": metadata["asset"] ?? "",
                 "role": metadata["role"] ?? "",
@@ -753,8 +754,20 @@ enum RuntimeSceneSnapshotWriter {
                     "y": Double(position.y),
                     "z": Double(position.z),
                 ],
+                "visual_bounds": [
+                    "center": vector(bounds.center),
+                    "extents": vector(bounds.extents),
+                ],
             ]
         }
+    }
+
+    private static func vector(_ value: SIMD3<Float>) -> [String: Any] {
+        [
+            "x": Double(value.x),
+            "y": Double(value.y),
+            "z": Double(value.z),
+        ]
     }
 
     private static func parseMetadata(_ name: String) -> [String: String]? {

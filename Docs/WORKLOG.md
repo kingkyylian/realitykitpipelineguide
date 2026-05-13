@@ -12,6 +12,39 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 139: RKG Visual Bounds Snapshot Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Runtime scene-role visibility kanıtını bir adım daha ileri taşımak: enabled entity ve pozisyon metadata'sına ek olarak generated role entity'lerinin ölçülebilir visual bounds taşımasını zorunlu kılmak.
+
+**Yapılanlar:**
+
+- Generated `RuntimeSceneSnapshotWriter` artık her `rkg|...` role entity için `visual_bounds.center` ve `visual_bounds.extents` yazıyor.
+- `verify-screenshots`, visual bounds metadata'sı eksik/bozuksa `invalid_scene_snapshot` dönüyor.
+- Beklenen visible role enabled olsa bile visual bounds extents tamamen sıfırsa `scene_role_not_visible` olarak reddediliyor.
+- Flappy auto-loop proof app yeni snapshot formatıyla yeniden üretildi, simulator'da capture edildi ve public `Docs/screenshots/rkg_flappy_*.jpg` kanıtları yenilendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_missing_visual_bounds Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_zero_visual_bounds_for_visible_role Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_runtime_scene_snapshot_evidence_writer: first run failed as expected on old snapshot/verifier contract; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status: ok; 21 tests
+rtk ./.venv/bin/python Tools/rkg.py new-spec flappy_side_scroller --title "Flappy Reef Auto" --output Build/rkg-flappy-auto/FlappySpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-flappy-auto/FlappySpec.json --output Build/rkg-flappy-auto/FlappyReefAuto --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-flappy-auto/FlappyReefAuto: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy-auto/FlappyReefAuto --device FF329D84-0179-49E2-AFC4-12D4935845FC --json: ok; 5 screenshots captured
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks with visual bounds scene snapshots
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+git diff --check: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 252 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+`is_enabled` tek başına mesh görünürlüğü kanıtı değil. Visual bounds extents, pixel-level OCR/overlap testi olmasa da "role entity sahnede boş bir node değil" iddiasını generated app runtime'ından doğruluyor.
+
 ### Sprint 138: RKG Scene Role Visibility Gate
 
 **Durum:** Tamamlandı

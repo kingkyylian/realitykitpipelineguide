@@ -143,6 +143,7 @@ def _scene_snapshot_status(
         return "invalid_scene_snapshot"
     actual_roles: set[str] = set()
     enabled_roles: set[str] = set()
+    visible_roles: set[str] = set()
     for role_record in roles:
         if not isinstance(role_record, Mapping):
             return "invalid_scene_snapshot"
@@ -154,9 +155,13 @@ def _scene_snapshot_status(
         actual_roles.add(role)
         if role_record["is_enabled"]:
             enabled_roles.add(role)
+            if _scene_role_record_has_measurable_visual_bounds(role_record):
+                visible_roles.add(role)
     if not expected_roles.issubset(actual_roles):
         return "scene_role_mismatch"
     if not expected_roles.issubset(enabled_roles):
+        return "scene_role_not_visible"
+    if not expected_roles.issubset(visible_roles):
         return "scene_role_not_visible"
     return "ok"
 
@@ -170,11 +175,36 @@ def _scene_role_record_has_valid_visibility_metadata(role_record: Mapping[str, A
     position = role_record.get("position")
     if not isinstance(position, Mapping):
         return False
-    return all(_is_finite_number(position.get(axis)) for axis in ("x", "y", "z"))
+    if not all(_is_finite_number(position.get(axis)) for axis in ("x", "y", "z")):
+        return False
+    visual_bounds = role_record.get("visual_bounds")
+    if not isinstance(visual_bounds, Mapping):
+        return False
+    center = visual_bounds.get("center")
+    extents = visual_bounds.get("extents")
+    if not isinstance(center, Mapping) or not isinstance(extents, Mapping):
+        return False
+    if not all(_is_finite_number(center.get(axis)) for axis in ("x", "y", "z")):
+        return False
+    return all(_is_non_negative_finite_number(extents.get(axis)) for axis in ("x", "y", "z"))
+
+
+def _scene_role_record_has_measurable_visual_bounds(role_record: Mapping[str, Any]) -> bool:
+    visual_bounds = role_record.get("visual_bounds")
+    if not isinstance(visual_bounds, Mapping):
+        return False
+    extents = visual_bounds.get("extents")
+    if not isinstance(extents, Mapping):
+        return False
+    return max(float(extents[axis]) for axis in ("x", "y", "z")) > 0.001
 
 
 def _is_finite_number(value: object) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def _is_non_negative_finite_number(value: object) -> bool:
+    return _is_finite_number(value) and float(value) >= 0.0
 
 
 def _semantic_visual_status(path: Path, step: Mapping[str, Any]) -> str:

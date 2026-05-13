@@ -587,6 +587,9 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn('"rkg-scene-snapshot-\\(state.rawValue).json"', snapshot)
             self.assertIn('"schema_version": 1', snapshot)
             self.assertIn('"roles": collectRoles(from: anchor)', snapshot)
+            self.assertIn("let bounds = child.visualBounds(relativeTo: anchor)", snapshot)
+            self.assertIn('"visual_bounds":', snapshot)
+            self.assertIn('"extents": vector(bounds.extents)', snapshot)
             self.assertIn('targetBasic.name = "rkg|asset=target_basic|role=target|fallback=procedural_rings"', scene_controller)
             self.assertIn("RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)", scene_controller)
 

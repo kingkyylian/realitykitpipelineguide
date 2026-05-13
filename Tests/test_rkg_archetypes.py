@@ -72,6 +72,8 @@ class RkgArchetypeTests(unittest.TestCase):
             ["gameplay_start", "mid_flight", "near_gap", "collision", "results"],
         )
         self.assertIn("state.birdY", record["screenshot_proofs"]["mid_flight"])
+        self.assertIn("auto loop", record["screenshot_proofs"]["mid_flight"])
+        self.assertNotIn("Tick", record["screenshot_proofs"]["collision"])
         self.assertIn("state.isCollision == true", record["screenshot_proofs"]["collision"])
 
     def test_custom_realitykit_archetype_exposes_composable_surface(self) -> None:

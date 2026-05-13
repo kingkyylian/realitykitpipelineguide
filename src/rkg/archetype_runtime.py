@@ -53,6 +53,7 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
             "var obstacleX: Double = GameRules.flappyStartObstacleX",
             "var gapY: Double = GameRules.flappyStartGapY",
             "var pipesPassed: Int = 0",
+            "var flappyFramesElapsed: Int = 0",
             "var isCollision: Bool = false",
         ]
     if archetype_id == "custom_realitykit":
@@ -389,13 +390,17 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             "static let flappyStartY = 0.52",
             "static let flappyStartObstacleX = 1.0",
             "static let flappyStartGapY = 0.54",
+            "static let flappyFrameInterval = 0.18",
             "static let flappyGravity = -0.040",
             "static let flappyImpulse = 0.180",
-            "static let flappyObstacleSpeed = 0.150",
+            "static let flappyObstacleBaseSpeed = 0.130",
             "static let flappyGapHalfHeight = 0.180",
             "static let flappyBirdX = 0.25",
             """static func clampedBirdY(_ value: Double) -> Double {
     min(max(value, 0.08), 0.92)
+}""",
+            """static func flappyObstacleSpeed(for pipesPassed: Int) -> Double {
+    min(flappyObstacleBaseSpeed + Double(max(0, pipesPassed)) * 0.012, 0.220)
 }""",
             """static func nextFlappyGap(after pipesPassed: Int) -> Double {
     let gaps = [0.36, 0.58, 0.44, 0.68, 0.50]
@@ -416,6 +421,7 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     state.obstacleX = flappyStartObstacleX
     state.gapY = flappyStartGapY
     state.pipesPassed = 0
+    state.flappyFramesElapsed = 0
     state.isCollision = false
     state.lastEvent = "ready"
     return state
@@ -434,10 +440,11 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
     if next.phase != .playing {
         return startFlappySession(sessionSeconds: next.sessionSeconds)
     }
-    next.elapsedSeconds += 1
+    next.flappyFramesElapsed += 1
+    next.elapsedSeconds = Int(Double(next.flappyFramesElapsed) * flappyFrameInterval)
     next.birdVelocity += flappyGravity
     next.birdY = clampedBirdY(next.birdY + next.birdVelocity)
-    next.obstacleX -= flappyObstacleSpeed
+    next.obstacleX -= flappyObstacleSpeed(for: next.pipesPassed)
     if next.obstacleX < -0.16 {
         next.pipesPassed += 1
         next.score = next.pipesPassed * hitScore

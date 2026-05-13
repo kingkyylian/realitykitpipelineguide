@@ -12,6 +12,43 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 137: RKG Flappy Auto Loop Polish
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Native Flappy archetype'ını manual `Tick` prototipinden gerçek zamanlı oynanabilir generated loop'a yaklaştırmak.
+
+**Yapılanlar:**
+
+- Generated Flappy `ContentView` artık `Timer.publish(every: GameRules.flappyFrameInterval...)` ile otomatik frame advance ediyor.
+- Screenshot-state launch sırasında auto-loop bilerek donuyor; capture kanıtları deterministik kalıyor.
+- Manual `Tick` butonu ve `tickFlappy()` helper'ı kaldırıldı; normal kontrol yüzeyi Flap/Reset olarak kaldı.
+- İlk Flap aksiyonu idle state'ten session başlatıp bird'e impulse veriyor.
+- Runtime'a `flappyFrameInterval`, `flappyObstacleBaseSpeed` ve `flappyObstacleSpeed(for:)` eklendi; obstacle hızı geçilen pipe sayısına göre kontrollü artıyor.
+- `flappyFramesElapsed` state alanı eklendi; session süresi auto-loop frame interval'ine göre hesaplanıyor.
+- Flappy proof metinleri `Tick` yerine auto-loop davranışını anlatacak şekilde güncellendi.
+- `Docs/screenshots/rkg_flappy_*.jpg` kanıtları auto-loop generated app'ten tekrar alındı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_archetypes.RkgArchetypeTests.test_flappy_side_scroller_exposes_flight_roles_input_and_screenshot_proofs Tests.test_rkg_archetype_runtime.RkgArchetypeRuntimeTests.test_flappy_runtime_contract_is_exposed_outside_scaffold Tests.test_rkg_content_views.RkgContentViewTests.test_flappy_content_view_contract_is_outside_scaffold Tests.test_rkg_init_game.RkgInitGameTests.test_init_game_generates_flappy_state_rules_and_play_loop: first run failed as expected on missing auto-loop contract; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_archetypes Tests.test_rkg_archetype_runtime Tests.test_rkg_content_views Tests.test_rkg_init_game Tests.test_rkg_scaffold_generators Tests.test_rkg_new_spec Tests.test_rkg_start_game: ok; 77 tests
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 248 tests
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+git diff --check: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+rtk ./.venv/bin/python Tools/rkg.py new-spec flappy_side_scroller --title "Flappy Reef Auto" --output Build/rkg-flappy-auto/FlappySpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-flappy-auto/FlappySpec.json --output Build/rkg-flappy-auto/FlappyReefAuto --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-flappy-auto/FlappyReefAuto: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy-auto/FlappyReefAuto --device FF329D84-0179-49E2-AFC4-12D4935845FC --json: ok; 5 screenshots captured
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+```
+
+**Öğrenme notu:**
+
+Generated game'in "oynanabilir" sayılması için QA amaçlı step button yeterli değil. Auto-loop eklerken screenshot seeding'i dondurmak önemliydi; aksi halde capture bekleme süresi state'i değiştirip kanıtları nondeterministic yapardı.
+
 ### Sprint 136: RKG Native Flappy Side Scroller
 
 **Durum:** Tamamlandı

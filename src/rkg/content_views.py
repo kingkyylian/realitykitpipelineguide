@@ -683,16 +683,23 @@ struct ContentView: View {{
 
 
 def _flappy_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
-    return f"""import SwiftUI
+    return f"""import Combine
+import Foundation
+import SwiftUI
 
 struct ContentView: View {{
     @State private var state = GameRules.flappyScreenshotSession(
         for: ScreenshotState.requested,
         fallback: GameSessionState()
     )
+    private let frameTimer = Timer.publish(every: GameRules.flappyFrameInterval, on: .main, in: .common).autoconnect()
 
     private var isPlaying: Bool {{
         SessionControl.isPlaying(state)
+    }}
+
+    private var isAutoLoopActive: Bool {{
+        isPlaying && ScreenshotState.requested == nil
     }}
 
     var body: some View {{
@@ -739,11 +746,6 @@ struct ContentView: View {{
                         }}
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
-                        Button("Tick") {{
-                            tickFlappy()
-                        }}
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
                         Button(InputIntent.resetTitle) {{
                             state = SessionControl.reset()
                         }}
@@ -767,20 +769,23 @@ struct ContentView: View {{
                     flapFlappy()
                 }}
             )
+            .onReceive(frameTimer) {{ _ in
+                advanceFlappyIfNeeded()
+            }}
         }}
     }}
 
     private func flapFlappy() {{
         if !isPlaying {{
             state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)
+            state = GameRules.flapBird(state)
             return
         }}
         state = GameRules.flapBird(state)
     }}
 
-    private func tickFlappy() {{
-        if !isPlaying {{
-            state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)
+    private func advanceFlappyIfNeeded() {{
+        if !isAutoLoopActive {{
             return
         }}
         state = GameRules.advanceFlappyFrame(state)

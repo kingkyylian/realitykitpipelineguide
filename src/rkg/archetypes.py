@@ -133,9 +133,9 @@ ARCHETYPES: list[JsonDict] = [
         "screenshot_states": ["gameplay_start", "mid_flight", "near_gap", "collision", "results"],
         "screenshot_proofs": {
             "gameplay_start": "Tap Start; state.phase == .playing; bird, obstacle gate, and arena are visible.",
-            "mid_flight": "Tap Flap, then Tick; state.birdY changes and state.birdVelocity != 0.",
+            "mid_flight": "Tap Flap and let the auto loop advance; state.birdY changes and state.birdVelocity != 0.",
             "near_gap": "Seed or play until obstacle approaches the bird; state.obstacleX is near the player and state.birdY is inside the gap.",
-            "collision": "Tick outside the gap or hit the flight band; state.isCollision == true and result UI is visible.",
+            "collision": "Let the auto loop advance outside the gap or hit the flight band; state.isCollision == true and result UI is visible.",
             "results": "Clear a few gates or collide; state.phase == .result and score/result UI is visible.",
         },
         "scope_risk": "medium",

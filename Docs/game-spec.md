@@ -212,7 +212,7 @@ release:
 
 ## Flappy Side Scroller Example
 
-`flappy_side_scroller` is the native Flappy-like archetype. It requires `player`, `obstacle`, and `arena` roles, generates tap-to-flap gravity state, scrolling obstacle/gap state, collision/result proof, and launch-state screenshot seeding for `gameplay_start`, `mid_flight`, `near_gap`, `collision`, and `results`.
+`flappy_side_scroller` is the native Flappy-like archetype. It requires `player`, `obstacle`, and `arena` roles, generates tap-to-flap gravity state, timer-driven obstacle advance, frame-interval session timing, speed ramp, scrolling obstacle/gap state, collision/result proof, and launch-state screenshot seeding for `gameplay_start`, `mid_flight`, `near_gap`, `collision`, and `results`.
 
 ```yaml
 game:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import subprocess
 import time
@@ -159,7 +160,99 @@ def _write_capture_sidecar(plan: Mapping[str, Any], step: Mapping[str, Any], pro
     scene_snapshot_value = step.get("scene_snapshot")
     if isinstance(scene_snapshot_value, str) and scene_snapshot_value:
         payload["scene_snapshot"] = _project_relative_path(project, Path(scene_snapshot_value))
+        role_pixel_evidence = _role_pixel_evidence_from_scene_snapshot(
+            Path(scene_snapshot_value),
+            [str(role) for role in step.get("visible_roles", [])],
+        )
+        if role_pixel_evidence:
+            payload["role_pixel_evidence"] = role_pixel_evidence
     sidecar.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _role_pixel_evidence_from_scene_snapshot(scene_snapshot: Path, visible_roles: list[str]) -> JsonDict:
+    if not scene_snapshot.is_file():
+        return {}
+    try:
+        payload = json.loads(scene_snapshot.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+    roles = payload.get("roles")
+    if not isinstance(roles, list):
+        return {}
+    expected_roles = {role for role in visible_roles if role}
+    evidence: JsonDict = {}
+    evidence_sizes: dict[str, float] = {}
+    for role_record in roles:
+        if not isinstance(role_record, Mapping):
+            continue
+        role = role_record.get("role")
+        if not isinstance(role, str) or role not in expected_roles:
+            continue
+        if role_record.get("is_enabled") is not True:
+            continue
+        region = _role_pixel_region_for_scene_record(role_record)
+        if region is None:
+            continue
+        size = float(region["width"]) * float(region["height"])
+        if role in evidence and size <= evidence_sizes[role]:
+            continue
+        evidence_sizes[role] = size
+        evidence[role] = {
+            "asset_id": str(role_record.get("asset_id", "")),
+            "entity_name": str(role_record.get("entity_name", "")),
+            "region": region,
+            "source": "runtime_scene_snapshot",
+        }
+    return evidence
+
+
+def _role_pixel_region_for_scene_record(role_record: Mapping[str, Any]) -> JsonDict | None:
+    role = role_record.get("role")
+    if role == "arena":
+        return {"x": 0.05, "y": 0.3, "width": 0.9, "height": 0.48}
+
+    visual_bounds = role_record.get("visual_bounds")
+    if not isinstance(visual_bounds, Mapping):
+        return None
+    center = visual_bounds.get("center")
+    extents = visual_bounds.get("extents")
+    if not isinstance(center, Mapping) or not isinstance(extents, Mapping):
+        return None
+    if not all(_is_finite_number(center.get(axis)) for axis in ("x", "y", "z")):
+        return None
+    if not all(_is_non_negative_finite_number(extents.get(axis)) for axis in ("x", "y", "z")):
+        return None
+
+    max_extent = max(float(extents[axis]) for axis in ("x", "y", "z"))
+    if max_extent <= 0:
+        return None
+
+    width = _clamp(0.18 + min(max_extent, 0.8) * 0.18, 0.16, 0.32)
+    height = _clamp(0.18 + min(max_extent, 0.8) * 0.16, 0.16, 0.32)
+    screen_x = _clamp(0.5 + float(center["x"]) * 0.30, 0.12, 0.88)
+    screen_y = _clamp(0.47 - float(center["y"]) * 0.20 + (float(center["z"]) + 0.8) * 0.035, 0.24, 0.72)
+    return {
+        "x": _rounded_fraction(_clamp(screen_x - width / 2.0, 0.02, 0.98 - width)),
+        "y": _rounded_fraction(_clamp(screen_y - height / 2.0, 0.02, 0.98 - height)),
+        "width": _rounded_fraction(width),
+        "height": _rounded_fraction(height),
+    }
+
+
+def _is_finite_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def _is_non_negative_finite_number(value: object) -> bool:
+    return _is_finite_number(value) and float(value) >= 0.0
+
+
+def _clamp(value: float, minimum: float, maximum: float) -> float:
+    return min(maximum, max(minimum, value))
+
+
+def _rounded_fraction(value: float) -> float:
+    return round(value, 4)
 
 
 def _copy_runtime_scene_snapshot(

@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 146: RKG Runtime Role-Pixel Evidence
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Screenshot QA'yı sadece sidecar metadata ve scene-role bounds ile sınırlamamak; `capture-screenshots` runtime scene snapshot'tan role-specific pixel evidence region'ları yazsın ve `accept-assets` bu kanıtla doğrulansın.
+
+**Yapılanlar:**
+
+- `rkg capture-screenshots` sidecar writer artık `.scene.json` içindeki enabled role kayıtlarından `role_pixel_evidence` üretir.
+- Evidence kayıtları role, asset id, entity name, normalized screenshot region ve `runtime_scene_snapshot` source bilgisini taşır.
+- Arena için geniş scene-band region, diğer roller için visual bounds center/extents tabanlı deterministic projection kullanıldı.
+- İlk gerçek Flappy verify pass'i `gameplay_start` için `role_pixel_not_visible` yakaladı; obstacle projection fazla merkeze düşüyordu. Projection katsayısı düzeltilip dogfood tekrarlandı.
+- Public `Docs/screenshots/rkg_flappy_demo_*.jpg` evidence seti son passing capture/accept run'ından yenilendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_writes_role_pixel_evidence_from_runtime_scene_snapshot: first run failed as expected on missing role_pixel_evidence; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_writes_role_pixel_evidence_from_runtime_scene_snapshot Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_copies_runtime_scene_snapshot_after_successful_screenshot Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_accepts_varied_role_pixel_evidence_region: ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture Tests.test_rkg_screenshot_status Tests.test_rkg_asset_acceptance Tests.test_rkg_qa_plan: ok; 50 tests
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy-role-assets-v1/FlappyReefDemo --device booted --json: ok; sidecars include player/obstacle/arena role_pixel_evidence
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-role-assets-v1/FlappyReefDemo --json: first run caught role_pixel_not_visible; after projection fix ok; 5 checks
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-role-assets-v1/FlappyReefDemo --device booted --json: ok; verify_screenshots and release_check_assets exit 0
+```
+
+**Öğrenme notu:**
+
+Role-pixel evidence sadece metadata üretimi değil, gerçek görsel doğrulama kapısıdır. İlk heuristic gerçek screenshot'ta obstacle için flat region seçti ve verifier bunu yakaladı; bu yüzden sidecar kanıtını dogfood etmeden güvenilir kabul etmiyoruz.
+
 ### Sprint 145: RKG Flappy Role-Specific Asset Templates
 
 **Durum:** Tamamlandı

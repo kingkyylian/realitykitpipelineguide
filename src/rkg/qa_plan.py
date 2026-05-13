@@ -87,7 +87,7 @@ def _screenshot_proof(state: str, proof_map: Mapping[str, str]) -> str:
 
 
 def _capture_automation(archetype_id: str, state: str) -> str:
-    if archetype_id in {"fighter_2_5d", "custom_realitykit"}:
+    if archetype_id in {"fighter_2_5d", "flappy_side_scroller", "custom_realitykit"}:
         return f"launch_arg --rkg-screenshot-state {state}"
     return "manual_capture"
 

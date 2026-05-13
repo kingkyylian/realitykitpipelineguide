@@ -89,6 +89,38 @@ def fighter_spec() -> dict:
     return spec
 
 
+def flappy_spec() -> dict:
+    spec = lane_dodger_spec()
+    spec["game"]["id"] = "flappy_reef_demo"
+    spec["game"]["display_name"] = "Flappy Reef Demo"
+    spec["game"]["archetype"] = "flappy_side_scroller"
+    spec["game"]["input"] = "tap"
+    spec["loop"]["player_action"] = "tap to flap through scrolling pipe gaps"
+    spec["loop"]["fail_condition"] = "hit a pipe or leave the flight band"
+    spec["assets"] = {
+        "bird_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "pipe_gate": {
+            "type": "prop",
+            "role": "obstacle",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_gate",
+        },
+        "reef_lane": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_flight", "near_gap", "collision", "results"]
+    return spec
+
+
 def custom_projectile_spec() -> dict:
     spec = lane_dodger_spec()
     spec["game"]["id"] = "arc_volley"
@@ -183,6 +215,14 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["steps"][1]["state"], "mid_combo")
         self.assertEqual(payload["steps"][1]["automation"], "launch_arg --rkg-screenshot-state mid_combo")
         self.assertEqual(payload["steps"][3]["automation"], "launch_arg --rkg-screenshot-state knockout")
+
+    def test_flappy_qa_plan_exposes_launch_state_automation(self) -> None:
+        payload = build_qa_plan(flappy_spec())
+
+        self.assertEqual(payload["archetype"], "flappy_side_scroller")
+        self.assertEqual(payload["steps"][2]["state"], "near_gap")
+        self.assertEqual(payload["steps"][2]["automation"], "launch_arg --rkg-screenshot-state near_gap")
+        self.assertEqual(payload["steps"][4]["automation"], "launch_arg --rkg-screenshot-state results")
 
     def test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation(self) -> None:
         payload = build_qa_plan(custom_projectile_spec())

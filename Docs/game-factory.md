@@ -246,7 +246,7 @@ Start with small, replayable game shapes. The order below is not product priorit
 | Custom RealityKit skeleton | Composable camera/input/system starter for racing, FPS, shooter, collector, or other broad prototypes before a native archetype exists. |
 
 For the end-to-end fighter skeleton path, see `Docs/rkg-fighter-walkthrough.md`.
-For the Flappy-like proof, see `Docs/screenshots/rkg_flappy_*.jpg` and Sprint 136 in `Docs/WORKLOG.md`.
+For the Flappy-like proof, see `Docs/screenshots/rkg_flappy_*.jpg` and Sprint 136 in `Docs/WORKLOG.md`. For the broader Flappy demo-tool dogfood that starts from `rkg start-game`, captures five simulator states, and accepts three generated assets, see `Docs/rkg-flappy-comprehensive-demo.md`.
 
 For a broad `custom_realitykit` dogfood run that starts from an idea and reaches simulator screenshot evidence, see `Docs/rkg-shard-volley-dogfood.md`.
 For generic racing/FPS examples, see `Docs/rkg-generic-skeleton.md`.

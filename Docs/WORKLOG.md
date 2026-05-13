@@ -12,6 +12,45 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 144: RKG Flappy Comprehensive Demo Dogfood
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Flappy Bird tarzı bir demoyu RKG/RKP demo toolchain'iyle kapsamlı kullanmak: idea scoring, `start-game`, QA plan, generated app build, simulator capture, screenshot verifier ve multi-asset acceptance zinciri tek koşuda kanıtlanmalı.
+
+**Yapılanlar:**
+
+- `Build/rkg-flappy-comprehensive-v1/idea.json` fikri `start-game` ile `flappy_side_scroller` archetype'a yönlendirildi.
+- Demo project `Build/rkg-flappy-comprehensive-v1/FlappyReefDemo` olarak üretildi.
+- TDD ile `flappy_side_scroller` QA plan bug'ı düzeltildi: Flappy screenshot adımları artık `manual_capture` yerine `launch_arg --rkg-screenshot-state <state>` döndürüyor.
+- `validate-spec`, `plan-game`, `qa-plan`, `verify-game`, `capture-screenshots`, `verify-screenshots`, `accept-assets` ve generated-project `release-check --assets` dogfood edildi.
+- `bird_player`, `pipe_gate`, `reef_lane` assetleri generated project içinde build/inspect/accept zincirinden geçti.
+- Public evidence olarak 5 release screenshot ve 3 asset acceptance screenshot `Docs/screenshots/rkg_flappy_demo_*.jpg` altına kopyalandı.
+- Dogfood kaydı `Docs/rkg-flappy-comprehensive-demo.md` olarak eklendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan.RkgQaPlanTests.test_flappy_qa_plan_exposes_launch_state_automation: first run failed as expected on manual_capture; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan.RkgQaPlanTests.test_fighter_qa_plan_exposes_launch_state_automation Tests.test_rkg_qa_plan.RkgQaPlanTests.test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation: ok
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-flappy-comprehensive-v1/idea.json --output Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --force --json: ok; score 100 pass; flappy_side_scroller
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-flappy-comprehensive-v1/FlappyReefDemo/GameSpec.json: GameSpec ok
+rtk ./.venv/bin/python Tools/rkg.py plan-game Build/rkg-flappy-comprehensive-v1/FlappyReefDemo/GameSpec.json --json: ok
+rtk ./.venv/bin/python Tools/rkg.py qa-plan Build/rkg-flappy-comprehensive-v1/FlappyReefDemo/GameSpec.json --json: ok; launch_arg automation for 5 states
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --device booted --dry-run --json: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-flappy-comprehensive-v1/FlappyReefDemo: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --device booted --json: ok; 5 screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --json: ok; 5 checks
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --device booted --dry-run --json: ok
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-comprehensive-v1/FlappyReefDemo --device booted --json: ok; 3 assets accepted
+PYTHONPATH=/Users/kyylian/Developer/RealityKitPipelineDemo/src /Users/kyylian/Developer/RealityKitPipelineDemo/.venv/bin/python -m rkp.cli release-check --assets: ok from generated project
+sips -g pixelWidth -g pixelHeight for the five release screenshots: 1206x2622
+```
+
+**Öğrenme notu:**
+
+RKG artık Flappy benzeri bir oyunu sadece scaffold etmiyor; fikirden generated app'e, deterministic simulator screenshot'a ve asset acceptance'a kadar uçtan uca koşturabiliyor. Kalan ürün açığı toolchain değil game feel: kuş/pipe silüeti, animasyon, VFX, ses/haptics ve level variety.
+
 ### Sprint 143: RKG Opt-in Role Pixel Evidence Gate
 
 **Durum:** Tamamlandı

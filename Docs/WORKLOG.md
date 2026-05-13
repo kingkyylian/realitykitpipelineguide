@@ -12,6 +12,41 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 141: RKG Center Modal Occlusion Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Generated oyun screenshot QA'sında aktif gameplay'in ortasına büyük modal/tutorial kartı binmesini yakalayan ikinci pixel-level composition guardrail'ini eklemek.
+
+**Yapılanlar:**
+
+- `qa-plan` `semantic_visual_contract` çıktısına orta bant eşiği eklendi:
+  - `center_band_top_fraction`
+  - `center_band_bottom_fraction`
+  - `max_center_light_coverage`
+  - `center_light_luma_threshold`
+- `verify-screenshots`, aktif gameplay ortasında fazla parlak modal coverage görürse `semantic_center_occlusion` dönüyor.
+- `results`, `collision`, `knockout` gibi result-like states için merkez panel toleransı korunuyor; result UI doğal olduğu için bu states `max_center_light_coverage: 1.0` alıyor.
+- Büyük orta modalı reddeden ve result state merkez panelini kabul eden regression testleri eklendi.
+- RKG mimari/game-factory/dogfood/handoff dokümanları yeni hata kodu ve kalan mesh visibility/OCR-level text overlap boşluğu ile güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_center_modal_occluding_gameplay Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_allows_center_panel_for_result_like_state Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture Tests.test_rkg_qa_plan.RkgQaPlanTests.test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation: first run failed as expected on old verifier/qa-plan contract; then ok
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 256 tests
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+git diff --check: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: release-check ok; 256 tests
+```
+
+**Öğrenme notu:**
+
+Top, bottom ve center coverage kapıları artık büyük panel/overlay sınıfı hataları üç bölgede yakalıyor. Bu hâlâ OCR veya role-to-pixel projection değil; bir sonraki gerçek görsel kalite katmanı declared mesh'in ekranda okunur pixel footprint'e sahip olduğunu kanıtlamak olmalı.
+
 ### Sprint 140: RKG Bottom Control Occlusion Gate
 
 **Durum:** Tamamlandı

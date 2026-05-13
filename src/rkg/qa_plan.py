@@ -98,6 +98,10 @@ def _semantic_visual_contract(archetype_id: str, state: str) -> JsonDict:
         "bottom_band_fraction": 0.2,
         "max_bottom_light_coverage": 0.82,
         "bottom_light_luma_threshold": 170,
+        "center_band_top_fraction": 0.34,
+        "center_band_bottom_fraction": 0.66,
+        "max_center_light_coverage": 0.88,
+        "center_light_luma_threshold": 170,
         "scene_band_top_fraction": 0.24,
         "scene_band_bottom_fraction": 0.78,
         "min_scene_luma_span": 18,
@@ -106,6 +110,12 @@ def _semantic_visual_contract(archetype_id: str, state: str) -> JsonDict:
     }
     if state == "results":
         contract["scene_band_bottom_fraction"] = 0.72
+    if _is_result_like_state(state):
+        contract["max_center_light_coverage"] = 1.0
     if archetype_id == "custom_realitykit":
         contract["min_scene_luma_span"] = 16
     return contract
+
+
+def _is_result_like_state(state: str) -> bool:
+    return state in {"collision", "knockout", "results"} or "result" in state

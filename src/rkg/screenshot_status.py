@@ -251,6 +251,16 @@ def _semantic_visual_grid_status(
         if light_coverage > max_bottom_light_coverage:
             return "semantic_control_occlusion"
 
+    center_top = _contract_float(contract, "center_band_top_fraction", 0.34)
+    center_bottom = _contract_float(contract, "center_band_bottom_fraction", 0.66)
+    max_center_light_coverage = _contract_float(contract, "max_center_light_coverage", 0.88)
+    center_light_luma_threshold = _contract_float(contract, "center_light_luma_threshold", 170.0)
+    center_samples = _samples_between_y_fractions(samples, height, center_top, center_bottom)
+    if center_samples:
+        light_coverage = _luma_coverage(center_samples, center_light_luma_threshold)
+        if light_coverage > max_center_light_coverage:
+            return "semantic_center_occlusion"
+
     scene_top = _contract_float(contract, "scene_band_top_fraction", 0.24)
     scene_bottom = _contract_float(contract, "scene_band_bottom_fraction", 0.78)
     scene_samples = _samples_between_y_fractions(samples, height, scene_top, scene_bottom)

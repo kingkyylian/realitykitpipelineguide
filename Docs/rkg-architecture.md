@@ -221,13 +221,13 @@ Current `verify-screenshots` behavior:
 - If `--plan qa-plan.json` is passed, consumes the machine-readable `rkg qa-plan --json` payload directly.
 - If no plan is passed, reads `<generated-project>/GameSpec.json` and rebuilds the QA plan.
 - Checks each `capture_path` under the generated project.
-- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `missing_sidecar`, `invalid_sidecar`, `role_evidence_mismatch`, `missing_scene_snapshot`, `invalid_scene_snapshot`, `scene_role_mismatch`, `scene_role_not_visible`, `blank_or_solid`, `duplicate_visual_evidence`, `semantic_debug_overlay`, `semantic_control_occlusion`, `semantic_flat_scene`, `semantic_scene_too_dark`, or `ok`.
+- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `missing_sidecar`, `invalid_sidecar`, `role_evidence_mismatch`, `missing_scene_snapshot`, `invalid_scene_snapshot`, `scene_role_mismatch`, `scene_role_not_visible`, `blank_or_solid`, `duplicate_visual_evidence`, `semantic_debug_overlay`, `semantic_control_occlusion`, `semantic_center_occlusion`, `semantic_flat_scene`, `semantic_scene_too_dark`, or `ok`.
 - Accepts JPEG and PNG image headers only when the file carries readable dimensions of at least 300x300 pixels.
 - Requires a JSON sidecar next to every valid planned screenshot. The sidecar must match the QA plan game id, state, automation hint, visible roles, and point at a runtime scene snapshot.
 - Requires `Docs/screenshots/<state>.scene.json` runtime evidence copied from the generated app container. The snapshot must match the state and include the expected asset roles bound in the running RealityKit scene. Each expected role must have an enabled `rkg|...` entity, finite `position.x/y/z` metadata, and `visual_bounds.center/extents` metadata. Disabled expected roles or zero visual bounds fail as `scene_role_not_visible`.
 - For 8-bit RGB/RGBA PNG captures, reconstructs filtered scanlines, samples pixels, and rejects near-solid images as `blank_or_solid`.
 - On macOS, uses `sips` to rasterize JPEG captures into the same sampler. A malformed dimension-bearing JPEG is `invalid_image`; a near-solid JPEG is `blank_or_solid`.
-- Applies the QA plan's `semantic_visual_contract` after metadata checks. Current contract checks top-band light coverage, bottom-band control-panel coverage, scene luma span, and scene bright-pixel ratio.
+- Applies the QA plan's `semantic_visual_contract` after metadata checks. Current contract checks top-band light coverage, bottom-band control-panel coverage, center-band modal coverage, scene luma span, and scene bright-pixel ratio.
 - If two planned states produce the same sampled visual fingerprint, the later state is `duplicate_visual_evidence`.
 - Exits nonzero when any planned screenshot evidence is missing or invalid.
 
@@ -305,6 +305,10 @@ Current `qa-plan --json` shape:
         "bottom_band_fraction": 0.2,
         "max_bottom_light_coverage": 0.82,
         "bottom_light_luma_threshold": 170,
+        "center_band_top_fraction": 0.34,
+        "center_band_bottom_fraction": 0.66,
+        "max_center_light_coverage": 0.88,
+        "center_light_luma_threshold": 170,
         "scene_band_top_fraction": 0.24,
         "scene_band_bottom_fraction": 0.78,
         "min_scene_luma_span": 18,

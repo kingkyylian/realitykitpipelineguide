@@ -45,6 +45,24 @@ def valid_spec() -> dict:
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["gameplay_start", "mid_session", "results"],
         },
+        "quality": {
+            "feel": {
+                "movement": "snappy",
+                "input_response": "instant",
+                "collision_forgiveness": "medium",
+                "difficulty_curve": "ramping",
+            },
+            "feedback": {
+                "score": ["pulse", "sound_hook"],
+                "hit": ["flash", "shake", "haptic_hook"],
+                "fail": ["freeze_frame", "result_transition"],
+            },
+            "style": {
+                "mood": "arcade",
+                "palette": "high_contrast",
+                "shape_language": "readable_silhouettes",
+            },
+        },
     }
 
 
@@ -89,6 +107,10 @@ class StorePackTests(unittest.TestCase):
         self.assertIn("| gameplay_start |", screenshots)
         self.assertIn("Docs/screenshots/gameplay_start.jpg", screenshots)
         self.assertIn("target, arena", screenshots)
+        metadata = pack["Docs/store/metadata.md"]
+        self.assertIn("## Quality Contract", metadata)
+        self.assertIn("- Movement feel: snappy", metadata)
+        self.assertIn("- Hit feedback: flash, shake, haptic_hook", metadata)
         monetization = pack["Docs/store/monetization.md"]
         self.assertIn("Model: paid", monetization)
         self.assertIn("No external unlocks", monetization)
@@ -112,6 +134,7 @@ class StorePackTests(unittest.TestCase):
         self.assertIn("| 1 | gameplay_start | Tap Start; state.phase == .playing;", runbook)
         self.assertIn("| 3 | near_miss | Swipe next to the obstacle, then tap Dodge; state.nearMisses > 0.", runbook)
         self.assertIn("Declared roles available: player, obstacle, arena", runbook)
+        self.assertIn("Quality contract: snappy movement, instant input, high_contrast palette.", runbook)
 
 
 if __name__ == "__main__":

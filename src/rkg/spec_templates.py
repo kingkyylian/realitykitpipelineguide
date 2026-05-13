@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from rkg.archetypes import describe_archetype
+from rkg.quality import quality_contract_for_archetype, quality_contract_for_systems
 
 JsonDict = dict[str, Any]
 ALLOWED_SYSTEMS = {
@@ -67,6 +68,7 @@ def build_game_template(title: str, camera: str, input_model: str, systems: list
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["gameplay_start", "mid_action", "fail_or_hit", "results"],
         },
+        "quality": quality_contract_for_systems(normalized_systems),
     }
 
 
@@ -123,6 +125,7 @@ def _fighter_spec(title: str) -> JsonDict:
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["round_start", "mid_combo", "perfect_dodge", "knockout"],
         },
+        "quality": quality_contract_for_archetype("fighter_2_5d"),
     }
 
 
@@ -167,6 +170,7 @@ def _flappy_spec(title: str) -> JsonDict:
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["gameplay_start", "mid_flight", "near_gap", "collision", "results"],
         },
+        "quality": quality_contract_for_archetype("flappy_side_scroller"),
     }
 
 

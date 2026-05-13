@@ -13,7 +13,7 @@ RKG can call RKP commands. It cannot mark assets accepted without RKP screenshot
 | Layer | Owns | Must not own |
 | --- | --- | --- |
 | RKP | Asset manifest, USDZ build/inspect, budgets, screenshot acceptance, release gate. | Game rules, store positioning, archetype choice. |
-| RKG | Game idea scoring, GameSpec, archetype registry, project scaffold, reusable gameplay modules, store/QA pack. | Marking assets imported, bypassing RKP acceptance, hiding fallback gaps. |
+| RKG | Game idea scoring, GameSpec, quality contracts, archetype registry, project scaffold, reusable gameplay modules, store/QA pack. | Marking assets imported, bypassing RKP acceptance, hiding fallback gaps. |
 | Generated game | Runtime loop, generated Swift modules, procedural fallback use, actual gameplay proof. | Tool policy, repo-wide acceptance state. |
 
 ## Core Data Flow
@@ -25,6 +25,7 @@ idea.json
 -> GameSpec.yaml
 -> rkg validate-spec
 -> rkg plan-game
+-> quality_contract surfaced in plan/QA/store docs
 -> rkg init-game
 -> generated SwiftUI + RealityKit project
 -> rkp build/inspect/accept assets
@@ -97,6 +98,37 @@ Every role must map to:
 - A generated load attempt.
 - A procedural fallback.
 - A screenshot state that proves the role is visible or intentionally absent.
+
+## Quality Contract
+
+`GameSpec.quality` records first-playable quality expectations without pretending the generated app is finished. It is optional for older specs, but new RKG templates emit it.
+
+Shape:
+
+```json
+{
+  "quality": {
+    "feel": {
+      "movement": "snappy",
+      "input_response": "instant",
+      "collision_forgiveness": "medium",
+      "difficulty_curve": "ramping"
+    },
+    "feedback": {
+      "score": ["score_pop", "sound_hook"],
+      "hit": ["flash", "shake", "haptic_hook"],
+      "fail": ["freeze_frame", "result_transition"]
+    },
+    "style": {
+      "mood": "arcade",
+      "palette": "high_contrast",
+      "shape_language": "readable_silhouettes"
+    }
+  }
+}
+```
+
+The contract appears in `plan-game --json` as `quality_contract`, in `qa-plan --json` beside screenshot steps, and in generated store metadata plus the screenshot QA runbook. This keeps game feel, animation/VFX/audio/haptic hooks, level pressure, and art-direction readability visible before asset acceptance starts.
 
 ## Shared Runtime State Machine
 
@@ -197,9 +229,9 @@ The state-bound scene generators share one entity setup helper for the repeated 
 | `rkg list-adapters` | Show `custom_realitykit` adapter capability records. | Text and `--json`; exposes systems, generated state/rules, scene properties, and roles. |
 | `rkg list-archetypes` | Show registry ids and short descriptions. | Text and `--json`. |
 | `rkg describe-archetype <id>` | Explain required roles, modules, screenshots, risk. | Text and `--json`. |
-| `rkg validate-spec GameSpec.yaml` | Validate GameSpec and archetype support. | Nonzero on invalid. |
-| `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
-| `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; includes screenshot, sidecar, scene snapshot paths, semantic visual contract thresholds, and custom RealityKit proof text is adapter-specific when systems select racing, projectile, shooter, or collector. |
+| `rkg validate-spec GameSpec.yaml` | Validate GameSpec, archetype support, and optional quality contract shape. | Nonzero on invalid. |
+| `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots and quality contract that `init-game` will generate. | Implemented; does not write files. |
+| `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; includes screenshot, sidecar, scene snapshot paths, quality contract, semantic visual contract thresholds, and custom RealityKit proof text is adapter-specific when systems select racing, projectile, shooter, or collector. |
 | `rkg capture-screenshots <dir>` | Generate when needed, build, install, launch screenshot states, and save simulator captures. | Runs `xcodegen generate` when `project.yml` exists, drives `xcrun simctl`, writes JPEG captures, JSON sidecars, and runtime `.scene.json` role snapshots copied from the app container. |
 | `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, readable dimensions, sidecar metadata, runtime scene-role snapshot metadata including enabled visible roles with minimum visual bounds, blank/solid PNG/JPEG evidence, duplicate visual evidence across states, and first-pass semantic visual contract failures. |
 | `rkg accept-first-asset <dir>` | Build, capture, copy screenshot evidence, accept, and release-check the first gameplay-relevant generated asset. | Text and `--json`; `--dry-run` prints the workflow, `--asset-id` overrides role selection, `--source-state` overrides the screenshot state used as acceptance evidence, and execution dispatches local `rkp`/`rkg` steps through workspace Python modules. |

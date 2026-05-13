@@ -54,6 +54,24 @@ def lane_dodger_spec() -> dict:
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["gameplay_start", "mid_session", "near_miss", "results"],
         },
+        "quality": {
+            "feel": {
+                "movement": "snappy",
+                "input_response": "instant",
+                "collision_forgiveness": "medium",
+                "difficulty_curve": "ramping",
+            },
+            "feedback": {
+                "score": ["pulse", "sound_hook"],
+                "hit": ["flash", "shake", "haptic_hook"],
+                "fail": ["freeze_frame", "result_transition"],
+            },
+            "style": {
+                "mood": "arcade",
+                "palette": "high_contrast",
+                "shape_language": "readable_silhouettes",
+            },
+        },
     }
 
 
@@ -188,6 +206,8 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["display_name"], "Lane Dash")
         self.assertEqual(payload["archetype"], "lane_dodger")
         self.assertEqual(payload["preflight"], ["rkg verify-game <generated-project>"])
+        self.assertEqual(payload["quality_contract"]["feel"]["movement"], "snappy")
+        self.assertEqual(payload["quality_contract"]["feedback"]["fail"], ["freeze_frame", "result_transition"])
         self.assertEqual(payload["steps"][0]["order"], 1)
         self.assertEqual(payload["steps"][0]["state"], "gameplay_start")
         self.assertEqual(payload["steps"][0]["screenshot_state_case"], "gameplayStart")

@@ -104,6 +104,53 @@ class GameSpecTests(unittest.TestCase):
 
         self.assertIn("release.devices must contain at least one device", issues)
 
+    def test_accepts_optional_quality_contract(self) -> None:
+        spec = valid_spec()
+        spec["quality"] = {
+            "feel": {
+                "movement": "snappy",
+                "input_response": "instant",
+                "collision_forgiveness": "medium",
+                "difficulty_curve": "ramping",
+            },
+            "feedback": {
+                "score": ["pulse", "sound_hook"],
+                "hit": ["flash", "shake", "haptic_hook"],
+                "fail": ["freeze_frame", "result_transition"],
+            },
+            "style": {
+                "mood": "arcade",
+                "palette": "high_contrast",
+                "shape_language": "readable_silhouettes",
+            },
+        }
+
+        self.assertEqual(validate_game_spec(spec), [])
+
+    def test_rejects_invalid_quality_contract(self) -> None:
+        spec = valid_spec()
+        spec["quality"] = {
+            "feel": {
+                "movement": "",
+                "input_response": 12,
+            },
+            "feedback": {
+                "hit": "flash",
+                "score": ["pulse", ""],
+            },
+            "style": "arcade",
+            "audio": {"music": "fast"},
+        }
+
+        issues = validate_game_spec(spec)
+
+        self.assertIn("quality.audio is not supported", issues)
+        self.assertIn("quality.feel.movement must be a non-empty string", issues)
+        self.assertIn("quality.feel.input_response must be a non-empty string", issues)
+        self.assertIn("quality.feedback.hit must be a list of non-empty strings", issues)
+        self.assertIn("quality.feedback.score must be a list of non-empty strings", issues)
+        self.assertIn("quality.style must be an object", issues)
+
     def test_rejects_non_snake_case_game_id(self) -> None:
         spec = valid_spec()
         spec["game"]["id"] = "RingDash"

@@ -5,6 +5,7 @@ from typing import Any
 
 from rkg.archetypes import describe_archetype
 from rkg.qa_plan import qa_steps_for
+from rkg.quality import quality_contract_from_spec
 
 StorePack = dict[str, str]
 
@@ -26,6 +27,7 @@ def build_store_pack(spec: Mapping[str, Any]) -> StorePack:
 def metadata(display_name: str, spec: Mapping[str, Any]) -> str:
     game = spec["game"]
     loop = spec["loop"]
+    quality = _quality_metadata(spec)
     return f"""# Store Metadata Draft
 
 App Name: {display_name}
@@ -35,6 +37,8 @@ Monetization: {game["monetization"]}
 ## Description Draft
 
 {display_name} is a short-session arcade game where players {loop["player_action"]}. Sessions last {game["session_seconds"]} seconds and focus on clean input, readable play, and repeatable score improvement.
+
+{quality}
 
 ## Screenshot Checklist
 
@@ -100,6 +104,8 @@ def screenshot_qa_runbook(spec: Mapping[str, Any], archetype: Mapping[str, Any])
         "Run `rkg verify-game` before capture. Drive the generated game through these rows in order, "
         "resetting between rows when the previous state ends the session. "
         "Run `rkg verify-screenshots .` after capture.\n\n"
+        + _quality_runbook_line(spec)
+        + "\n\n"
         + "\n".join(rows)
         + "\n"
     )
@@ -156,3 +162,52 @@ def _screenshot_proof(state: str, archetype: Mapping[str, Any]) -> str:
         if isinstance(proof, str):
             return proof
     return "Capture after driving the generated game into this release state."
+
+
+def _quality_metadata(spec: Mapping[str, Any]) -> str:
+    quality = quality_contract_from_spec(spec)
+    if not quality:
+        return "## Quality Contract\n\nNo explicit quality contract declared."
+
+    feel = quality.get("feel", {})
+    feedback = quality.get("feedback", {})
+    style = quality.get("style", {})
+    lines = ["## Quality Contract"]
+    if isinstance(feel, Mapping):
+        movement = feel.get("movement")
+        input_response = feel.get("input_response")
+        difficulty_curve = feel.get("difficulty_curve")
+        if movement:
+            lines.append(f"- Movement feel: {movement}")
+        if input_response:
+            lines.append(f"- Input response: {input_response}")
+        if difficulty_curve:
+            lines.append(f"- Difficulty curve: {difficulty_curve}")
+    if isinstance(style, Mapping):
+        mood = style.get("mood")
+        palette = style.get("palette")
+        shape_language = style.get("shape_language")
+        if mood:
+            lines.append(f"- Mood: {mood}")
+        if palette:
+            lines.append(f"- Palette: {palette}")
+        if shape_language:
+            lines.append(f"- Shape language: {shape_language}")
+    if isinstance(feedback, Mapping):
+        for key in ("score", "hit", "fail"):
+            values = feedback.get(key)
+            if isinstance(values, list) and values:
+                lines.append(f"- {key.capitalize()} feedback: {', '.join(str(value) for value in values)}")
+    return "\n".join(lines)
+
+
+def _quality_runbook_line(spec: Mapping[str, Any]) -> str:
+    quality = quality_contract_from_spec(spec)
+    feel = quality.get("feel", {})
+    style = quality.get("style", {})
+    if not isinstance(feel, Mapping) or not isinstance(style, Mapping):
+        return "Quality contract: not declared."
+    movement = feel.get("movement", "unspecified")
+    input_response = feel.get("input_response", "unspecified")
+    palette = style.get("palette", "unspecified")
+    return f"Quality contract: {movement} movement, {input_response} input, {palette} palette."

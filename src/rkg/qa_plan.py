@@ -6,6 +6,7 @@ from typing import Any
 from rkg.archetypes import describe_archetype
 from rkg.custom_realitykit_runtime import custom_realitykit_adapter_for_systems
 from rkg.plan import swift_identifier_for
+from rkg.quality import quality_contract_from_spec
 from rkg.spec import assert_valid_game_spec
 
 JsonDict = dict[str, Any]
@@ -22,6 +23,7 @@ def build_qa_plan(spec: Mapping[str, Any]) -> JsonDict:
         "archetype": str(game["archetype"]),
         "preflight": ["rkg verify-game <generated-project>"],
         "capture_root": "Docs/screenshots",
+        "quality_contract": quality_contract_from_spec(spec),
         "steps": qa_steps_for(spec, archetype),
     }
 

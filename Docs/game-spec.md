@@ -44,7 +44,31 @@ release:
     - gameplay_start
     - mid_session
     - results
+
+quality:
+  feel:
+    movement: snappy
+    input_response: instant
+    collision_forgiveness: medium
+    difficulty_curve: ramping
+  feedback:
+    score:
+      - pulse
+      - sound_hook
+    hit:
+      - flash
+      - shake
+      - haptic_hook
+    fail:
+      - freeze_frame
+      - result_transition
+  style:
+    mood: arcade
+    palette: high_contrast
+    shape_language: readable_silhouettes
 ```
+
+`quality` is optional for older specs, but all new RKG starter specs write it. Treat it as the product-quality contract for the first playable: how movement should feel, which feedback hooks should exist, and what art-direction rules keep the generated assets readable.
 
 ## Validation Rules
 
@@ -63,6 +87,9 @@ release:
 - `release.devices` must contain at least one device.
 - `release.screenshots` must contain at least one screenshot.
 - Every screenshot state must be supported by the selected archetype.
+- `quality`, when present, must be an object with supported `feel`, `feedback`, and `style` sections.
+- `quality.feel` and `quality.style` values must be non-empty strings.
+- `quality.feedback` values must be non-empty string lists.
 
 Validate a spec before scaffolding:
 
@@ -71,7 +98,7 @@ python3 Tools/rkg.py validate-spec GameSpec.yaml
 python3 Tools/rkg.py validate-spec GameSpec.yaml --json
 ```
 
-Role-aware specs are preferred because they let RKG generate role-specific loaders, fallbacks, screenshots, and store checklists. RKP still owns the final asset acceptance state.
+Role-aware specs are preferred because they let RKG generate role-specific loaders, fallbacks, screenshots, and store checklists. Quality-aware specs are preferred because they keep game feel, feedback hooks, and art direction visible in `plan-game`, `qa-plan`, and store metadata. RKP still owns the final asset acceptance state.
 
 ## Starter Specs
 
@@ -90,7 +117,7 @@ python3 Tools/rkg.py new-game --title "Desert Chase" --camera chase --input tilt
 python3 Tools/rkg.py validate-spec GameSpec.json
 ```
 
-`new-game` writes `game.archetype: custom_realitykit` and rejects unsupported camera rigs, input models, and gameplay systems before it writes the file.
+`new-game` writes `game.archetype: custom_realitykit`, adds a systems-aware `quality` contract, and rejects unsupported camera rigs, input models, and gameplay systems before it writes the file.
 
 ## Custom RealityKit Skeleton Example
 
@@ -149,7 +176,31 @@ release:
     - mid_action
     - fail_or_hit
     - results
+
+quality:
+  feel:
+    movement: momentum
+    input_response: responsive
+    collision_forgiveness: medium
+    difficulty_curve: lap_pressure
+  feedback:
+    score:
+      - lap_pop
+      - checkpoint_chime
+    hit:
+      - impact_flash
+      - camera_kick
+      - haptic_hook
+    fail:
+      - slow_motion_bump
+      - result_transition
+  style:
+    mood: speed_arcade
+    palette: track_contrast
+    shape_language: bold_vehicle_readability
 ```
+
+`plan-game --json` exposes this block as `quality_contract`; `qa-plan --json` carries the same contract beside screenshot evidence steps, and generated store metadata includes the movement/input/style and score/hit/fail feedback hooks.
 
 ## 2.5D Fighter Example
 

@@ -48,6 +48,24 @@ def valid_spec() -> dict:
             "devices": ["iPhone 15", "iPad"],
             "screenshots": ["gameplay_start", "mid_session", "results"],
         },
+        "quality": {
+            "feel": {
+                "movement": "snappy",
+                "input_response": "instant",
+                "collision_forgiveness": "medium",
+                "difficulty_curve": "ramping",
+            },
+            "feedback": {
+                "score": ["pulse", "sound_hook"],
+                "hit": ["flash", "shake", "haptic_hook"],
+                "fail": ["freeze_frame", "result_transition"],
+            },
+            "style": {
+                "mood": "arcade",
+                "palette": "high_contrast",
+                "shape_language": "readable_silhouettes",
+            },
+        },
     }
 
 
@@ -152,6 +170,9 @@ class RkgPlanGameTests(unittest.TestCase):
         self.assertEqual(payload["screenshot_states"], ["gameplay_start", "mid_session", "results"])
         self.assertIn("screenshot_proofs", payload)
         self.assertIn("state.phase == .playing", payload["screenshot_proofs"]["gameplay_start"])
+        self.assertEqual(payload["quality_contract"]["feel"]["movement"], "snappy")
+        self.assertEqual(payload["quality_contract"]["feedback"]["hit"], ["flash", "shake", "haptic_hook"])
+        self.assertEqual(payload["quality_contract"]["style"]["shape_language"], "readable_silhouettes")
 
     def test_build_game_plan_exposes_runtime_entities_for_declared_roles(self) -> None:
         payload = build_game_plan(lane_dodger_spec())

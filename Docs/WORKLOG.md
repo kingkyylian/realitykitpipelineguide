@@ -12,6 +12,45 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 148: RKG General Game Quality Contracts
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** RKG'yi Flappy veya tek archetype odağından çıkarıp genel oyun üretimi için ilk ürün-kalite sözleşmesini eklemek: game feel, feedback/VFX/ses/haptic hook'ları ve art direction beklentileri GameSpec'ten plan/QA/store çıktısına taşınmalı.
+
+**Yapılanlar:**
+
+- `GameSpec.quality` optional contract olarak eklendi; eski spec'ler kırılmıyor.
+- `validate-spec` artık `quality.feel`, `quality.feedback`, ve `quality.style` shape'ini denetliyor.
+- `new-spec` fighter/flappy template'leri ve `new-game` racing/projectile/shooter/collector template'leri default kalite kontratı üretiyor.
+- `plan-game --json` ve `qa-plan --json` çıktıları `quality_contract` taşıyor.
+- Generated store metadata `## Quality Contract` bölümü üretiyor; screenshot QA runbook hareket/input/palette özetini taşıyor.
+- `Docs/game-spec.md`, `Docs/game-factory.md`, `Docs/rkg-architecture.md`, ve `Docs/ai-handoff.md` yeni sözleşmeye göre güncellendi.
+- Projectile dogfood ile `Shard Volley Quality` generated project üretildi; generated `GameSpec`, store metadata ve QA runbook içinde `anchored`, `charged_release`, `high_contrast_targets` kontratı doğrulandı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests/test_rkg_spec.py Tests/test_rkg_new_game.py Tests/test_rkg_new_spec.py Tests/test_rkg_plan_game.py Tests/test_rkg_qa_plan.py Tests/test_rkg_store_pack.py: first run failed as expected; then ok, 39 tests
+rtk ./.venv/bin/python Tools/rkg.py new-game --title "Shard Volley Quality" --camera third_person --input drag --systems projectile,shooting,score --output Build/rkg-quality-contract-v1/GameSpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py validate-spec Build/rkg-quality-contract-v1/GameSpec.json --json: ok true
+rtk ./.venv/bin/python Tools/rkg.py plan-game Build/rkg-quality-contract-v1/GameSpec.json --json: ok; quality_contract present
+rtk ./.venv/bin/python Tools/rkg.py qa-plan Build/rkg-quality-contract-v1/GameSpec.json --json: ok; quality_contract present
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-quality-contract-v1/GameSpec.json --output Build/rkg-quality-contract-v1/ShardVolleyQuality --force: ok
+rg -n "Quality Contract|anchored|charged_release|high_contrast_targets|quality_contract" Build/rkg-quality-contract-v1/ShardVolleyQuality: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-quality-contract-v1/ShardVolleyQuality: verify-game ok
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+git diff --check: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 268 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: release-check ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok
+```
+
+**Öğrenme notu:**
+
+Genel oyun generator'ında "asset + iskelet" tek başına kalite üretmiyor. İlk doğru ürün adımı, oyunun his/feedback/art-direction beklentisini machine-readable kontrata koymak oldu. Sonraki anlamlı slice bu kontratı generated Swift'e bağlamak: animasyon timing, VFX intensity, sound/haptic hook stubları ve level variety presets.
+
 ### Sprint 147: RKG Per-Asset Acceptance Reports
 
 **Durum:** Tamamlandı

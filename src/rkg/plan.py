@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from rkg.archetypes import describe_archetype
+from rkg.quality import quality_contract_from_spec
 from rkg.spec import assert_valid_game_spec
 
 JsonDict = dict[str, Any]
@@ -55,6 +56,7 @@ def build_game_plan(spec: Mapping[str, Any]) -> JsonDict:
         "runtime_entities": runtime_entities_for(spec),
         "screenshot_states": list(spec["release"]["screenshots"]),
         "screenshot_proofs": _screenshot_proofs(spec, archetype),
+        "quality_contract": quality_contract_from_spec(spec),
     }
 
 

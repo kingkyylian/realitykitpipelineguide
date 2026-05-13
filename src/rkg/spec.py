@@ -79,6 +79,7 @@ def validate_game_spec(spec: Mapping[str, Any], *, app_store: bool = True) -> li
     if release:
         _require_fields(release, "release", REQUIRED_RELEASE_FIELDS, issues)
         _validate_release(release, issues, archetype)
+    _validate_quality(spec.get("quality"), issues)
 
     return issues
 
@@ -239,3 +240,48 @@ def _validate_release(
         for screenshot in screenshots:
             if screenshot not in allowed_states:
                 issues.append(f"release.screenshots state {screenshot} is not used by {archetype['id']}")
+
+
+def _validate_quality(value: object, issues: list[str]) -> None:
+    if value is None:
+        return
+    if not isinstance(value, Mapping):
+        issues.append("quality must be an object")
+        return
+
+    supported = {"feel", "feedback", "style"}
+    for key in value:
+        if key not in supported:
+            issues.append(f"quality.{key} is not supported")
+
+    _validate_string_map(value.get("feel"), "quality.feel", issues)
+    _validate_feedback_map(value.get("feedback"), issues)
+    _validate_string_map(value.get("style"), "quality.style", issues)
+
+
+def _validate_string_map(value: object, prefix: str, issues: list[str]) -> None:
+    if value is None:
+        return
+    if not isinstance(value, Mapping):
+        issues.append(f"{prefix} must be an object")
+        return
+    for key, item in value.items():
+        if not isinstance(key, str):
+            issues.append(f"{prefix} keys must be strings")
+            continue
+        if not isinstance(item, str) or not item.strip():
+            issues.append(f"{prefix}.{key} must be a non-empty string")
+
+
+def _validate_feedback_map(value: object, issues: list[str]) -> None:
+    if value is None:
+        return
+    if not isinstance(value, Mapping):
+        issues.append("quality.feedback must be an object")
+        return
+    for key, items in value.items():
+        if not isinstance(key, str):
+            issues.append("quality.feedback keys must be strings")
+            continue
+        if not isinstance(items, list) or not items or not all(isinstance(item, str) and item.strip() for item in items):
+            issues.append(f"quality.feedback.{key} must be a list of non-empty strings")

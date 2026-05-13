@@ -392,6 +392,50 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             self.assertTrue(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "ok")
 
+    def test_verify_screenshots_rejects_debug_overlay_like_top_panel(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = []
+            for y in range(320):
+                if y < 88:
+                    rows.append([(176, 176, 176) for _ in range(320)])
+                elif y < 250:
+                    rows.append([((x * 7) % 180, 24 + (y * 5) % 140, ((x + y) * 3) % 210) for x in range(320)])
+                else:
+                    rows.append([(24 + (x % 8), 28 + (y % 6), 32) for x in range(320)])
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "semantic_debug_overlay")
+
+    def test_verify_screenshots_accepts_semantically_varied_gameplay_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = []
+            for y in range(320):
+                if y < 88:
+                    rows.append([(10 + (x % 12), 12 + (y % 10), 16) for x in range(320)])
+                elif y < 250:
+                    rows.append([((x * 9) % 220, 38 + (y * 5) % 170, 42 + ((x + y) * 4) % 180) for x in range(320)])
+                else:
+                    rows.append([(30 + (x % 14), 34 + (y % 8), 38) for x in range(320)])
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "ok")
+
     def test_verify_screenshots_cli_consumes_qa_plan_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

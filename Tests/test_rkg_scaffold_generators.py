@@ -150,6 +150,26 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("struct ResultView: View", swift)
         self.assertIn('Text("Score \\(state.score)")', swift)
         self.assertIn("Button(InputIntent.resetTitle, action: onReset)", swift)
+        self.assertIn(".background(Color.black.opacity(0.62))", swift)
+        self.assertIn(".foregroundStyle(.white)", swift)
+
+    def test_fallback_factory_uses_neutral_player_proxy_instead_of_default_red_sphere(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_fallback_factory_swift"))
+
+        swift = scaffold._fallback_factory_swift()
+
+        self.assertIn('case "procedural_capsule":', swift)
+        self.assertIn("UIColor(red: 0.24, green: 0.46, blue: 0.52, alpha: 1.0)", swift)
+        self.assertIn("mesh: .generateBox(size: [0.24, 0.24, 0.20])", swift)
+
+    def test_world_rig_generator_emits_idle_motion_feedback(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_world_rig_swift"))
+
+        swift = scaffold._world_rig_swift()
+
+        self.assertIn("static func updateIdleMotion(anchor: AnchorEntity, time: Float)", swift)
+        self.assertIn("let laneName = \"rkg|world=lane_\\(index)\"", swift)
+        self.assertIn("wave(time * 1.6)", swift)
 
 
 if __name__ == "__main__":

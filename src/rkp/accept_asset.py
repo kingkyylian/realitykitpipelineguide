@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from rkp.asset_manifest import asset_usdz_path, find_asset, load_manifest, write_manifest
+from rkp.inspect_usdz import inspect_asset
 from rkp.rkp_project import ProjectPaths, load_project
 from rkp.runtime import module_command, package_env
 
@@ -50,7 +51,13 @@ def copy_screenshot(asset_id: str, screenshot: Path, project: ProjectPaths = PRO
     return output.resolve()
 
 
-def update_asset_brief(asset_id: str, screenshot_rel: str, project: ProjectPaths = PROJECT) -> None:
+def update_asset_brief(
+    asset_id: str,
+    screenshot_rel: str,
+    *,
+    inspection_ok: bool = False,
+    project: ProjectPaths = PROJECT,
+) -> None:
     brief_path = project.docs_assets_dir / f"{asset_id}.md"
     if not brief_path.exists():
         return
@@ -59,10 +66,17 @@ def update_asset_brief(asset_id: str, screenshot_rel: str, project: ProjectPaths
     replacements = {
         f"- [ ] USDZ exported to `Assets/Imported/{asset_id}.usdz`.": f"- [x] USDZ exported to `Assets/Imported/{asset_id}.usdz`.",
         "- [ ] `Tools/asset_manifest.json` status changed from `planned` to `imported`.": "- [x] `Tools/asset_manifest.json` status changed from `planned` to `imported`.",
+        "- [ ] Manifest entry remains aligned with this role and budget.": "- [x] Manifest entry remains aligned with this role and budget.",
         "- [ ] `make doctor` passes without new errors.": "- [x] `make doctor` passes without new errors.",
         "- [ ] Simulator screenshot captured if visual.": "- [x] Simulator screenshot captured if visual.",
+        "- [ ] Runtime screenshot evidence captured before imported status.": "- [x] Runtime screenshot evidence captured before imported status.",
+        f"- [ ] `rkp accept-asset {asset_id} --screenshot <path>` passes.": f"- [x] `rkp accept-asset {asset_id} --screenshot <path>` passes.",
         "- [ ] `Docs/WORKLOG.md` lesson added.": "- [x] `Docs/WORKLOG.md` lesson added.",
     }
+    if inspection_ok:
+        replacements[f"- [ ] `rkp inspect-usdz {asset_id} --json` passes."] = (
+            f"- [x] `rkp inspect-usdz {asset_id} --json` passes."
+        )
     for old, new in replacements.items():
         text = text.replace(old, new)
 
@@ -142,6 +156,7 @@ def main() -> int:
 
     screenshot_rel = relative(accepted_screenshot)
     usdz_rel = relative(usdz_path)
+    inspection_ok = bool(inspect_asset(args.id).get("ok"))
     asset["status"] = "imported"
     notes = asset.get("notes", "")
     acceptance_note = f" Accepted with screenshot {screenshot_rel}."
@@ -149,7 +164,7 @@ def main() -> int:
         asset["notes"] = (notes.rstrip() + acceptance_note).strip()
     write_manifest(manifest)
 
-    update_asset_brief(args.id, screenshot_rel)
+    update_asset_brief(args.id, screenshot_rel, inspection_ok=inspection_ok)
     prepend_worklog(args.id, screenshot_rel, usdz_rel)
 
     doctor_status = run_doctor()

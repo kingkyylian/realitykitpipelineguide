@@ -168,6 +168,8 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["steps"][2]["sidecar_path"], "Docs/screenshots/near_miss.json")
         self.assertEqual(payload["steps"][2]["scene_snapshot_path"], "Docs/screenshots/near_miss.scene.json")
         self.assertEqual(payload["steps"][2]["automation"], "manual_capture")
+        self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["max_top_light_coverage"], 0.34)
+        self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["min_scene_luma_span"], 18)
 
     def test_fighter_qa_plan_exposes_launch_state_automation(self) -> None:
         payload = build_qa_plan(fighter_spec())
@@ -189,6 +191,8 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertIn("projectileHits > 0", payload["steps"][2]["drive"])
         self.assertIn("state.phase == .result", payload["steps"][3]["drive"])
         self.assertEqual(payload["steps"][2]["visible_roles"], ["player", "arena", "weapon", "projectile", "target"])
+        self.assertEqual(payload["steps"][0]["semantic_visual_contract"]["max_top_light_coverage"], 0.34)
+        self.assertEqual(payload["steps"][0]["semantic_visual_contract"]["min_scene_bright_ratio"], 0.015)
 
     def test_qa_plan_cli_prints_json_without_creating_output(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

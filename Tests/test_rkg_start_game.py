@@ -64,6 +64,47 @@ class RkgStartGameTests(unittest.TestCase):
             self.assertTrue(payload["paths"]["spec"].endswith("GameSpec.json"))
             self.assertEqual(payload["qa_plan"]["steps"][1]["state"], "mid_action")
             self.assertEqual(payload["qa_plan"]["steps"][1]["scene_snapshot_path"], "Docs/screenshots/mid_action.scene.json")
+            self.assertEqual(payload["asset_pipeline"]["cwd"], str(output.resolve()))
+            tasks_by_id = {task["asset_id"]: task for task in payload["asset_pipeline"]["tasks"]}
+            self.assertEqual(
+                sorted(tasks_by_id),
+                ["arena_space", "player_proxy", "projectile_proxy", "target_proxy", "weapon_proxy"],
+            )
+            target_task = tasks_by_id["target_proxy"]
+            self.assertEqual(target_task["role"], "target")
+            self.assertEqual(target_task["type"], "gameplay_target")
+            self.assertEqual(target_task["brief_path"], "Docs/assets/target_proxy.md")
+            self.assertEqual(target_task["runtime_file"], "Assets/Imported/target_proxy.usdz")
+            self.assertEqual(target_task["screenshot_path"], "Docs/screenshots/target_proxy_imported.jpg")
+            self.assertEqual(
+                target_task["commands"],
+                [
+                    {
+                        "step": "make_asset",
+                        "command": [
+                            "rkp",
+                            "make-asset",
+                            "target_proxy",
+                            "--type",
+                            "gameplay_target",
+                            "--prompt",
+                            "target role gameplay_target for Shard Volley; budget 700 tris / 512 texture; fallback procedural_rings",
+                        ],
+                    },
+                    {"step": "build_asset", "command": ["rkp", "build-asset", "target_proxy"]},
+                    {"step": "inspect_usdz", "command": ["rkp", "inspect-usdz", "target_proxy", "--json"]},
+                    {
+                        "step": "accept_asset",
+                        "command": [
+                            "rkp",
+                            "accept-asset",
+                            "target_proxy",
+                            "--screenshot",
+                            "Docs/screenshots/target_proxy_imported.jpg",
+                        ],
+                    },
+                ],
+            )
             spec = json.loads((output / "GameSpec.json").read_text(encoding="utf-8"))
             self.assertEqual(spec["game"]["id"], "shard_volley")
             self.assertEqual(spec["game"]["camera"], "third_person")

@@ -12,6 +12,368 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 135: RKG Acceptance Runner Product Hardening
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** `rkg accept-first-asset` ve `rkg accept-assets` workflow'larını ürün davranışına yaklaştırmak: plan çıktısı kullanıcıya okunur `rkp`/`rkg` komutları göstermeye devam etmeli, ama executor lokal PATH veya eski kurulu binary'ye güvenmeden workspace source tree'yi çalıştırmalı.
+
+**Yapılanlar:**
+
+- Acceptance runner `_run_command` artık `rkp ...` komutlarını `python -m rkp.cli ...` olarak dispatch ediyor.
+- Aynı resolver `rkg ...` komutlarını da `python -m rkg.cli ...` olarak dispatch ediyor.
+- JSON/dry-run planları değişmedi; kullanıcıya ve dokümantasyona görünen workflow hâlâ `rkp make-asset`, `rkp build-asset`, `rkp accept-asset` gibi okunur komutlardan oluşuyor.
+- Regression testleri hem workspace `PYTHONPATH` korumasını hem de module dispatch davranışını doğruluyor.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance: ok; 7 tests
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 238 tests
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+rtk ./.venv/bin/python -c "from pathlib import Path; from rkg.asset_acceptance import _run_command; p=Path('Build/rkg-proper-skeleton-v7/ShardVolleyStart'); print('rkp', _run_command(['rkp','status'], p)); print('rkg', _run_command(['rkg','qa-plan','GameSpec.json'], p))": ok; rkp 0, rkg 0
+```
+
+**Öğrenme notu:**
+
+Ürünleşmiş agent workflow'unda plan okunabilir olabilir, ama executor deterministik olmalı. Bu değişiklik dogfood sırasında yanlışlıkla eski global `rkp`/`rkg` binary'sinin kullanılmasını engeller.
+
+### Sprint 134: RKG Semantic Screenshot QA And Motion Feedback
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** Presentation parity sonrası kalan ilk kalite kapısını kapatmak: `qa-plan` her screenshot için piksel-level semantic contract üretmeli, `verify-screenshots` debug overlay/flat-scene gibi temel görsel hataları reddetmeli, generated `custom_realitykit` sahnesi de tamamen statik kalmayacak bir motion feedback hook'u taşımalı.
+
+**Yapılanlar:**
+
+- `qa-plan` screenshot adımlarına `semantic_visual_contract` eklendi.
+- `verify-screenshots` artık image/sidecar/runtime scene snapshot sonrası piksel band analizi yapıyor:
+  - üst bölgede fazla açık panel varsa `semantic_debug_overlay`
+  - gameplay sahne bandı çok düzse `semantic_flat_scene`
+  - sahne bandı yeterince okunur değilse `semantic_scene_too_dark`
+- PNG sampler coordinate-aware hale geldi; JPEG semantic check aynı macOS `sips` rasterizer yolunu kullanıyor.
+- Generated `WorldRig.swift` `updateIdleMotion(anchor:time:)` kazandı:
+  - world root çok hafif sway
+  - target frame bob
+  - lane rail pulse
+- Generated `custom_realitykit` `GameSceneController.swift` `SceneEvents.Update` subscription ile motion tick'i bağlıyor.
+- V7 Shard Volley screenshot kanıtları `Docs/screenshots/rkg_shard_volley_v7_*.jpg` olarak kopyalandı.
+
+**Dogfood Demo:**
+
+```text
+Build/rkg-proper-skeleton-v7/ShardVolleyStart
+```
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_qa_plan Tests.test_rkg_screenshot_status Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_scaffold_generators: ok; 37 tests
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-start-game-dogfood/idea.json --output Build/rkg-proper-skeleton-v7/ShardVolleyStart --json: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-proper-skeleton-v7/ShardVolleyStart: ok; generated tests, doctor, release-check, xcodegen, xcodebuild
+rtk xcrun simctl boot FF329D84-0179-49E2-AFC4-12D4935845FC: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-proper-skeleton-v7/ShardVolleyStart --device booted --json: ok; 4 screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-proper-skeleton-v7/ShardVolleyStart --json: ok; 4/4 screenshots, semantic contracts passed
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 237 tests
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+```
+
+**Screenshot evidence:**
+
+```text
+Docs/screenshots/rkg_shard_volley_v7_gameplay_start.jpg
+Docs/screenshots/rkg_shard_volley_v7_mid_action.jpg
+Docs/screenshots/rkg_shard_volley_v7_fail_or_hit.jpg
+Docs/screenshots/rkg_shard_volley_v7_results.jpg
+```
+
+**Öğrenme notu:**
+
+Bu gate hâlâ insan gözü yerine geçmez; text overlap veya her mesh'in gerçekten okunabilir silüete sahip olduğunu kanıtlamıyor. Ama artık eski gri dev panel gibi temel görsel hatalar screenshot verification'da fail oluyor ve generated scene runtime'da ilk motion feedback omurgasına sahip.
+
+### Sprint 133: RKG Game-Skeleton Presentation Parity
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** Shard Volley gibi `custom_realitykit` çıktılarının dev overlay/proof fixture hissini azaltıp en az oyun iskeleti seviyesine taşımak: full-screen game shell, okunur HUD, world/lighting rig, projectile feedback, temiz result state ve daha iyi fallback composition.
+
+**Yapılanlar:**
+
+- `custom_realitykit` `ContentView` artık tek gri debug panel üretmiyor:
+  - full-screen `GameView`
+  - `StartOverlay`
+  - safe-area top `GameHUD`
+  - bottom `PrimaryInputLayer`
+  - ayrı `ResultView`
+  - `statusBarHidden(true)` ve `persistentSystemOverlays(.hidden)`
+- Projectile adapter kontrolleri metin ağırlıklı default button yerine icon button sözleşmesine geçti.
+- Generated `WorldRig.swift` eklendi:
+  - koyu arka plan
+  - key/rim light
+  - backdrop
+  - arena floor + lane rails
+  - target frame
+  - projectile trail / hit pulse feedback
+- Projectile scene composition yeniden ayarlandı:
+  - player proxy küçültülüp aşağı alındı
+  - weapon/projectile/target ölçekleri daha okunur hale getirildi
+  - target hit state daha belirgin büyüme/renk feedback'i alıyor
+- `procedural_capsule` fallback kırmızı default sphere yerine nötr launcher proxy oldu.
+- Result state gameplay controls göstermiyor; sadece dark result panel + reset gösteriyor.
+
+**Dogfood Demo:**
+
+```text
+Build/rkg-proper-skeleton-v6/ShardVolleyStart
+```
+
+**Verification:**
+
+```text
+rtk python3 -m unittest Tests.test_rkg_content_views Tests.test_rkg_custom_realitykit_runtime Tests.test_rkg_scaffold_generators Tests.test_rkg_start_game: ok; 21 tests
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-start-game-dogfood/idea.json --output Build/rkg-proper-skeleton-v6/ShardVolleyStart --json: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-proper-skeleton-v6/ShardVolleyStart: ok; generated tests, doctor, release-check, xcodegen, xcodebuild
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-proper-skeleton-v6/ShardVolleyStart --device booted: ok; 4 screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-proper-skeleton-v6/ShardVolleyStart --json: ok; 4/4 screenshots
+```
+
+**Screenshot evidence:**
+
+```text
+Build/rkg-proper-skeleton-v6/ShardVolleyStart/Docs/screenshots/gameplay_start.jpg
+Build/rkg-proper-skeleton-v6/ShardVolleyStart/Docs/screenshots/mid_action.jpg
+Build/rkg-proper-skeleton-v6/ShardVolleyStart/Docs/screenshots/fail_or_hit.jpg
+Build/rkg-proper-skeleton-v6/ShardVolleyStart/Docs/screenshots/results.jpg
+```
+
+**Öğrenme notu:**
+
+Bu sprint RKG'yi shipping oyun seviyesine getirmedi; ama generated `custom_realitykit` skeleton artık ilk screenshot'ta dev/debug panel değil, oyun shell'i, sahne dünyası, okunur controls ve result state üretiyor. Kalan kalite açığı pixel-level semantic QA: screenshot verifier hâlâ text overlap, mesh visibility ve kompozisyon kalitesini insan gözü kadar değerlendirmiyor.
+
+### Sprint 132: RKG Full Demo Asset Acceptance
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** Tek `target_proxy` kabulünden çıkıp generated demo içindeki tüm temel gameplay role asset'lerini RKP acceptance zincirine sokmak; bunu tek simulator screenshot capture pass'i ile tekrarlanabilir komuta bağlamak.
+
+**Yapılanlar:**
+
+- Yeni `rkg accept-assets <generated-project>` komutu eklendi.
+- Komut varsayılan olarak tüm generated asset görevlerini gameplay önceliğine göre sıralıyor:
+  - `target`, `projectile`, `weapon`, `player`, `arena`
+- `--asset-id` tekrar edilebilir; istenirse subset kabul edilebiliyor.
+- Çoklu workflow sırası:
+  - her asset için `rkp make-asset`, `rkp build-asset`, `rkp inspect-usdz --json`
+  - bir kez `rkg capture-screenshots`
+  - bir kez `rkg verify-screenshots`
+  - her asset için uygun state screenshot'ını `<asset_id>_imported.jpg` path'ine kopyalama
+  - her asset için `rkp accept-asset`
+  - bir kez `rkp release-check --assets`
+- `execute_asset_acceptance_plan` ortak executor olarak eklendi; `accept-first-asset` bunu kullanacak şekilde korundu.
+- RKP generated-game role tipleri genişletildi:
+  - `gameplay_actor`
+  - `weapon_proxy`
+  - `hit_vfx`
+  - `ui_prop`
+- `prompt-asset` artık generated-game role prompt'larını tanıyor:
+  - `player`
+  - `weapon`
+  - `arena`
+  - mevcut `projectile`
+  - mevcut `target`
+- Deterministic Blender template'lerine player capsule/proxy, weapon proxy, projectile orb+trail, arena floor+lanes/rails parçaları eklendi.
+
+**Dogfood Demo:**
+
+```text
+Build/rkg-full-demo-v1/ShardVolleyStart
+```
+
+**Generated asset inspect sonuçları:**
+
+```text
+player_proxy: imported, 296 / 1500 triangles, 512x512 baseColor, st UV present
+arena_space: imported, 50 / 1200 triangles, 512x512 baseColor, st UV present
+weapon_proxy: imported, 68 / 700 triangles, 512x512 baseColor, st UV present
+projectile_proxy: imported, 254 / 400 triangles, 512x512 baseColor, st UV present
+target_proxy: imported, 288 / 700 triangles, 512x512 baseColor, st UV present
+```
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_assets_dry_run_plans_all_roles_with_one_capture Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_assets_execution_captures_once_and_accepts_each_asset: expected red before command/executor existed; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkp_package.RkpPackageTests.test_template_generator_supports_generated_game_role_archetypes: expected red before budgets/archetypes existed; then ok
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-start-game-dogfood/idea.json --output Build/rkg-full-demo-v1/ShardVolleyStart --force --json: ok
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-full-demo-v1/ShardVolleyStart --device booted --dry-run --json: ok; one capture and one release-check planned
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-full-demo-v1/ShardVolleyStart --device booted --json: ok; all 5 assets built, inspected, captured, accepted, release-checked
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-full-demo-v1/ShardVolleyStart --json: ok; 4/4 screenshots
+rtk /Users/kyylian/Developer/RealityKitPipelineDemo/.venv/bin/python -m rkp.cli status --json from generated project: all 5 assets imported and ready
+```
+
+**Öğrenme notu:**
+
+`accept-assets` kaliteyi otomatik olarak "shipping art" seviyesine çıkarmıyor; ama full demo artık sadece procedural fallback proof değil. Beş role asset'i de RKP manifest, USDZ inspect, simulator screenshot evidence ve generated release-check zincirinden geçiyor. Kalan en önemli açık pixel-level semantic QA: screenshot içinde bu asset'lerin gerçekten okunur ölçekte göründüğünü ve overlay text'in çakışmadığını hâlâ insan gözü veya yeni görsel analiz doğrulamalı.
+
+### Sprint 131: RKG Polished First Demo Slice
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** `accept-first-asset` workflow'unu fresh generated demo üzerinde tekrar dogfood etmek; ilk kabul edilen `target_proxy` asset'ini daha okunur bir gameplay hedefi yapmak ve sıfırdan demo üretiminde yakalanan toolchain açıklarını kapatmak.
+
+**Yapılanlar:**
+
+- `rkp prompt-asset` template'inde `target` archetype için düz quad yerine UV'li, hafif kalın, dairesel bullseye mesh üretimi eklendi.
+- Target base-color texture daha okunur yüksek kontrast halka yapısına çekildi.
+- Template regression testi `make_bullseye_target_mesh`, `st` UV ve target branch sözleşmesini kontrol edecek şekilde genişletildi.
+- `rkg capture-screenshots` fresh generated project için `project.yml` varsa `xcodegen generate` adımını planlıyor ve build'den önce çalıştırıyor.
+- `accept-first-asset` subprocess runner'ı CLI entrypoint'lerinde workspace `src` kodunu öne alan environment ile çalışıyor; bu dogfood sırasında kurulu eski `rkp` binary'sine düşme sorununu kapattı.
+- `Build/rkg-polished-demo-v2/ShardVolleyStart` sıfırdan üretildi.
+- `target_proxy` ilk asset olarak üretildi, inspect edildi, simulator screenshot akışından acceptance screenshot'ına kopyalandı ve `imported` yapıldı.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkp_package.RkpPackageTests.test_template_generator_does_not_call_claude_when_api_key_exists: ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_screenshots_dry_run_lists_fighter_launch_commands: ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_capture.RkgCaptureTests.test_capture_execution_runs_build_install_launch_and_screenshot_steps Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_acceptance_runner_prefers_workspace_pythonpath_for_cli_entrypoints: ok
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-start-game-dogfood/idea.json --output Build/rkg-polished-demo-v2/ShardVolleyStart --force --json: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-polished-demo-v2/ShardVolleyStart --device booted --dry-run --json: ok; generate step present
+rtk ./.venv/bin/python Tools/rkg.py accept-first-asset Build/rkg-polished-demo-v2/ShardVolleyStart --asset-id target_proxy --source-state fail_or_hit --device booted --json: ok
+rkp inspect-usdz target_proxy --json during acceptance: ok; 288 / 700 triangles, 512x512 baseColor, st UV present, USDZ 34844 bytes
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-polished-demo-v2/ShardVolleyStart --json: ok; 4/4 screenshots
+rkp release-check --assets during acceptance: ok; generated project tests, manifest, imported asset inspect, XcodeGen, and xcodebuild all passed
+```
+
+**Öğrenme notu:**
+
+Bu sprint iki farklı kalite bariyerini ayırdı: asset inspect artık yeni bullseye geometry'nin gerçekten build'e girdiğini sayısal olarak kanıtlıyor, screenshot verifier ise generated app'in dört release state'inin boş/duplicate olmayan, sidecar ve runtime scene-role kanıtı olan görüntüler ürettiğini kanıtlıyor. Hâlâ pixel-level semantic QA veya text-overlap kanıtı yok; bir sonraki RKG kalite işi bu olmalı.
+
+### Sprint 130: RKG First Asset Acceptance Workflow
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** Sıfırdan demo üretiminde screenshot dosyalarını elle seçip kopyalama adımını azaltmak; generated project içindeki ilk gameplay-relevant asset'i tek RKG workflow'u ile RKP acceptance zincirine sokmak.
+
+**Yapılanlar:**
+
+- Yeni `src/rkg/asset_acceptance.py` modülü eklendi.
+- Yeni `rkg accept-first-asset <generated-project>` komutu eklendi.
+- Komut varsayılan olarak en yüksek öncelikli gameplay role'ünü seçiyor:
+  - `target`, `enemy`, `opponent`, `projectile`, `weapon`, `player`, `vehicle`, `pickup`, `obstacle`, `cover`, `arena`
+- `--asset-id` ile belirli asset seçilebiliyor.
+- `--source-state` ile acceptance screenshot'ının hangi release state'inden alınacağı belirtilebiliyor.
+- `--dry-run --json` planı makine-okunur şekilde döküyor.
+- Normal çalışma sırası:
+  - `rkp make-asset`
+  - `rkp build-asset`
+  - `rkp inspect-usdz --json`
+  - `rkg capture-screenshots`
+  - `rkg verify-screenshots`
+  - seçilen release screenshot'ını `<asset_id>_imported.jpg` acceptance path'ine kopyalama
+  - `rkp accept-asset`
+  - `rkp release-check --assets`
+- `Tests/test_rkg_asset_acceptance.py` plan ve executor davranışını kapsıyor.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_first_asset_dry_run_selects_target_and_acceptance_screenshot: expected red before command existed; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_first_asset_dry_run_skips_make_when_blender_script_exists: expected red before resume handling; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance: ok, 3 tests
+rtk ./.venv/bin/python Tools/rkg.py accept-first-asset Build/rkg-start-game-dogfood/ShardVolleyStart --asset-id target_proxy --source-state fail_or_hit --device booted --json: ok; build, inspect, capture, verify-screenshots, copy, accept, release-check --assets all exited 0
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance Tests.test_rkg_start_game Tests.test_rkp_project.RkpProjectTests.test_accept_asset_updates_rkg_generated_asset_brief_checklist: ok, 7 tests
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 229 tests
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok; CoreSimulator sandbox warnings appeared
+```
+
+**Öğrenme notu:**
+
+Bu komut screenshot sayısını azaltmıyor; manuel screenshot dosyası yönetimini azaltıyor. Hedef artık "tek tek görsel dosya seçerek pipeline kapatmak" değil, generated demo project için ilk asset acceptance workflow'unu otomasyona bağlamak.
+
+### Sprint 129: RKG Asset Bridge Dogfood
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** Sprint 128'de `start-game --json` içine eklenen `asset_pipeline.tasks` alanının sadece plan üretmediğini, gerçek bir generated project içinde RKP asset acceptance'a kadar çalıştığını kanıtlamak.
+
+**Yapılanlar:**
+
+- `Build/rkg-start-game-dogfood/ShardVolleyStart` current code ile yeniden üretildi.
+- `asset_pipeline.tasks` içinden `target_proxy` görevi seçildi.
+- Generated project root'unda şu RKP zinciri çalıştırıldı:
+  - `rkp make-asset target_proxy --type gameplay_target --prompt "..."`
+  - `rkp build-asset target_proxy`
+  - `rkp inspect-usdz target_proxy --json`
+  - `rkg capture-screenshots ... --device booted`
+  - `rkg verify-screenshots ... --json`
+  - `rkp accept-asset target_proxy --screenshot Docs/screenshots/target_proxy_imported.jpg`
+  - `rkp release-check --assets`
+- Blender bu ortamda segfault etti; RKP direct USDZ fallback devreye girip `Assets/Imported/target_proxy.usdz` üretti.
+- Dogfood sırasında RKG-generated asset brief checklist'inin `accept-asset` sonrası eksik işaretlendiği görüldü.
+- `src/rkp/accept_asset.py` RKG-generated brief formatındaki manifest/screenshot/acceptance checklist satırlarını işaretleyecek şekilde güncellendi.
+- `accept-asset`, mevcut USDZ aynı anda inspect'ten geçiyorsa RKG brief'teki `rkp inspect-usdz ... --json` checklist satırını da işaretliyor; `inspect-usdz` non-mutating raporlama komutu olarak kaldı.
+- `Tests/test_rkp_project.py` RKG-generated asset brief acceptance checklist regression testiyle genişletildi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_accept_asset_updates_rkg_generated_asset_brief_checklist: expected red on unchecked RKG checklist; then ok
+rkp make-asset target_proxy --type gameplay_target --prompt "...": ok, prompt script generated from target archetype
+rkp build-asset target_proxy: ok via direct USDZ fallback after Blender exit 139; target_proxy.usdz 11536 bytes
+rkp inspect-usdz target_proxy --json: ok; 192/700 triangles, baseColor 512x512, st UV present
+rtk xcodegen generate: ok for generated ShardVolleyStart project
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-start-game-dogfood/ShardVolleyStart --device booted: ok, 4 screenshots
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-start-game-dogfood/ShardVolleyStart --json: ok, 4/4 screenshots
+rkp accept-asset target_proxy --screenshot Docs/screenshots/target_proxy_imported.jpg: ok, manifest status imported
+/Users/kyylian/Developer/RealityKitPipelineDemo/.venv/bin/python -m rkp.cli release-check --assets: ok; inspected imported target_proxy and built generated app
+rtk ./.venv/bin/python -m unittest Tests.test_rkp_project.RkpProjectTests.test_accept_asset_updates_rkg_generated_asset_brief_checklist Tests.test_rkg_start_game: ok, 4 tests
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 226 tests
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok; CoreSimulator sandbox warnings appeared
+```
+
+**Öğrenme notu:**
+
+RKG -> RKP bridge artık tek asset için pratikte kapandı: idea -> generated project -> asset task -> USDZ -> simulator screenshot -> `accept-asset` -> `release-check --assets`. Kalan iş bunu daha ergonomik ve otomatik hale getirmek; acceptance sınırı hâlâ screenshot kanıtıyla korunuyor.
+
+### Sprint 128: RKG Asset Pipeline Bridge
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-12
+**Amaç:** `start-game` çıktısını generated asset brief dosyalarında bırakmayıp, her role asset için doğrudan izlenebilir RKP asset komut planına çevirmek.
+
+**Yapılanlar:**
+
+- Yeni `src/rkg/asset_pipeline.py` modülü eklendi.
+- `rkg start-game --json` başarılı fikirler için artık `asset_pipeline` döndürüyor.
+- Her asset task şunları içeriyor:
+  - generated project `cwd`
+  - `asset_id`, `role`, `type`
+  - `Docs/assets/<asset_id>.md` brief path'i
+  - `Assets/Imported/<asset_id>.usdz` runtime USDZ path'i
+  - `Docs/screenshots/<asset_id>_imported.jpg` acceptance screenshot path'i
+  - sıralı `rkp make-asset`, `build-asset`, `inspect-usdz --json`, `accept-asset` komut dizileri
+- `start-game` testleri asset bridge sözleşmesini doğrulayacak şekilde genişletildi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_start_game: expected red on missing asset_pipeline; then ok, 3 tests
+rtk ./.venv/bin/python -m ruff check src Tests Tools: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok, 225 tests
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: ok; CoreSimulator sandbox warnings appeared
+```
+
+**Öğrenme notu:**
+
+Bu gerçek asset üretimini otomatik kabul etmiyor; doğru sınır bu. RKG artık "hangi asset brief'leri var?" sorusundan "generated project root'unda hangi RKP komutları sırayla çalışacak?" sorusuna makine-okunur cevap veriyor. Acceptance hâlâ screenshot kanıtı ve `rkp accept-asset` gerektiriyor.
+
 ### Sprint 127: RKG Idea-To-Project Start Command
 
 **Durum:** Tamamlandı

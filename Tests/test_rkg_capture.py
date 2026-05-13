@@ -74,6 +74,7 @@ class RkgCaptureTests(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual(Path(payload["project"]), project.resolve())
             self.assertEqual(payload["device"], "booted")
+            self.assertEqual(payload["generate"], ["xcodegen", "generate"])
             self.assertEqual(payload["steps"][1]["state"], "mid_combo")
             self.assertIn("--rkg-screenshot-state", payload["steps"][1]["launch"])
             self.assertTrue(payload["steps"][1]["screenshot"].endswith("Docs/screenshots/mid_combo.jpg"))
@@ -89,6 +90,7 @@ class RkgCaptureTests(unittest.TestCase):
         plan = {
             "project": "/tmp/Generated",
             "device": "booted",
+            "generate": ["xcodegen", "generate"],
             "build": ["xcodebuild", "build"],
             "install": ["xcrun", "simctl", "install", "booted", "App.app"],
             "steps": [
@@ -117,11 +119,12 @@ class RkgCaptureTests(unittest.TestCase):
         result = execute_capture_plan(plan, runner=fake_runner, sleep_seconds=0)
 
         self.assertTrue(result["ok"])
-        self.assertEqual(calls[0][0], ["xcodebuild", "build"])
-        self.assertEqual(calls[1][0], ["xcrun", "simctl", "install", "booted", "App.app"])
-        self.assertEqual(calls[2][0][-1], "round_start")
+        self.assertEqual(calls[0][0], ["xcodegen", "generate"])
+        self.assertEqual(calls[1][0], ["xcodebuild", "build"])
+        self.assertEqual(calls[2][0], ["xcrun", "simctl", "install", "booted", "App.app"])
+        self.assertEqual(calls[3][0][-1], "round_start")
         self.assertEqual(
-            calls[3][0],
+            calls[4][0],
             ["xcrun", "simctl", "io", "booted", "screenshot", "/tmp/Generated/Docs/screenshots/round_start.jpg"],
         )
 

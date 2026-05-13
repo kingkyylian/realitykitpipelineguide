@@ -10,6 +10,7 @@ from typing import Any
 
 from rkg.qa_plan import build_qa_plan
 from rkg.spec import load_game_spec
+from rkp.runtime import package_env
 
 JsonDict = dict[str, Any]
 CommandRunner = Callable[[list[str], Path], int]
@@ -63,6 +64,7 @@ def build_capture_plan(project: Path, *, device: str) -> JsonDict:
         "game_id": game_id,
         "display_name": display_name,
         "archetype": archetype,
+        "generate": ["xcodegen", "generate"] if (project / "project.yml").exists() else [],
         "bundle_id": bundle_id,
         "build": [
             "xcodebuild",
@@ -97,7 +99,9 @@ def execute_capture_plan(
     run = runner or _run_command
     completed = []
 
-    for command in [list(plan["build"]), list(plan["install"])]:
+    for command in [list(plan.get("generate", [])), list(plan["build"]), list(plan["install"])]:
+        if not command:
+            continue
         exit_code = run(command, project)
         completed.append({"command": command, "exit_code": exit_code})
         if exit_code != 0:
@@ -210,4 +214,4 @@ def _project_relative_path(project: Path, path: Path) -> str:
 def _run_command(command: list[str], cwd: Path) -> int:
     if command[:2] == ["xcrun", "simctl"] and shutil.which("rtk") is not None:
         command = ["rtk", *command]
-    return subprocess.run(command, cwd=cwd).returncode
+    return subprocess.run(command, cwd=cwd, env=package_env()).returncode

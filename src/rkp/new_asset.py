@@ -13,9 +13,13 @@ PROJECT = load_project()
 
 DEFAULT_BUDGETS = {
     "gameplay_target": {"maxTriangles": 1500, "maxTextureSize": 1024},
+    "gameplay_actor": {"maxTriangles": 1500, "maxTextureSize": 512},
     "environment": {"maxTriangles": 1200, "maxTextureSize": 1024},
+    "weapon_proxy": {"maxTriangles": 700, "maxTextureSize": 512},
     "prop": {"maxTriangles": 1000, "maxTextureSize": 1024},
     "projectile": {"maxTriangles": 400, "maxTextureSize": 512},
+    "hit_vfx": {"maxTriangles": 300, "maxTextureSize": 512},
+    "ui_prop": {"maxTriangles": 700, "maxTextureSize": 512},
 }
 
 

@@ -32,16 +32,23 @@ ARCHETYPE_KEYWORDS: dict[str, list[str]] = {
     "crate":      ["crate", "box", "container", "pickup", "supply"],
     "projectile": ["projectile", "bullet", "orb", "ball", "shot"],
     "target":     ["target", "bullseye", "ring", "board"],
+    "weapon":     ["weapon", "blaster", "barrel", "gun"],
+    "player":     ["player", "avatar", "hero", "actor"],
+    "arena":      ["arena", "floor", "lane", "track", "environment"],
 }
 
-_ARCHETYPE_PRIORITY = ["drone", "tower", "crate", "projectile", "target"]
+_ARCHETYPE_PRIORITY = ["drone", "tower", "crate", "projectile", "target", "weapon", "player", "arena"]
 
 
-def infer_palette(prompt: str) -> tuple[str, tuple[float, ...], tuple[float, ...]]:
+def infer_palette(prompt: str, archetype: str | None = None) -> tuple[str, tuple[float, ...], tuple[float, ...]]:
     lower = prompt.lower()
     for name, colors in PALETTES.items():
         if name in lower:
             return name, colors[0], colors[1]
+    if archetype in {"player", "projectile"}:
+        return "blue", PALETTES["blue"][0], PALETTES["blue"][1]
+    if archetype in {"weapon", "arena"}:
+        return "gray", PALETTES["gray"][0], PALETTES["gray"][1]
     return "red", PALETTES["red"][0], PALETTES["red"][1]
 
 
@@ -67,7 +74,7 @@ def geometry_label(archetype: str | None, asset_type: str) -> str:
 
 
 def blender_template(asset_id: str, asset_type: str, prompt: str, archetype: str | None) -> str:
-    palette_name, primary, secondary = infer_palette(prompt)
+    palette_name, primary, secondary = infer_palette(prompt, archetype)
     prompt_json = json.dumps(prompt)
     primary_json = json.dumps(primary)
     secondary_json = json.dumps(secondary)
@@ -126,11 +133,17 @@ def make_texture():
             radius = math.sqrt(dx * dx + dy * dy)
 
             if ARCHETYPE == "target" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_target"):
-                ring = int(radius * 18)
-                color = PRIMARY if ring % 2 == 0 else SECONDARY
-                if radius < 0.08:
+                if radius < 0.07:
                     color = (1.0, 1.0, 1.0, 1.0)
-                elif radius > 0.48:
+                elif radius < 0.16:
+                    color = PRIMARY
+                elif radius < 0.28:
+                    color = SECONDARY
+                elif radius < 0.39:
+                    color = PRIMARY
+                elif radius < 0.47:
+                    color = SECONDARY
+                else:
                     color = (0.04, 0.04, 0.04, 1.0)
             elif ARCHETYPE == "drone":
                 sector = int((math.atan2(dy, dx) / (2 * math.pi) + 0.5) * 8)
@@ -141,12 +154,20 @@ def make_texture():
             elif ARCHETYPE == "crate":
                 in_seam = (x % 128) < 4 or (y % 128) < 4
                 color = (0.06, 0.06, 0.06, 1.0) if in_seam else PRIMARY
+            elif ARCHETYPE == "player" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_actor"):
+                helmet = radius < 0.18
+                stripe = abs(u - 0.5) < 0.045 or (0.16 < v < 0.24)
+                color = SECONDARY if helmet or stripe else PRIMARY
+            elif ARCHETYPE == "weapon" or ASSET_TYPE == "weapon_proxy":
+                sight = abs(u - 0.5) < 0.045 or abs(v - 0.5) < 0.055
+                color = SECONDARY if sight else (0.12, 0.14, 0.15, 1.0)
             elif ARCHETYPE == "projectile" or (ARCHETYPE is None and ASSET_TYPE == "projectile"):
-                color = PRIMARY
-            elif ASSET_TYPE == "environment":
+                color = SECONDARY if radius < 0.18 else PRIMARY if radius < 0.42 else (0.04, 0.10, 0.16, 1.0)
+            elif ARCHETYPE == "arena" or ASSET_TYPE == "environment":
                 grid = x % 64 < 3 or y % 64 < 3
-                axis = abs(x - 256) < 3 or abs(y - 256) < 3
-                color = PRIMARY if axis else ((0.20, 0.24, 0.25, 1.0) if grid else SECONDARY)
+                lane = abs(x - 170) < 4 or abs(x - 341) < 4
+                center = abs(x - 256) < 5 or abs(y - 256) < 5
+                color = SECONDARY if center or lane else ((0.16, 0.19, 0.20, 1.0) if grid else (0.08, 0.10, 0.11, 1.0))
             else:
                 stripe = (x // 48 + y // 48) % 2 == 0
                 color = PRIMARY if stripe else SECONDARY
@@ -190,6 +211,57 @@ def make_quad_mesh(width, height, vertical=True):
     uv_layer = mesh.uv_layers.new(name="st")
     for loop_index, uv in enumerate(((0, 0), (1, 0), (1, 1), (0, 1))):
         uv_layer.data[loop_index].uv = uv
+    return mesh
+
+
+def make_bullseye_target_mesh(radius=0.34, depth=0.035, segments=72):
+    vertices = []
+    faces = []
+    face_uvs = []
+    front_z = depth / 2
+    back_z = -depth / 2
+
+    front_center = len(vertices)
+    vertices.append((0, 0, front_z))
+    front_ring_start = len(vertices)
+    for index in range(segments):
+        angle = 2 * math.pi * index / segments
+        vertices.append((math.cos(angle) * radius, math.sin(angle) * radius, front_z))
+
+    back_center = len(vertices)
+    vertices.append((0, 0, back_z))
+    back_ring_start = len(vertices)
+    for index in range(segments):
+        angle = 2 * math.pi * index / segments
+        vertices.append((math.cos(angle) * radius, math.sin(angle) * radius, back_z))
+
+    def radial_uv(index):
+        angle = 2 * math.pi * index / segments
+        return (0.5 + math.cos(angle) * 0.5, 0.5 + math.sin(angle) * 0.5)
+
+    for index in range(segments):
+        next_index = (index + 1) % segments
+        front_a = front_ring_start + index
+        front_b = front_ring_start + next_index
+        back_a = back_ring_start + index
+        back_b = back_ring_start + next_index
+        uv_a = radial_uv(index)
+        uv_b = radial_uv(next_index)
+
+        faces.append((front_center, front_a, front_b))
+        face_uvs.append(((0.5, 0.5), uv_a, uv_b))
+        faces.append((back_center, back_b, back_a))
+        face_uvs.append(((0.5, 0.5), uv_b, uv_a))
+        faces.append((front_a, back_a, back_b, front_b))
+        face_uvs.append((uv_a, uv_a, uv_b, uv_b))
+
+    mesh = bpy.data.meshes.new(f"{{ASSET_ID}}_bullseye_mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    uv_layer = mesh.uv_layers.new(name="st")
+    for polygon, polygon_uvs in zip(mesh.polygons, face_uvs):
+        for loop_index, uv in zip(polygon.loop_indices, polygon_uvs):
+            uv_layer.data[loop_index].uv = uv
     return mesh
 
 
@@ -251,6 +323,70 @@ def make_crate_parts():
     return [obj]
 
 
+def make_player_parts():
+    parts = []
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.09, depth=0.30, location=(0, 0, 0.20))
+    parts.append(bpy.context.active_object)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.085, location=(0, 0, 0.40))
+    parts.append(bpy.context.active_object)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, -0.055, 0.24))
+    marker = bpy.context.active_object
+    marker.scale = (0.055, 0.018, 0.11)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(marker)
+    return parts
+
+
+def make_weapon_parts():
+    parts = []
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.035, depth=0.34, location=(0, 0, 0))
+    barrel = bpy.context.active_object
+    parts.append(barrel)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, -0.055, -0.08))
+    grip = bpy.context.active_object
+    grip.scale = (0.04, 0.035, 0.10)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(grip)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0.0, 0.12))
+    sight = bpy.context.active_object
+    sight.scale = (0.05, 0.018, 0.018)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(sight)
+    return parts
+
+
+def make_projectile_parts():
+    parts = []
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.07, location=(0, 0, 0.05))
+    parts.append(bpy.context.active_object)
+    bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=0.045, radius2=0.0, depth=0.13, location=(0, 0, -0.04))
+    trail = bpy.context.active_object
+    trail.rotation_euler[0] = math.pi
+    parts.append(trail)
+    return parts
+
+
+def make_arena_parts():
+    parts = []
+    mesh = make_quad_mesh(2.4, 2.4, vertical=False)
+    floor = bpy.data.objects.new(f"{{ASSET_ID}}_floor", mesh)
+    bpy.context.collection.objects.link(floor)
+    parts.append(floor)
+    for y in (-1.16, 1.16):
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, y, 0.025))
+        rail = bpy.context.active_object
+        rail.scale = (1.2, 0.025, 0.035)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        parts.append(rail)
+    for x in (-0.40, 0.40):
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(x, 0, 0.018))
+        lane = bpy.context.active_object
+        lane.scale = (0.018, 1.05, 0.018)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        parts.append(lane)
+    return parts
+
+
 def make_asset(material):
     if ARCHETYPE == "drone":
         obj = join_and_uv(make_drone_parts())
@@ -258,15 +394,20 @@ def make_asset(material):
         obj = join_and_uv(make_tower_parts())
     elif ARCHETYPE == "crate":
         obj = join_and_uv(make_crate_parts())
-    elif ARCHETYPE == "projectile" or (ARCHETYPE is None and ASSET_TYPE == "projectile"):
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.06, location=(0, 0, 0.06))
-        obj = join_and_uv([bpy.context.active_object])
-    elif ASSET_TYPE == "environment":
-        mesh = make_quad_mesh(3.2, 3.2, vertical=False)
+    elif ARCHETYPE == "player" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_actor"):
+        obj = join_and_uv(make_player_parts())
+    elif ARCHETYPE == "weapon" or ASSET_TYPE == "weapon_proxy":
+        obj = join_and_uv(make_weapon_parts())
+    elif ARCHETYPE == "target" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_target"):
+        mesh = make_bullseye_target_mesh()
         obj = bpy.data.objects.new(ASSET_ID, mesh)
         bpy.context.collection.objects.link(obj)
         bpy.context.view_layer.objects.active = obj
         obj.select_set(True)
+    elif ARCHETYPE == "projectile" or (ARCHETYPE is None and ASSET_TYPE == "projectile"):
+        obj = join_and_uv(make_projectile_parts())
+    elif ARCHETYPE == "arena" or ASSET_TYPE == "environment":
+        obj = join_and_uv(make_arena_parts())
     else:
         mesh = make_quad_mesh(0.52, 0.52, vertical=True)
         obj = bpy.data.objects.new(ASSET_ID, mesh)

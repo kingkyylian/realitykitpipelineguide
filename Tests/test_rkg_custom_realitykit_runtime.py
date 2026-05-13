@@ -171,7 +171,8 @@ class RkgCustomRealityKitRuntimeTests(unittest.TestCase):
         self.assertIn("static func startShooterSession(sessionSeconds: Int) -> GameSessionState", "\n".join(by_id["shooter"].rule_members))
         self.assertIn("static func startCollectorSession(sessionSeconds: Int) -> GameSessionState", "\n".join(by_id["collector"].rule_members))
         self.assertIn("Button(\"Left\")", by_id["racing"].content_section)
-        self.assertIn("Button(\"Launch\")", by_id["projectile"].content_section)
+        self.assertIn('Image(systemName: "scope")', by_id["projectile"].content_section)
+        self.assertIn('.accessibilityLabel("Launch")', by_id["projectile"].content_section)
         self.assertIn("Button(\"Aim Left\")", by_id["shooter"].content_section)
         self.assertIn("Button(\"Collect\")", by_id["collector"].content_section)
         self.assertIn("vehicleEntity", by_id["racing"].scene_properties)
@@ -213,13 +214,25 @@ class RkgCustomRealityKitRuntimeTests(unittest.TestCase):
         self.assertIn("static func launchProjectile(_ state: GameSessionState) -> GameSessionState", rules)
         self.assertIn("static func fireShooterWeapon(_ state: GameSessionState) -> GameSessionState", rules)
         self.assertIn("static func collectPickup(_ state: GameSessionState) -> GameSessionState", rules)
-        self.assertIn("Button(\"Launch\")", content_sections)
+        self.assertIn('Image(systemName: "scope")', content_sections)
         self.assertIn("Button(\"Aim Left\")", content_sections)
         self.assertIn("Button(\"Left\")", content_sections)
         self.assertIn("Button(\"Collect\")", content_sections)
         self.assertIn("private var projectileEntity: Entity?", scene_controller)
         self.assertIn("private var targetEntity: Entity?", scene_controller)
+        self.assertIn("private var updateSubscription: Cancellable?", scene_controller)
+        self.assertIn("view.scene.subscribe(to: SceneEvents.Update.self)", scene_controller)
+        self.assertIn("WorldRig.updateIdleMotion(anchor: anchor, time: motionTime)", scene_controller)
         self.assertIn("func updateProjectile(state: GameSessionState)", scene_controller)
+        self.assertIn("WorldRig.install(into: view, anchor: anchor)", scene_controller)
+        self.assertIn(
+            "WorldRig.updateProjectileFeedback(anchor: anchor, state: state, style: projectileFeedbackStyle)",
+            scene_controller,
+        )
+        self.assertIn("ProjectileFeedbackStyle", scene_controller)
+        self.assertIn("playerEntity?.position = [0, -0.22, -0.64]", scene_controller)
+        self.assertIn("playerEntity?.scale = state.isFailureProofVisible ? [0.48, 0.48, 0.48] : [0.58, 0.58, 0.58]", scene_controller)
+        self.assertIn("targetEntity?.scale = state.lastProjectileHit ? [1.30, 1.30, 1.30] : [1.18, 1.18, 1.18]", scene_controller)
 
     def test_list_adapters_cli_exposes_capability_matrix(self) -> None:
         result = subprocess.run(

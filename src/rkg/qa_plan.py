@@ -44,6 +44,7 @@ def qa_steps_for(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> list[
                 "sidecar_path": f"Docs/screenshots/{state_name}.json",
                 "scene_snapshot_path": f"Docs/screenshots/{state_name}.scene.json",
                 "automation": _capture_automation(str(spec["game"]["archetype"]), state_name),
+                "semantic_visual_contract": _semantic_visual_contract(str(spec["game"]["archetype"]), state_name),
             }
         )
     return steps
@@ -87,3 +88,21 @@ def _capture_automation(archetype_id: str, state: str) -> str:
     if archetype_id in {"fighter_2_5d", "custom_realitykit"}:
         return f"launch_arg --rkg-screenshot-state {state}"
     return "manual_capture"
+
+
+def _semantic_visual_contract(archetype_id: str, state: str) -> JsonDict:
+    contract: JsonDict = {
+        "top_band_fraction": 0.24,
+        "max_top_light_coverage": 0.34,
+        "light_luma_threshold": 160,
+        "scene_band_top_fraction": 0.24,
+        "scene_band_bottom_fraction": 0.78,
+        "min_scene_luma_span": 18,
+        "min_scene_bright_ratio": 0.015,
+        "scene_bright_luma_threshold": 58,
+    }
+    if state == "results":
+        contract["scene_band_bottom_fraction"] = 0.72
+    if archetype_id == "custom_realitykit":
+        contract["min_scene_luma_span"] = 16
+    return contract

@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from rkg.asset_pipeline import build_asset_pipeline
 from rkg.idea_score import score_game_idea
 from rkg.qa_plan import build_qa_plan
 from rkg.scaffold import init_game
@@ -97,6 +98,7 @@ def start_game_from_idea(payload: Mapping[str, Any], output: Path, *, force: boo
     spec = _spec_from_recommendation(recommendation, payload)
     init_game(spec, output, force=force)
     result["qa_plan"] = build_qa_plan(spec)
+    result["asset_pipeline"] = build_asset_pipeline(spec, output)
     return result
 
 

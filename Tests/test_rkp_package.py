@@ -404,6 +404,37 @@ class RkpPackageTests(unittest.TestCase):
         self.assertFalse(ai_generated)
         self.assertIn('ASSET_ID = "template_target"', script)
         self.assertIn("ARCHETYPE = 'target'", script)
+        self.assertIn("def make_bullseye_target_mesh(radius=0.34, depth=0.035, segments=72):", script)
+        self.assertIn('mesh = bpy.data.meshes.new(f"{ASSET_ID}_bullseye_mesh")', script)
+        self.assertIn("elif ARCHETYPE == \"target\" or (ARCHETYPE is None and ASSET_TYPE == \"gameplay_target\"):", script)
+        self.assertIn("mesh = make_bullseye_target_mesh()", script)
+        self.assertIn('uv_layer = mesh.uv_layers.new(name="st")', script)
+
+    def test_template_generator_supports_generated_game_role_archetypes(self) -> None:
+        from rkp import prompt_asset
+        from rkp.new_asset import DEFAULT_BUDGETS
+
+        self.assertIn("gameplay_actor", DEFAULT_BUDGETS)
+        self.assertIn("weapon_proxy", DEFAULT_BUDGETS)
+        self.assertEqual(prompt_asset.infer_archetype("player role gameplay_actor for Shard Volley"), "player")
+        self.assertEqual(prompt_asset.infer_archetype("weapon role weapon_proxy for Shard Volley"), "weapon")
+        self.assertEqual(prompt_asset.infer_archetype("arena role environment for Shard Volley"), "arena")
+        self.assertEqual(prompt_asset.infer_archetype("projectile role projectile for Shard Volley"), "projectile")
+
+        script = prompt_asset.blender_template(
+            "player_proxy",
+            "gameplay_actor",
+            "player role gameplay_actor for Shard Volley",
+            "player",
+        )
+
+        self.assertIn("def make_player_parts():", script)
+        self.assertIn("def make_weapon_parts():", script)
+        self.assertIn("def make_arena_parts():", script)
+        self.assertIn("def make_projectile_parts():", script)
+        self.assertIn('elif ARCHETYPE == "player" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_actor"):', script)
+        self.assertIn('elif ARCHETYPE == "weapon" or ASSET_TYPE == "weapon_proxy":', script)
+        self.assertIn('elif ARCHETYPE == "arena" or ASSET_TYPE == "environment":', script)
 
     def test_make_asset_meshy_uses_configured_asset_path_and_refine_quality(self) -> None:
         from rkp import cli

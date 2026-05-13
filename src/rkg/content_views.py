@@ -39,82 +39,222 @@ struct ContentView: View {{
         for: ScreenshotState.requested,
         fallback: GameSessionState()
     )
+    @State private var hasStarted = ScreenshotState.requested != nil
 
     private var isPlaying: Bool {{
         SessionControl.isPlaying(state)
     }}
 
+    private var isInterfaceVisible: Bool {{
+        hasStarted || isPlaying || SessionControl.isResult(state)
+    }}
+
+    private var showsStartOverlay: Bool {{
+        !isInterfaceVisible
+    }}
+
     var body: some View {{
-        ZStack(alignment: .top) {{
+        ZStack(alignment: .bottom) {{
             GameView(state: state)
                 .ignoresSafeArea()
 
-            VStack(spacing: 6) {{
-                HStack {{
-                    VStack(alignment: .leading, spacing: 2) {{
-                        Text({title})
-                            .font(.headline)
-                            .lineLimit(1)
-                        Text({subtitle})
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }}
-                    Spacer()
-                    Text("Score \\(state.score)")
-                        .font(.headline.monospacedDigit())
-                        .lineLimit(1)
-                }}
-
-                HStack(spacing: 12) {{
-                    Text(InputController.controlSummary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Text(SystemFlags.summary)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Spacer()
-                }}
-
-                HStack {{
-                    Text({player_action})
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Spacer()
-                    Button(isPlaying ? InputController.primaryActionLabel : InputIntent.startTitle) {{
-                        advanceSkeleton()
-                    }}
-                    .buttonStyle(.borderedProminent)
-                    Button(InputIntent.resetTitle) {{
-                        state = SessionControl.reset()
-                    }}
-                    .buttonStyle(.bordered)
-                }}
-
-{adapter_sections}
-
-                if SessionControl.isResult(state) {{
-                    ResultView(state: state) {{
-                        state = SessionControl.reset()
-                    }}
-                }}
+            if showsStartOverlay {{
+                StartOverlay(
+                    title: {title},
+                    subtitle: {subtitle},
+                    playerAction: {player_action},
+                    onStart: startSession
+                )
             }}
-            .controlSize(.small)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(.thinMaterial)
+
+            if isInterfaceVisible && !SessionControl.isResult(state) {{
+                PrimaryInputLayer(
+                    isPlaying: isPlaying,
+                    playerAction: {player_action},
+                    onPrimary: advanceSkeleton,
+                    onReset: resetSession
+                ) {{
+{adapter_sections}
+                }}
+                .controlSize(.small)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+            }}
+
+            if SessionControl.isResult(state) {{
+                ResultView(state: state, onReset: resetSession)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 28)
+            }}
         }}
+        .safeAreaInset(edge: .top) {{
+            if isInterfaceVisible {{
+                GameHUD(state: state)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
+            }}
+        }}
+        .statusBarHidden(true)
+        .persistentSystemOverlays(.hidden)
     }}
 
     private func advanceSkeleton() {{
         if !isPlaying {{
-            state = GameRules.startCustomRealityKitSession(sessionSeconds: state.sessionSeconds)
+            startSession()
             return
         }}
         state = GameRules.advanceCustomRealityKitSession(state)
+    }}
+
+    private func startSession() {{
+        hasStarted = true
+        state = GameRules.startCustomRealityKitSession(sessionSeconds: state.sessionSeconds)
+    }}
+
+    private func resetSession() {{
+        state = SessionControl.reset()
+        hasStarted = ScreenshotState.requested != nil
+    }}
+}}
+
+private struct GameHUD: View {{
+    let state: GameSessionState
+
+    var body: some View {{
+        HStack(alignment: .top, spacing: 12) {{
+            VStack(alignment: .leading, spacing: 3) {{
+                Text(InputController.controlSummary)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                Text(FeedbackState.message(for: state))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }}
+
+            Spacer(minLength: 10)
+
+            VStack(alignment: .trailing, spacing: 3) {{
+                Text("Score \\(state.score)")
+                    .font(.headline.monospacedDigit())
+                    .lineLimit(1)
+                Text(SystemFlags.summary)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }}
+        }}
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.45), radius: 8, y: 2)
+    }}
+}}
+
+private struct StartOverlay: View {{
+    let title: String
+    let subtitle: String
+    let playerAction: String
+    let onStart: () -> Void
+
+    var body: some View {{
+        VStack(alignment: .leading, spacing: 16) {{
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 5) {{
+                Text(title)
+                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+                Text(subtitle)
+                    .font(.subheadline.monospaced())
+                    .foregroundStyle(.white.opacity(0.68))
+                    .lineLimit(1)
+                Text(playerAction)
+                    .font(.callout)
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }}
+
+            Button(action: onStart) {{
+                HStack(spacing: 8) {{
+                    Image(systemName: "play.fill")
+                    Text(InputIntent.startTitle)
+                }}
+                .font(.headline)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+            }}
+            .buttonStyle(.borderedProminent)
+            .tint(.white)
+            .foregroundStyle(.black)
+
+            Spacer()
+                .frame(maxHeight: 160)
+        }}
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 24)
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.55), radius: 12, y: 4)
+    }}
+}}
+
+private struct PrimaryInputLayer<AdapterControls: View>: View {{
+    let isPlaying: Bool
+    let playerAction: String
+    let onPrimary: () -> Void
+    let onReset: () -> Void
+    let adapterControls: AdapterControls
+
+    init(
+        isPlaying: Bool,
+        playerAction: String,
+        onPrimary: @escaping () -> Void,
+        onReset: @escaping () -> Void,
+        @ViewBuilder adapterControls: () -> AdapterControls
+    ) {{
+        self.isPlaying = isPlaying
+        self.playerAction = playerAction
+        self.onPrimary = onPrimary
+        self.onReset = onReset
+        self.adapterControls = adapterControls()
+    }}
+
+    var body: some View {{
+        VStack(alignment: .leading, spacing: 10) {{
+            HStack(spacing: 10) {{
+                Image(systemName: "scope")
+                    .imageScale(.medium)
+                    .foregroundStyle(.white.opacity(0.82))
+                Text(playerAction)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.72))
+                    .lineLimit(2)
+                Spacer(minLength: 8)
+                Button(action: onPrimary) {{
+                    HStack(spacing: 6) {{
+                        Image(systemName: "bolt.fill")
+                        Text(isPlaying ? InputController.primaryActionLabel : InputIntent.startTitle)
+                    }}
+                }}
+                .buttonStyle(.borderedProminent)
+                Button(action: onReset) {{
+                    Image(systemName: "arrow.counterclockwise")
+                }}
+                .buttonStyle(.bordered)
+                .accessibilityLabel(InputIntent.resetTitle)
+            }}
+
+            adapterControls.foregroundStyle(.white)
+        }}
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.black.opacity(0.58))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }}
 }}
 """

@@ -425,6 +425,65 @@ def Mesh "Mesh"
             worklog = (root / "Docs" / "WORKLOG.md").read_text(encoding="utf-8")
             self.assertIn("portable_accept", worklog)
 
+    def test_accept_asset_updates_rkg_generated_asset_brief_checklist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            nested = self.make_external_project(root)
+            self.add_inspectable_usdz_asset(
+                root,
+                "rkg_target",
+                texture_name="rkg_target_basecolor.png",
+                texture_size=(4, 4),
+            )
+            brief_path = root / "Docs" / "assets" / "rkg_target.md"
+            brief_path.parent.mkdir(parents=True, exist_ok=True)
+            brief_path.write_text(
+                """# Asset Brief: rkg_target
+
+## Acceptance Checklist
+
+- [ ] USDZ exported to `Assets/Imported/rkg_target.usdz`.
+- [ ] Manifest entry remains aligned with this role and budget.
+- [ ] `rkp inspect-usdz rkg_target --json` passes.
+- [ ] Runtime screenshot evidence captured before imported status.
+- [ ] `rkp accept-asset rkg_target --screenshot <path>` passes.
+""",
+                encoding="utf-8",
+            )
+            inspect_result = subprocess.run(
+                [sys.executable, str(ROOT / "Tools" / "rkp.py"), "inspect-usdz", "rkg_target", "--json"],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(inspect_result.returncode, 0, inspect_result.stderr)
+            screenshot = root / "Docs" / "screenshots" / "rkg_target_imported.jpg"
+            screenshot.parent.mkdir(parents=True)
+            screenshot.write_bytes(b"\xff\xd8portable screenshot evidence\xff\xd9")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "Tools" / "rkp.py"),
+                    "accept-asset",
+                    "rkg_target",
+                    "--screenshot",
+                    "Docs/screenshots/rkg_target_imported.jpg",
+                ],
+                cwd=nested,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            brief = brief_path.read_text(encoding="utf-8")
+            self.assertIn("- [x] USDZ exported to `Assets/Imported/rkg_target.usdz`.", brief)
+            self.assertIn("- [x] Manifest entry remains aligned with this role and budget.", brief)
+            self.assertIn("- [x] `rkp inspect-usdz rkg_target --json` passes.", brief)
+            self.assertIn("- [x] Runtime screenshot evidence captured before imported status.", brief)
+            self.assertIn("- [x] `rkp accept-asset rkg_target --screenshot <path>` passes.", brief)
+            self.assertIn("![Accepted rkg_target](../screenshots/rkg_target_imported.jpg)", brief)
+
     def test_accept_asset_copies_external_absolute_screenshot(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -6,6 +6,12 @@ import sys
 from pathlib import Path
 
 from rkg.archetypes import describe_archetype, list_archetypes
+from rkg.asset_acceptance import (
+    build_asset_acceptance_plan,
+    build_first_asset_acceptance_plan,
+    execute_asset_acceptance_plan,
+    execute_first_asset_acceptance_plan,
+)
 from rkg.capture import build_capture_plan, execute_capture_plan
 from rkg.custom_realitykit_runtime import custom_realitykit_adapter_capabilities
 from rkg.idea_score import load_idea, score_game_idea
@@ -85,6 +91,28 @@ def main() -> int:
     capture.add_argument("--device", default="booted", help="Simulator UDID or 'booted'")
     capture.add_argument("--dry-run", action="store_true", help="Print planned commands without running them")
     capture.add_argument("--json", action="store_true", help="Print machine-readable capture plan")
+
+    accept_first_asset = subparsers.add_parser(
+        "accept-first-asset",
+        help="Build, capture, and accept the first gameplay-relevant asset in a generated project",
+    )
+    accept_first_asset.add_argument("project", help="Path to generated game directory")
+    accept_first_asset.add_argument("--asset-id", help="Asset id to accept; defaults to the highest-priority gameplay role")
+    accept_first_asset.add_argument("--device", default="booted", help="Simulator UDID or 'booted'")
+    accept_first_asset.add_argument("--source-state", help="Screenshot state to reuse as acceptance evidence")
+    accept_first_asset.add_argument("--dry-run", action="store_true", help="Print the planned workflow without running it")
+    accept_first_asset.add_argument("--json", action="store_true", help="Print machine-readable workflow plan/result")
+
+    accept_assets = subparsers.add_parser(
+        "accept-assets",
+        help="Build, capture, and accept generated project assets with one screenshot pass",
+    )
+    accept_assets.add_argument("project", help="Path to generated game directory")
+    accept_assets.add_argument("--asset-id", action="append", help="Asset id to accept; repeat to accept a subset")
+    accept_assets.add_argument("--device", default="booted", help="Simulator UDID or 'booted'")
+    accept_assets.add_argument("--source-state", help="Screenshot state to reuse as acceptance evidence for all assets")
+    accept_assets.add_argument("--dry-run", action="store_true", help="Print the planned workflow without running it")
+    accept_assets.add_argument("--json", action="store_true", help="Print machine-readable workflow plan/result")
 
     verify = subparsers.add_parser("verify-game", help="Run verification gates for a generated RKG project")
     verify.add_argument("project", help="Path to generated game directory")
@@ -287,6 +315,8 @@ def main() -> int:
             print(json.dumps(payload, indent=2, sort_keys=True))
         else:
             print(f"capture plan: {payload['project']}")
+            if payload.get("generate"):
+                print("generate: " + " ".join(payload["generate"]))
             print("build: " + " ".join(payload["build"]))
             print("install: " + " ".join(payload["install"]))
             for step in payload["steps"]:
@@ -298,6 +328,65 @@ def main() -> int:
         if args.json:
             print(json.dumps(result, indent=2, sort_keys=True))
         else:
+            for completed in result["completed"]:
+                print(("ok" if completed["exit_code"] == 0 else "fail") + ": " + " ".join(completed["command"]))
+        return 0 if result["ok"] else 1
+
+    if args.command == "accept-first-asset":
+        try:
+            payload = build_first_asset_acceptance_plan(
+                Path(args.project),
+                asset_id=args.asset_id,
+                device=args.device,
+                source_state=args.source_state,
+            )
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.dry_run:
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"asset acceptance plan: {payload['asset_id']} ({payload['role']})")
+                print(f"source: {payload['source_state']} -> {payload['acceptance_screenshot']}")
+                for step in payload["steps"]:
+                    print(f"{step['step']}: {' '.join(step['command'])}")
+            return 0
+        result = execute_first_asset_acceptance_plan(payload)
+        if args.json:
+            print(json.dumps({"plan": payload, "result": result}, indent=2, sort_keys=True))
+        else:
+            print(f"asset acceptance: {payload['asset_id']} ({payload['role']})")
+            for completed in result["completed"]:
+                print(("ok" if completed["exit_code"] == 0 else "fail") + ": " + " ".join(completed["command"]))
+        return 0 if result["ok"] else 1
+
+    if args.command == "accept-assets":
+        try:
+            payload = build_asset_acceptance_plan(
+                Path(args.project),
+                asset_ids=args.asset_id,
+                device=args.device,
+                source_state=args.source_state,
+            )
+        except (OSError, GameSpecError, ValueError, json.JSONDecodeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        if args.dry_run:
+            if args.json:
+                print(json.dumps(payload, indent=2, sort_keys=True))
+            else:
+                print(f"asset acceptance plan: {len(payload['assets'])} asset(s)")
+                for asset in payload["assets"]:
+                    print(f"- {asset['asset_id']} ({asset['role']}): {asset['source_state']} -> {asset['acceptance_screenshot']}")
+                for step in payload["steps"]:
+                    print(f"{step['step']}: {' '.join(step['command'])}")
+            return 0
+        result = execute_asset_acceptance_plan(payload)
+        if args.json:
+            print(json.dumps({"plan": payload, "result": result}, indent=2, sort_keys=True))
+        else:
+            print(f"asset acceptance: {len(payload['assets'])} asset(s)")
             for completed in result["completed"]:
                 print(("ok" if completed["exit_code"] == 0 else "fail") + ": " + " ".join(completed["command"]))
         return 0 if result["ok"] else 1

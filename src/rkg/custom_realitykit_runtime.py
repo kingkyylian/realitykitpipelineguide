@@ -118,21 +118,29 @@ def custom_realitykit_game_scene_controller_swift(spec: Mapping[str, Any]) -> st
         for adapter in adapters
     )
     adapter_methods = "\n\n".join(adapter.scene_methods for adapter in adapters)
-    return f"""import RealityKit
+    return f"""import Combine
+import RealityKit
 
 final class GameSceneController {{
     private let anchor = AnchorEntity(world: .zero)
 {property_lines}
     private var cameraRigEntity: Entity?
+    private var updateSubscription: Cancellable?
+    private var motionTime: Float = 0
+    private let projectileFeedbackStyle = ProjectileFeedbackStyle.standard
 
     func install(into view: ARView) {{
 {entity_lines}
 
+        WorldRig.install(into: view, anchor: anchor)
         let cameraRig = Entity()
         cameraRig.transform = CameraRig.transform
         cameraRigEntity = cameraRig
         anchor.addChild(cameraRig)
         view.scene.addAnchor(anchor)
+        updateSubscription = view.scene.subscribe(to: SceneEvents.Update.self) {{ [weak self] event in
+            self?.tick(deltaTime: Float(event.deltaTime))
+        }}
         RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
     }}
 
@@ -145,6 +153,12 @@ final class GameSceneController {{
     }}
 
 {adapter_methods}
+
+    private func tick(deltaTime: Float) {{
+        let clampedDelta = min(max(deltaTime, 0.0), Float(1.0 / 15.0))
+        motionTime += clampedDelta
+        WorldRig.updateIdleMotion(anchor: anchor, time: motionTime)
+    }}
 }}
 """
 
@@ -449,23 +463,35 @@ def _projectile_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
                         Spacer()
                     }
 
-                    HStack {
-                        Button("Aim Left") {
+                    HStack(spacing: 10) {
+                        Button {
                             state.projectileLane = GameRules.projectileLaneAfterAim(currentLane: state.projectileLane, direction: -1)
+                        } label: {
+                            Image(systemName: "arrow.left")
                         }
                         .buttonStyle(.bordered)
-                        Button("Aim Right") {
+                        .accessibilityLabel("Aim Left")
+                        Button {
                             state.projectileLane = GameRules.projectileLaneAfterAim(currentLane: state.projectileLane, direction: 1)
+                        } label: {
+                            Image(systemName: "arrow.right")
                         }
                         .buttonStyle(.bordered)
-                        Button("Charge") {
+                        .accessibilityLabel("Aim Right")
+                        Button {
                             state = GameRules.chargeProjectile(state)
+                        } label: {
+                            Image(systemName: "bolt.fill")
                         }
                         .buttonStyle(.bordered)
-                        Button("Launch") {
+                        .accessibilityLabel("Charge")
+                        Button {
                             state = GameRules.launchProjectile(state)
+                        } label: {
+                            Image(systemName: "scope")
                         }
                         .buttonStyle(.borderedProminent)
+                        .accessibilityLabel("Launch")
                         Spacer()
                     }
                 }
@@ -479,29 +505,29 @@ def _projectile_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
             ("targetEntity", frozenset({"target"})),
         ),
         system_flags_condition="SystemFlags.hasProjectile || SystemFlags.hasShooting",
-        scene_update_call="updateProjectile(state: state)",
+        scene_update_call="updateProjectile(state: state)\n            WorldRig.updateProjectileFeedback(anchor: anchor, state: state, style: projectileFeedbackStyle)",
         start_session_call="startProjectileSession(sessionSeconds: sessionSeconds)",
         advance_session_call="advanceProjectileFrame(state)",
         screenshot_session_call="projectileScreenshotSession(for: screenshotState, fallback: fallback)",
         scene_methods="""    func updateProjectile(state: GameSessionState) {
-        playerEntity?.position = [0, 0, -0.78]
-        playerEntity?.scale = state.isFailureProofVisible ? [0.92, 0.92, 0.92] : [1, 1, 1]
+        playerEntity?.position = [0, -0.22, -0.64]
+        playerEntity?.scale = state.isFailureProofVisible ? [0.48, 0.48, 0.48] : [0.58, 0.58, 0.58]
 
         arenaEntity?.position.z = -Float(state.projectileShots % 4) * 0.03
 
         weaponEntity?.isEnabled = SystemFlags.hasShooting
-        weaponEntity?.position = [xPosition(forProjectileLane: state.projectileLane) * 0.35, 0.12, -0.70]
-        weaponEntity?.scale = [1, 1, 1 + Float(state.projectileCharge - 1) * 0.10]
+        weaponEntity?.position = [xPosition(forProjectileLane: state.projectileLane) * 0.35, -0.08, -0.66]
+        weaponEntity?.scale = [0.70, 0.70, 0.80 + Float(state.projectileCharge - 1) * 0.10]
 
         projectileEntity?.isEnabled = SystemFlags.hasProjectile
         projectileEntity?.position = projectilePosition(state: state)
-        projectileEntity?.scale = state.lastProjectileHit ? [1.22, 1.22, 1.22] : [1, 1, 1]
+        projectileEntity?.scale = state.lastProjectileHit ? [0.92, 0.92, 0.92] : [0.72, 0.72, 0.72]
 
         targetEntity?.isEnabled = SystemFlags.hasProjectile || SystemFlags.hasShooting
         targetEntity?.position.x = xPosition(forProjectileLane: state.targetLane)
-        targetEntity?.position.y = state.lastProjectileHit ? 0.16 : 0.08
-        targetEntity?.position.z = -1.38
-        targetEntity?.scale = state.lastProjectileHit ? [1.16, 1.16, 1.16] : [1, 1, 1]
+        targetEntity?.position.y = state.lastProjectileHit ? 0.22 : 0.16
+        targetEntity?.position.z = -1.34
+        targetEntity?.scale = state.lastProjectileHit ? [1.30, 1.30, 1.30] : [1.18, 1.18, 1.18]
 
         cameraRigEntity?.transform = CameraRig.transform
         anchor.position.z = 0
@@ -512,9 +538,9 @@ def _projectile_runtime_adapter() -> CustomRealityKitRuntimeAdapter:
         let x = xPosition(forProjectileLane: state.projectileLane)
         if state.projectileInFlight {
             let travel = Float(min(state.projectileTravel, GameRules.projectileTravelFrames))
-            return [x, 0.18 + Float(state.projectileCharge) * 0.03, -0.70 - travel * 0.22]
+            return [x, 0.04 + Float(state.projectileCharge) * 0.03, -0.72 - travel * 0.22]
         }
-        return [x, 0.16, -0.70]
+        return [x, 0.02, -0.72]
     }
 
     private func xPosition(forProjectileLane lane: Int) -> Float {

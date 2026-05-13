@@ -48,6 +48,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "CameraRig.swift", camera_rig_swift(spec))
     _write_text(output / "Sources" / swift_name / "InputController.swift", input_controller_swift(spec))
     _write_text(output / "Sources" / swift_name / "SystemFlags.swift", system_flags_swift(spec))
+    _write_text(output / "Sources" / swift_name / "WorldRig.swift", _world_rig_swift())
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
@@ -385,6 +386,11 @@ import UIKit
 enum FallbackFactory {
     static func makeFallback(role: String, fallback: String) -> ModelEntity {
         switch fallback {
+        case "procedural_capsule":
+            return ModelEntity(
+                mesh: .generateBox(size: [0.24, 0.24, 0.20]),
+                materials: [SimpleMaterial(color: UIColor(red: 0.24, green: 0.46, blue: 0.52, alpha: 1.0), roughness: 0.48, isMetallic: false)]
+            )
         case "procedural_vehicle":
             return ModelEntity(
                 mesh: .generateBox(size: [0.30, 0.14, 0.46]),
@@ -503,6 +509,183 @@ enum FallbackFactory {
                 materials: [SimpleMaterial(color: .systemRed, roughness: 0.35, isMetallic: false)]
             )
         }
+    }
+}
+"""
+
+
+def _world_rig_swift() -> str:
+    return """import Foundation
+import RealityKit
+import UIKit
+
+struct ProjectileFeedbackStyle {
+    static let standard = ProjectileFeedbackStyle()
+
+    let idleTargetColor = UIColor(red: 0.22, green: 0.30, blue: 0.34, alpha: 1.0)
+    let hitTargetColor = UIColor(red: 0.95, green: 0.78, blue: 0.34, alpha: 1.0)
+    let trailColor = UIColor(red: 0.34, green: 0.68, blue: 0.92, alpha: 1.0)
+}
+
+enum WorldRig {
+    private static let rootName = "rkg|world=root"
+    private static let targetFrameName = "rkg|world=target_frame"
+    private static let hitPulseName = "rkg|world=hit_pulse"
+    private static let projectileTrailName = "rkg|world=projectile_trail"
+
+    static func install(into view: ARView, anchor: AnchorEntity) {
+        view.environment.background = .color(.init(red: 0.055, green: 0.065, blue: 0.075, alpha: 1.0))
+        guard anchor.findEntity(named: rootName) == nil else {
+            return
+        }
+
+        let root = Entity()
+        root.name = rootName
+        anchor.addChild(root)
+
+        addLighting(to: root)
+        addBackdrop(to: root)
+        addArena(to: root)
+        addTargetFrame(to: root)
+        addProjectileFeedback(to: root)
+    }
+
+    static func updateProjectileFeedback(anchor: AnchorEntity, state: GameSessionState, style: ProjectileFeedbackStyle) {
+        let targetX = Float(GameRules.clampedProjectileLane(state.targetLane) - 1) * 0.45
+        if let targetFrame = anchor.findEntity(named: targetFrameName) as? ModelEntity {
+            targetFrame.position.x = targetX
+            let color = state.lastProjectileHit ? style.hitTargetColor : style.idleTargetColor
+            targetFrame.model?.materials = [SimpleMaterial(color: color, roughness: 0.42, isMetallic: false)]
+        }
+
+        if let hitPulse = anchor.findEntity(named: hitPulseName) {
+            hitPulse.isEnabled = state.lastProjectileHit
+            hitPulse.position = [targetX, 0.16, -1.31]
+            let scale = state.lastProjectileHit ? Float(1.0 + Double(state.projectileHits) * 0.08) : 0.2
+            hitPulse.scale = [scale, scale, scale]
+        }
+
+        if let trail = anchor.findEntity(named: projectileTrailName) as? ModelEntity {
+            trail.isEnabled = state.projectileInFlight || state.lastProjectileHit
+            trail.position = [
+                Float(GameRules.clampedProjectileLane(state.projectileLane) - 1) * 0.45,
+                0.13,
+                -1.01
+            ]
+            trail.scale = [0.55, 1.0, state.projectileInFlight ? 1.45 : 0.65]
+            trail.model?.materials = [SimpleMaterial(color: style.trailColor, roughness: 0.30, isMetallic: false)]
+        }
+    }
+
+    static func updateIdleMotion(anchor: AnchorEntity, time: Float) {
+        guard let root = anchor.findEntity(named: rootName) else {
+            return
+        }
+        root.position.x = wave(time * 0.8) * 0.012
+
+        if let targetFrame = anchor.findEntity(named: targetFrameName) {
+            targetFrame.position.y = 0.08 + wave(time * 1.6) * 0.015
+        }
+
+        for index in 0..<3 {
+            let laneName = "rkg|world=lane_\\(index)"
+            guard let lane = anchor.findEntity(named: laneName) else {
+                continue
+            }
+            var scale = lane.scale
+            scale.z = 1.0 + wave(time * 1.2 + Float(index)) * 0.035
+            lane.scale = scale
+        }
+    }
+
+    private static func wave(_ value: Float) -> Float {
+        Float(sin(Double(value)))
+    }
+
+    private static func addLighting(to root: Entity) {
+        let keyLight = DirectionalLight()
+        keyLight.name = "rkg|world=key_light"
+        keyLight.light.intensity = 2800
+        keyLight.orientation = simd_quatf(angle: -.pi / 4.0, axis: [1, 0, 0])
+        root.addChild(keyLight)
+
+        let rimLight = PointLight()
+        rimLight.name = "rkg|world=rim_light"
+        rimLight.light.intensity = 3600
+        rimLight.position = [0.72, 0.84, -0.88]
+        root.addChild(rimLight)
+    }
+
+    private static func addBackdrop(to root: Entity) {
+        let backdropMaterial = SimpleMaterial(
+            color: UIColor(red: 0.08, green: 0.10, blue: 0.115, alpha: 1.0),
+            roughness: 0.88,
+            isMetallic: false
+        )
+        let backdrop = ModelEntity(mesh: .generateBox(size: [3.4, 1.32, 0.06]), materials: [backdropMaterial])
+        backdrop.name = "rkg|world=backdrop"
+        backdrop.position = [0, 0.16, -2.36]
+        root.addChild(backdrop)
+    }
+
+    private static func addArena(to root: Entity) {
+        let floorMaterial = SimpleMaterial(
+            color: UIColor(red: 0.14, green: 0.17, blue: 0.18, alpha: 1.0),
+            roughness: 0.90,
+            isMetallic: false
+        )
+        let floor = ModelEntity(mesh: .generateBox(size: [2.8, 0.04, 2.10]), materials: [floorMaterial])
+        floor.name = "rkg|world=floor"
+        floor.position = [0, -0.44, -1.18]
+        root.addChild(floor)
+
+        let laneMaterial = SimpleMaterial(
+            color: UIColor(red: 0.26, green: 0.35, blue: 0.37, alpha: 1.0),
+            roughness: 0.72,
+            isMetallic: false
+        )
+        for index in 0..<3 {
+            let lane = ModelEntity(mesh: .generateBox(size: [0.022, 0.014, 1.55]), materials: [laneMaterial])
+            lane.name = "rkg|world=lane_\\(index)"
+            lane.position = [Float(index - 1) * 0.45, -0.39, -1.02]
+            root.addChild(lane)
+        }
+    }
+
+    private static func addTargetFrame(to root: Entity) {
+        let material = SimpleMaterial(
+            color: UIColor(red: 0.22, green: 0.30, blue: 0.34, alpha: 1.0),
+            roughness: 0.42,
+            isMetallic: false
+        )
+        let targetFrame = ModelEntity(mesh: .generateBox(size: [0.52, 0.44, 0.035]), materials: [material])
+        targetFrame.name = targetFrameName
+        targetFrame.position = [0, 0.08, -1.44]
+        root.addChild(targetFrame)
+    }
+
+    private static func addProjectileFeedback(to root: Entity) {
+        let pulseMaterial = SimpleMaterial(
+            color: UIColor(red: 0.95, green: 0.78, blue: 0.34, alpha: 1.0),
+            roughness: 0.28,
+            isMetallic: false
+        )
+        let hitPulse = ModelEntity(mesh: .generateSphere(radius: 0.12), materials: [pulseMaterial])
+        hitPulse.name = hitPulseName
+        hitPulse.position = [0, 0.16, -1.31]
+        hitPulse.isEnabled = false
+        root.addChild(hitPulse)
+
+        let trailMaterial = SimpleMaterial(
+            color: UIColor(red: 0.34, green: 0.68, blue: 0.92, alpha: 1.0),
+            roughness: 0.30,
+            isMetallic: false
+        )
+        let trail = ModelEntity(mesh: .generateBox(size: [0.08, 0.03, 0.42]), materials: [trailMaterial])
+        trail.name = projectileTrailName
+        trail.position = [0, 0.13, -1.01]
+        trail.isEnabled = false
+        root.addChild(trail)
     }
 }
 """
@@ -948,12 +1131,21 @@ struct ResultView: View {
     let onReset: () -> Void
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Text("Score \\(state.score)")
-                .font(.title2.monospacedDigit())
+                .font(.system(size: 40, weight: .bold, design: .rounded).monospacedDigit())
             Button(InputIntent.resetTitle, action: onReset)
                 .buttonStyle(.borderedProminent)
         }
+        .frame(maxWidth: .infinity)
+        .padding(18)
+        .foregroundStyle(.white)
+        .background(Color.black.opacity(0.62))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 """

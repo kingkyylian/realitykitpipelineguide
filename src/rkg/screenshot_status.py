@@ -15,6 +15,7 @@ from rkg.spec import load_game_spec
 
 JsonDict = dict[str, Any]
 RgbSamples = list[tuple[int, int, int]]
+RgbGridSamples = list[tuple[int, int, int, int, int]]
 
 
 def load_qa_plan(path: Path) -> JsonDict:
@@ -65,6 +66,8 @@ def _check_step(project: Path, qa_plan: Mapping[str, Any], step: Mapping[str, An
     status, size, visual_fingerprint = _image_file_status(path)
     if status == "ok":
         status = _sidecar_status(project, qa_plan, step, path)
+    if status == "ok":
+        status = _semantic_visual_status(path, step)
     return {
         "order": int(step.get("order", 0)),
         "state": str(step.get("state", "")),
@@ -147,6 +150,94 @@ def _scene_snapshot_status(
     if not expected_roles.issubset(actual_roles):
         return "scene_role_mismatch"
     return "ok"
+
+
+def _semantic_visual_status(path: Path, step: Mapping[str, Any]) -> str:
+    contract = step.get("semantic_visual_contract")
+    if not isinstance(contract, Mapping):
+        return "ok"
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return "invalid_image"
+    grid, decode_failed = _image_rgb_sample_grid(data)
+    if decode_failed:
+        return "invalid_image"
+    if grid is None:
+        return "ok"
+    width, height, samples = grid
+    return _semantic_visual_grid_status(width, height, samples, contract) or "ok"
+
+
+def _semantic_visual_grid_status(
+    width: int,
+    height: int,
+    samples: RgbGridSamples,
+    contract: Mapping[str, Any],
+) -> str | None:
+    if width <= 0 or height <= 0 or not samples:
+        return None
+
+    top_fraction = _contract_float(contract, "top_band_fraction", 0.24)
+    max_top_light_coverage = _contract_float(contract, "max_top_light_coverage", 0.34)
+    light_luma_threshold = _contract_float(contract, "light_luma_threshold", 112.0)
+    top_samples = _samples_between_y_fractions(samples, height, 0.0, top_fraction)
+    if top_samples:
+        light_coverage = _luma_coverage(top_samples, light_luma_threshold)
+        if light_coverage > max_top_light_coverage:
+            return "semantic_debug_overlay"
+
+    scene_top = _contract_float(contract, "scene_band_top_fraction", 0.24)
+    scene_bottom = _contract_float(contract, "scene_band_bottom_fraction", 0.78)
+    scene_samples = _samples_between_y_fractions(samples, height, scene_top, scene_bottom)
+    if not scene_samples:
+        return None
+
+    min_scene_luma_span = _contract_float(contract, "min_scene_luma_span", 18.0)
+    if _luma_span(scene_samples) < min_scene_luma_span:
+        return "semantic_flat_scene"
+
+    min_scene_bright_ratio = _contract_float(contract, "min_scene_bright_ratio", 0.015)
+    scene_bright_luma_threshold = _contract_float(contract, "scene_bright_luma_threshold", 58.0)
+    if _luma_coverage(scene_samples, scene_bright_luma_threshold) < min_scene_bright_ratio:
+        return "semantic_scene_too_dark"
+    return None
+
+
+def _contract_float(contract: Mapping[str, Any], key: str, default: float) -> float:
+    value = contract.get(key)
+    if isinstance(value, (int, float)):
+        return float(value)
+    return default
+
+
+def _samples_between_y_fractions(
+    samples: RgbGridSamples,
+    height: int,
+    start_fraction: float,
+    end_fraction: float,
+) -> RgbGridSamples:
+    start_y = max(0.0, min(1.0, start_fraction)) * float(height)
+    end_y = max(start_y, min(1.0, end_fraction) * float(height))
+    return [sample for sample in samples if start_y <= float(sample[1]) < end_y]
+
+
+def _luma_coverage(samples: RgbGridSamples, threshold: float) -> float:
+    if not samples:
+        return 0.0
+    light_count = sum(1 for sample in samples if _sample_luma(sample) >= threshold)
+    return light_count / len(samples)
+
+
+def _luma_span(samples: RgbGridSamples) -> float:
+    if not samples:
+        return 0.0
+    lumas = [_sample_luma(sample) for sample in samples]
+    return max(lumas) - min(lumas)
+
+
+def _sample_luma(sample: tuple[int, int, int, int, int]) -> float:
+    return 0.2126 * sample[2] + 0.7152 * sample[3] + 0.0722 * sample[4]
 
 
 def _mark_duplicate_visual_evidence(checks: list[JsonDict]) -> None:
@@ -233,6 +324,15 @@ def _image_rgb_samples(data: bytes) -> tuple[RgbSamples | None, bool]:
     return None, False
 
 
+def _image_rgb_sample_grid(data: bytes) -> tuple[tuple[int, int, RgbGridSamples] | None, bool]:
+    grid = _png_rgb_sample_grid(data)
+    if grid is not None:
+        return grid, False
+    if data.startswith(b"\xff\xd8"):
+        return _jpeg_rgb_sample_grid(data)
+    return None, False
+
+
 def _rgb_sample_span(samples: RgbSamples) -> int:
     red = [sample[0] for sample in samples]
     green = [sample[1] for sample in samples]
@@ -276,7 +376,40 @@ def _jpeg_rgb_samples(data: bytes) -> tuple[RgbSamples | None, bool]:
         return samples, False
 
 
+def _jpeg_rgb_sample_grid(data: bytes) -> tuple[tuple[int, int, RgbGridSamples] | None, bool]:
+    decoder = shutil.which("sips")
+    if decoder is None:
+        return None, False
+    with tempfile.TemporaryDirectory(prefix="rkg-screenshot-") as tmp:
+        input_path = Path(tmp) / "capture.jpg"
+        output_path = Path(tmp) / "capture.png"
+        input_path.write_bytes(data)
+        try:
+            result = subprocess.run(
+                [decoder, "-s", "format", "png", str(input_path), "--out", str(output_path)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None, True
+        if result.returncode != 0 or not output_path.exists():
+            return None, True
+        grid = _png_rgb_sample_grid(output_path.read_bytes())
+        if grid is None:
+            return None, True
+        return grid, False
+
+
 def _png_rgb_samples(data: bytes) -> RgbSamples | None:
+    grid = _png_rgb_sample_grid(data)
+    if grid is None:
+        return None
+    _, _, samples = grid
+    return [(red, green, blue) for _, _, red, green, blue in samples]
+
+
+def _png_rgb_sample_grid(data: bytes) -> tuple[int, int, RgbGridSamples] | None:
     if not data.startswith(b"\x89PNG\r\n\x1a\n"):
         return None
     if len(data) < 33:
@@ -325,13 +458,13 @@ def _png_rgb_samples(data: bytes) -> RgbSamples | None:
 
     row_step = max(1, height // 128)
     column_step = max(1, width // 128)
-    samples: list[tuple[int, int, int]] = []
+    samples: RgbGridSamples = []
     for y in range(0, height, row_step):
         row = rows[y]
         for x in range(0, width, column_step):
             offset = x * bytes_per_pixel
-            samples.append((row[offset], row[offset + 1], row[offset + 2]))
-    return samples
+            samples.append((x, y, row[offset], row[offset + 1], row[offset + 2]))
+    return width, height, samples
 
 
 def _png_unfiltered_scanlines(raw: bytes, width: int, height: int, bytes_per_pixel: int) -> list[bytes] | None:

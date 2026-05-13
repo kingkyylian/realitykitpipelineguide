@@ -163,7 +163,7 @@ Create a prompt-backed procedural Blender draft:
 rkp prompt-asset enemy_drone --type gameplay_target --prompt "red bullseye drone target"
 ```
 
-`prompt-asset` is scaffold-first, not open-ended text-to-3D. The prompt is recorded in the manifest and brief, and it can select one of the built-in procedural archetypes: `drone`, `tower`, `crate`, `projectile`, or `target`. Unknown shapes use the asset type's default geometry template and require editing `Tools/blender/create_<asset_id>.py`.
+`prompt-asset` is scaffold-first, not open-ended text-to-3D. The prompt is recorded in the manifest and brief, and it can select one of the built-in procedural archetypes: `drone`, `tower`, `crate`, `projectile`, `target`, `player`, `weapon`, or `arena`. The generated-game role archetypes emit low-budget UV meshes with 512px base-color textures so RKG demos can move beyond pure fallback art before manual art direction. Unknown shapes use the asset type's default geometry template and require editing `Tools/blender/create_<asset_id>.py`.
 
 Run the same loop through one command:
 
@@ -210,6 +210,8 @@ make inspect-usdz id=enemy_drone json=1
 ```
 
 `inspect-usdz` checks whether the package exists, whether configured `textureMaps` are inside the USDZ, whether PNG/JPEG texture dimensions stay under `maxTextureSize`, whether USD text exposes `primvars:st`, and whether parsed face counts stay under the manifest triangle budget. The JSON output includes `textureMaps` for all configured maps and keeps `baseColorTexture` as a compatibility alias for existing automation. Binary `.usdc` packages are decoded through `usdcat` when that tool is available; otherwise geometry/UV status remains `unknown` instead of being invented.
+
+When a generated asset brief contains an `rkp inspect-usdz <id> --json` checklist line, `accept-asset` marks that line complete only if the current USDZ also passes inspection. Asset acceptance remains a separate screenshot-gated step.
 
 Use `verify-asset` as the one-command asset quality gate:
 

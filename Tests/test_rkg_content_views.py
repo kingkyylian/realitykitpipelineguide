@@ -80,14 +80,25 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("state = GameRules.performPerfectDodge(state)", content)
         self.assertIn("state = GameRules.applyFighterDamage(state)", content)
 
-    def test_custom_realitykit_content_view_keeps_overlay_compact(self) -> None:
+    def test_custom_realitykit_content_view_emits_game_shell_instead_of_dev_overlay(self) -> None:
         content = content_view_swift("Arc Volley", spec_for("custom_realitykit"))
 
         self.assertIn("@State private var state = GameRules.customRealityKitScreenshotSession(", content)
+        self.assertIn("@State private var hasStarted = ScreenshotState.requested != nil", content)
+        self.assertIn("ZStack(alignment: .bottom)", content)
+        self.assertIn("GameHUD(state: state)", content)
+        self.assertIn("StartOverlay(", content)
+        self.assertIn("PrimaryInputLayer(", content)
+        self.assertIn("if isInterfaceVisible && !SessionControl.isResult(state)", content)
+        self.assertIn("\n            if SessionControl.isResult(state) {\n                ResultView", content)
+        self.assertIn(".statusBarHidden(true)", content)
+        self.assertIn(".persistentSystemOverlays(.hidden)", content)
+        self.assertIn('Image(systemName: "scope")', content)
+        self.assertIn('Image(systemName: "bolt.fill")', content)
+        self.assertIn("adapterControls.foregroundStyle(.white)", content)
         self.assertIn(".controlSize(.small)", content)
-        self.assertIn(".padding(.horizontal, 10)", content)
-        self.assertIn(".padding(.vertical, 8)", content)
-        self.assertIn(".lineLimit(1)", content)
+        self.assertIn(".safeAreaInset(edge: .top)", content)
+        self.assertNotIn(".background(.thinMaterial)", content)
 
     def test_generic_content_view_contract_remains_available_for_unknown_archetype(self) -> None:
         content = content_view_swift('Ring "Dash"', spec_for("prototype"))

@@ -221,10 +221,11 @@ Current `verify-screenshots` behavior:
 - If `--plan qa-plan.json` is passed, consumes the machine-readable `rkg qa-plan --json` payload directly.
 - If no plan is passed, reads `<generated-project>/GameSpec.json` and rebuilds the QA plan.
 - Checks each `capture_path` under the generated project.
-- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `missing_sidecar`, `invalid_sidecar`, `role_evidence_mismatch`, `missing_scene_snapshot`, `invalid_scene_snapshot`, `scene_role_mismatch`, `scene_role_not_visible`, `blank_or_solid`, `duplicate_visual_evidence`, `semantic_debug_overlay`, `semantic_control_occlusion`, `semantic_center_occlusion`, `semantic_flat_scene`, `semantic_scene_too_dark`, or `ok`.
+- Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `missing_sidecar`, `invalid_sidecar`, `role_evidence_mismatch`, `missing_scene_snapshot`, `invalid_scene_snapshot`, `scene_role_mismatch`, `scene_role_not_visible`, `missing_role_pixel_evidence`, `invalid_role_pixel_evidence`, `role_pixel_not_visible`, `blank_or_solid`, `duplicate_visual_evidence`, `semantic_debug_overlay`, `semantic_control_occlusion`, `semantic_center_occlusion`, `semantic_flat_scene`, `semantic_scene_too_dark`, or `ok`.
 - Accepts JPEG and PNG image headers only when the file carries readable dimensions of at least 300x300 pixels.
 - Requires a JSON sidecar next to every valid planned screenshot. The sidecar must match the QA plan game id, state, automation hint, visible roles, and point at a runtime scene snapshot.
 - Requires `Docs/screenshots/<state>.scene.json` runtime evidence copied from the generated app container. The snapshot must match the state and include the expected asset roles bound in the running RealityKit scene. Each expected role must have an enabled `rkg|...` entity, finite `position.x/y/z` metadata, and `visual_bounds.center/extents` metadata that meets the QA plan's `role_visibility_contract.min_visual_extent`. Disabled expected roles, zero visual bounds, or microscopic bounds fail as `scene_role_not_visible`.
+- If `role_pixel_contract.required` is enabled, requires sidecar `role_pixel_evidence` for each expected role. Each role evidence entry points at a normalized screenshot `region`; the verifier samples that region and rejects missing, malformed, undersampled, or flat regions as `missing_role_pixel_evidence`, `invalid_role_pixel_evidence`, or `role_pixel_not_visible`.
 - For 8-bit RGB/RGBA PNG captures, reconstructs filtered scanlines, samples pixels, and rejects near-solid images as `blank_or_solid`.
 - On macOS, uses `sips` to rasterize JPEG captures into the same sampler. A malformed dimension-bearing JPEG is `invalid_image`; a near-solid JPEG is `blank_or_solid`.
 - Applies the QA plan's `semantic_visual_contract` after metadata checks. Current contract checks top-band light coverage, bottom-band control-panel coverage, center-band modal coverage, scene luma span, and scene bright-pixel ratio.
@@ -300,6 +301,11 @@ Current `qa-plan --json` shape:
       "automation": "manual_capture",
       "role_visibility_contract": {
         "min_visual_extent": 0.04
+      },
+      "role_pixel_contract": {
+        "required": false,
+        "min_luma_span": 10,
+        "min_sample_count": 4
       },
       "semantic_visual_contract": {
         "top_band_fraction": 0.24,

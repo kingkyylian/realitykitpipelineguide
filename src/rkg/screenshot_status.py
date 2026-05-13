@@ -104,7 +104,10 @@ def _sidecar_status(project: Path, qa_plan: Mapping[str, Any], step: Mapping[str
     actual_roles = payload.get("visible_roles")
     if not isinstance(actual_roles, list) or {str(role) for role in actual_roles} != expected_roles:
         return "role_evidence_mismatch"
-    return _scene_snapshot_status(project, step, payload, expected_roles)
+    scene_status = _scene_snapshot_status(project, step, payload, expected_roles)
+    if scene_status != "ok":
+        return scene_status
+    return _role_pixel_evidence_status(capture_path, step, payload, expected_roles)
 
 
 def _sidecar_path(project: Path, step: Mapping[str, Any], capture_path: Path) -> Path:
@@ -167,6 +170,76 @@ def _scene_snapshot_status(
     if not expected_roles.issubset(visible_roles):
         return "scene_role_not_visible"
     return "ok"
+
+
+def _role_pixel_evidence_status(
+    capture_path: Path,
+    step: Mapping[str, Any],
+    sidecar: Mapping[str, Any],
+    expected_roles: set[str],
+) -> str:
+    contract = step.get("role_pixel_contract")
+    if not isinstance(contract, Mapping):
+        return "ok"
+    required = contract.get("required") is True
+    evidence = sidecar.get("role_pixel_evidence")
+    if evidence is None:
+        return "missing_role_pixel_evidence" if required else "ok"
+    if not isinstance(evidence, Mapping):
+        return "invalid_role_pixel_evidence"
+
+    evidence_roles = {str(role) for role in evidence.keys()}
+    if required and not expected_roles.issubset(evidence_roles):
+        return "missing_role_pixel_evidence"
+    roles_to_check = expected_roles if required else expected_roles.intersection(evidence_roles)
+    if not roles_to_check:
+        return "ok"
+
+    try:
+        data = capture_path.read_bytes()
+    except OSError:
+        return "invalid_image"
+    grid, decode_failed = _image_rgb_sample_grid(data)
+    if decode_failed or grid is None:
+        return "invalid_image"
+    width, height, samples = grid
+    min_luma_span = _contract_float(contract, "min_luma_span", 10.0)
+    min_sample_count = max(1, int(_contract_float(contract, "min_sample_count", 4.0)))
+
+    for role in sorted(roles_to_check):
+        role_evidence = evidence.get(role)
+        if not isinstance(role_evidence, Mapping):
+            return "invalid_role_pixel_evidence"
+        region = _role_pixel_evidence_region(role_evidence)
+        if region is None:
+            return "invalid_role_pixel_evidence"
+        region_samples = _samples_in_fraction_region(samples, width, height, *region)
+        if len(region_samples) < min_sample_count:
+            return "invalid_role_pixel_evidence"
+        if _luma_span(region_samples) < min_luma_span:
+            return "role_pixel_not_visible"
+    return "ok"
+
+
+def _role_pixel_evidence_region(evidence: Mapping[str, Any]) -> tuple[float, float, float, float] | None:
+    region = evidence.get("region")
+    if not isinstance(region, Mapping):
+        return None
+    x = region.get("x")
+    y = region.get("y")
+    width = region.get("width")
+    height = region.get("height")
+    if not all(_is_finite_number(value) for value in (x, y, width, height)):
+        return None
+    x_value = float(x)
+    y_value = float(y)
+    width_value = float(width)
+    height_value = float(height)
+    if x_value < 0 or y_value < 0 or width_value <= 0 or height_value <= 0:
+        return None
+    if x_value >= 1 or y_value >= 1 or x_value + width_value > 1 or y_value + height_value > 1:
+        return None
+    return x_value, y_value, width_value, height_value
 
 
 def _scene_role_record_has_valid_visibility_metadata(role_record: Mapping[str, Any]) -> bool:
@@ -305,6 +378,26 @@ def _samples_between_y_fractions(
     start_y = max(0.0, min(1.0, start_fraction)) * float(height)
     end_y = max(start_y, min(1.0, end_fraction) * float(height))
     return [sample for sample in samples if start_y <= float(sample[1]) < end_y]
+
+
+def _samples_in_fraction_region(
+    samples: RgbGridSamples,
+    width: int,
+    height: int,
+    x_fraction: float,
+    y_fraction: float,
+    width_fraction: float,
+    height_fraction: float,
+) -> RgbGridSamples:
+    start_x = max(0.0, min(1.0, x_fraction)) * float(width)
+    start_y = max(0.0, min(1.0, y_fraction)) * float(height)
+    end_x = max(start_x, min(1.0, x_fraction + width_fraction) * float(width))
+    end_y = max(start_y, min(1.0, y_fraction + height_fraction) * float(height))
+    return [
+        sample
+        for sample in samples
+        if start_x <= float(sample[0]) < end_x and start_y <= float(sample[1]) < end_y
+    ]
 
 
 def _luma_coverage(samples: RgbGridSamples, threshold: float) -> float:

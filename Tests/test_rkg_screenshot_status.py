@@ -82,28 +82,25 @@ class RkgScreenshotStatusTests(unittest.TestCase):
         *,
         state: str = "gameplay_start",
         visible_roles: list[str] | None = None,
+        role_pixel_evidence: dict | None = None,
     ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(
-                {
-                    "schema_version": 1,
-                    "game_id": "ring_dash",
-                    "display_name": "Ring Dash",
-                    "archetype": "target_shooter",
-                    "state": state,
-                    "screenshot_state_case": state,
-                    "visible_roles": visible_roles or ["target", "arena"],
-                    "expected_evidence": "Declared roles available: target, arena",
-                    "automation": "manual_capture",
-                    "screenshot": f"Docs/screenshots/{state}.jpg",
-                    "scene_snapshot": f"Docs/screenshots/{state}.scene.json",
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
+        payload = {
+            "schema_version": 1,
+            "game_id": "ring_dash",
+            "display_name": "Ring Dash",
+            "archetype": "target_shooter",
+            "state": state,
+            "screenshot_state_case": state,
+            "visible_roles": visible_roles or ["target", "arena"],
+            "expected_evidence": "Declared roles available: target, arena",
+            "automation": "manual_capture",
+            "screenshot": f"Docs/screenshots/{state}.jpg",
+            "scene_snapshot": f"Docs/screenshots/{state}.scene.json",
+        }
+        if role_pixel_evidence is not None:
+            payload["role_pixel_evidence"] = role_pixel_evidence
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
     def write_scene_snapshot(
         self,
@@ -460,6 +457,105 @@ class RkgScreenshotStatusTests(unittest.TestCase):
 
             self.assertFalse(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "scene_role_not_visible")
+
+    def test_verify_screenshots_requires_role_pixel_evidence_when_contract_is_required(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+            plan["steps"][0]["role_pixel_contract"]["required"] = True
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "missing_role_pixel_evidence")
+
+    def test_verify_screenshots_rejects_invalid_role_pixel_evidence_region(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 220, 34 + (y * 5) % 170, 42 + ((x + y) * 4) % 180) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(
+                project / "Docs" / "screenshots" / "gameplay_start.json",
+                role_pixel_evidence={
+                    "target": {"region": {"x": 0.25, "y": 0.25, "width": 0.0, "height": 0.3}},
+                    "arena": {"region": {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0}},
+                },
+            )
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+            plan["steps"][0]["role_pixel_contract"]["required"] = True
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "invalid_role_pixel_evidence")
+
+    def test_verify_screenshots_rejects_flat_role_pixel_evidence_region(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = []
+            for y in range(320):
+                row = []
+                for x in range(320):
+                    if 96 <= x < 192 and 96 <= y < 192:
+                        row.append((92, 92, 92))
+                    else:
+                        row.append(((x * 7) % 220, 34 + (y * 5) % 170, 42 + ((x + y) * 4) % 180))
+                rows.append(row)
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(
+                project / "Docs" / "screenshots" / "gameplay_start.json",
+                role_pixel_evidence={
+                    "target": {"region": {"x": 0.3, "y": 0.3, "width": 0.3, "height": 0.3}},
+                    "arena": {"region": {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0}},
+                },
+            )
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+            plan["steps"][0]["role_pixel_contract"]["required"] = True
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "role_pixel_not_visible")
+
+    def test_verify_screenshots_accepts_varied_role_pixel_evidence_region(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 220, 34 + (y * 5) % 170, 42 + ((x + y) * 4) % 180) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(
+                project / "Docs" / "screenshots" / "gameplay_start.json",
+                role_pixel_evidence={
+                    "target": {"region": {"x": 0.25, "y": 0.25, "width": 0.3, "height": 0.3}},
+                    "arena": {"region": {"x": 0.0, "y": 0.0, "width": 1.0, "height": 1.0}},
+                },
+            )
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+            plan["steps"][0]["role_pixel_contract"]["required"] = True
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "ok")
 
     def test_verify_screenshots_rejects_sidecar_role_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

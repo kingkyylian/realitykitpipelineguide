@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 143: RKG Opt-in Role Pixel Evidence Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Runtime role metadata ile screenshot pixel sampling arasında ilk köprüyü kurmak: sidecar explicit role pixel region kanıtı sağladığında verifier bu region'ın görsel footprint taşıdığını doğrulamalı.
+
+**Yapılanlar:**
+
+- `qa-plan` screenshot adımlarına opt-in `role_pixel_contract` eklendi.
+- Varsayılan contract:
+  - `required: false`
+  - `min_luma_span: 10`
+  - `min_sample_count: 4`
+- `verify-screenshots`, contract required olduğunda sidecar `role_pixel_evidence` mapping'ini bekliyor.
+- Her expected role için normalized `region` örnekleniyor; eksik evidence `missing_role_pixel_evidence`, bozuk/undersampled region `invalid_role_pixel_evidence`, düz/flat region `role_pixel_not_visible` dönüyor.
+- Bu sprint otomatik projection üretmiyor; verifier tarafındaki veri sözleşmesini ve pixel sampler gate'ini hazır hale getiriyor.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_requires_role_pixel_evidence_when_contract_is_required Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_invalid_role_pixel_evidence_region Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_flat_role_pixel_evidence_region Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_accepts_varied_role_pixel_evidence_region Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture: first run failed as expected on missing role_pixel_contract; then ok
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 261 tests
+git diff --check: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: release-check ok; 261 tests
+```
+
+**Öğrenme notu:**
+
+Bu gerçek role projection değil; capture sidecar'ı role region bilgisini üretmediği sürece opt-in kalıyor. Ama verifier artık "bu role şu screenshot bölgesinde görünür olmalı" iddiasını piksel örneklemesiyle test edebiliyor. Bir sonraki mantıklı adım, generated runtime/capture hattının bu region'ları otomatik yazması.
+
 ### Sprint 142: RKG Minimum Role Footprint Gate
 
 **Durum:** Tamamlandı

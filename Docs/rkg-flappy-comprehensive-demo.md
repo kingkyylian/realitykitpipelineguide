@@ -43,6 +43,12 @@ The follow-up role-asset pass tightened prompt-to-asset quality. RKG asset pipel
 
 The latest capture pass also writes automatic sidecar `role_pixel_evidence` from runtime scene snapshots. For `gameplay_start`, the sidecar records pixel regions for `player`/`bird_player`, `obstacle`/`pipe_gate`, and `arena`/`reef_lane`; `verify-screenshots` validates those regions against the captured image before `accept-assets` copies acceptance screenshots.
 
+The latest `accept-assets --json` result also includes `asset_reports`, so each accepted asset carries its proof summary:
+
+- `bird_player`: `screenshot_status=ok`, `role_pixel_evidence_status=present`
+- `pipe_gate`: `screenshot_status=ok`, `role_pixel_evidence_status=present`
+- `reef_lane`: `screenshot_status=ok`, `role_pixel_evidence_status=present`
+
 ## Screenshot Evidence
 
 | State | Public evidence |
@@ -71,7 +77,7 @@ All five generated screenshots were captured at `1206x2622` and passed `verify-s
 rkg verify-game: ok
 rkg capture-screenshots --device booted --json: ok; 5 screenshots with role_pixel_evidence sidecars
 rkg verify-screenshots --json: ok; 5 checks including sidecar role_pixel_evidence
-rkg accept-assets --device booted --json: ok; 15 completed workflow steps; generated flappy_bird/flappy_gate/flappy_reef drafts and verified role-pixel evidence
+rkg accept-assets --device booted --json: ok; 15 completed workflow steps; generated flappy_bird/flappy_gate/flappy_reef drafts, verified role-pixel evidence, and emitted asset_reports for all 3 assets
 rkp release-check --assets from generated project: ok
 ```
 

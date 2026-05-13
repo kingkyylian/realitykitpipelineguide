@@ -322,6 +322,121 @@ class RkgAssetAcceptanceTests(unittest.TestCase):
             self.assertTrue((project / "Docs" / "screenshots" / "target_proxy_imported.jpg").exists())
             self.assertTrue((project / "Docs" / "screenshots" / "projectile_proxy_imported.jpg").exists())
 
+    def test_accept_assets_execution_reports_role_pixel_evidence_per_asset(self) -> None:
+        from rkg.asset_acceptance import execute_asset_acceptance_plan
+
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "Generated"
+            project.mkdir()
+            plan = {
+                "project": str(project),
+                "device": "booted",
+                "assets": [
+                    {
+                        "asset_id": "target_proxy",
+                        "role": "target",
+                        "source_state": "fail_or_hit",
+                        "source_screenshot": "Docs/screenshots/fail_or_hit.jpg",
+                        "acceptance_screenshot": "Docs/screenshots/target_proxy_imported.jpg",
+                    },
+                    {
+                        "asset_id": "projectile_proxy",
+                        "role": "projectile",
+                        "source_state": "mid_action",
+                        "source_screenshot": "Docs/screenshots/mid_action.jpg",
+                        "acceptance_screenshot": "Docs/screenshots/projectile_proxy_imported.jpg",
+                    },
+                ],
+                "steps": [
+                    {"step": "capture_screenshots", "command": ["rkg", "capture-screenshots", ".", "--device", "booted"]},
+                    {"step": "verify_screenshots", "command": ["rkg", "verify-screenshots", "."]},
+                    {
+                        "step": "copy_acceptance_screenshot",
+                        "command": ["copy", "Docs/screenshots/fail_or_hit.jpg", "Docs/screenshots/target_proxy_imported.jpg"],
+                    },
+                    {
+                        "step": "accept_asset",
+                        "command": [
+                            "rkp",
+                            "accept-asset",
+                            "target_proxy",
+                            "--screenshot",
+                            "Docs/screenshots/target_proxy_imported.jpg",
+                        ],
+                    },
+                    {
+                        "step": "copy_acceptance_screenshot",
+                        "command": ["copy", "Docs/screenshots/mid_action.jpg", "Docs/screenshots/projectile_proxy_imported.jpg"],
+                    },
+                    {
+                        "step": "accept_asset",
+                        "command": [
+                            "rkp",
+                            "accept-asset",
+                            "projectile_proxy",
+                            "--screenshot",
+                            "Docs/screenshots/projectile_proxy_imported.jpg",
+                        ],
+                    },
+                    {"step": "release_check_assets", "command": ["rkp", "release-check", "--assets"]},
+                ],
+            }
+
+            def fake_capture(project_root: Path, device: str) -> dict:
+                screenshot_root = project_root / "Docs" / "screenshots"
+                screenshot_root.mkdir(parents=True)
+                (screenshot_root / "fail_or_hit.jpg").write_bytes(b"\xff\xd8hit\xff\xd9")
+                (screenshot_root / "mid_action.jpg").write_bytes(b"\xff\xd8mid\xff\xd9")
+                (screenshot_root / "fail_or_hit.json").write_text(
+                    json.dumps(
+                        {
+                            "role_pixel_evidence": {
+                                "target": {
+                                    "asset_id": "target_proxy",
+                                    "region": {"x": 0.42, "y": 0.22, "width": 0.2, "height": 0.24},
+                                    "source": "runtime_scene_snapshot",
+                                }
+                            }
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                (screenshot_root / "mid_action.json").write_text(
+                    json.dumps(
+                        {
+                            "role_pixel_evidence": {
+                                "projectile": {
+                                    "asset_id": "projectile_proxy",
+                                    "region": {"x": 0.48, "y": 0.36, "width": 0.18, "height": 0.18},
+                                    "source": "runtime_scene_snapshot",
+                                }
+                            }
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                return {"ok": True, "completed": []}
+
+            result = execute_asset_acceptance_plan(
+                plan,
+                runner=lambda command, cwd: 0,
+                capture_executor=fake_capture,
+                screenshot_verifier=lambda project_root: {
+                    "ok": True,
+                    "checks": [
+                        {"state": "fail_or_hit", "status": "ok"},
+                        {"state": "mid_action", "status": "ok"},
+                    ],
+                },
+            )
+
+            self.assertTrue(result["ok"])
+            reports = {report["asset_id"]: report for report in result["asset_reports"]}
+            self.assertEqual(reports["target_proxy"]["role_pixel_evidence_status"], "present")
+            self.assertEqual(reports["target_proxy"]["screenshot_status"], "ok")
+            self.assertEqual(reports["target_proxy"]["role_pixel_evidence"]["region"]["x"], 0.42)
+            self.assertEqual(reports["projectile_proxy"]["role_pixel_evidence"]["asset_id"], "projectile_proxy")
+
     def test_acceptance_runner_prefers_workspace_pythonpath_for_cli_entrypoints(self) -> None:
         from rkg.asset_acceptance import _run_command
 

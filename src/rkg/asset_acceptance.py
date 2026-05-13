@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from collections.abc import Callable, Mapping
@@ -139,6 +140,7 @@ def execute_asset_acceptance_plan(
     project = Path(str(plan["project"]))
     run = runner or _run_command
     completed = []
+    screenshot_status: Mapping[str, Any] | None = None
     for step in plan["steps"]:
         step_name = str(step["step"])
         command = [str(part) for part in step["command"]]
@@ -155,6 +157,7 @@ def execute_asset_acceptance_plan(
             continue
         if step_name == "verify_screenshots":
             status = (screenshot_verifier or build_screenshot_status_for_project)(project)
+            screenshot_status = status
             exit_code = 0 if status.get("ok") else 1
             completed.append({"step": step_name, "command": command, "exit_code": exit_code})
             if exit_code != 0:
@@ -173,7 +176,11 @@ def execute_asset_acceptance_plan(
         completed.append({"step": step_name, "command": command, "exit_code": exit_code})
         if exit_code != 0:
             return {"ok": False, "completed": completed}
-    return {"ok": True, "completed": completed}
+    return {
+        "ok": True,
+        "completed": completed,
+        "asset_reports": _asset_reports(project, plan, screenshot_status),
+    }
 
 
 def execute_first_asset_acceptance_plan(
@@ -253,6 +260,81 @@ def _copy_screenshot(project: Path, source: str, destination: str) -> None:
         raise FileNotFoundError(f"source screenshot is missing: {source}")
     destination_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(source_path, destination_path)
+
+
+def _asset_reports(project: Path, plan: Mapping[str, Any], screenshot_status: Mapping[str, Any] | None) -> list[JsonDict]:
+    reports = []
+    status_by_state = _screenshot_status_by_state(screenshot_status)
+    for asset in _planned_assets(plan):
+        source_state = str(asset.get("source_state", ""))
+        source_screenshot = str(asset.get("source_screenshot", ""))
+        role = str(asset.get("role", ""))
+        evidence = _role_pixel_evidence_for_asset(project, source_screenshot, role)
+        reports.append(
+            {
+                "asset_id": str(asset.get("asset_id", "")),
+                "role": role,
+                "source_state": source_state,
+                "source_screenshot": source_screenshot,
+                "acceptance_screenshot": str(asset.get("acceptance_screenshot", "")),
+                "screenshot_status": status_by_state.get(source_state, "unknown"),
+                "role_pixel_evidence_status": "present" if evidence is not None else "missing",
+                "role_pixel_evidence": evidence,
+            }
+        )
+    return reports
+
+
+def _planned_assets(plan: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    assets = plan.get("assets")
+    if isinstance(assets, list):
+        return [asset for asset in assets if isinstance(asset, Mapping)]
+    if "asset_id" in plan:
+        return [
+            {
+                "asset_id": plan.get("asset_id"),
+                "role": plan.get("role"),
+                "source_state": plan.get("source_state"),
+                "source_screenshot": plan.get("source_screenshot"),
+                "acceptance_screenshot": plan.get("acceptance_screenshot"),
+            }
+        ]
+    return []
+
+
+def _screenshot_status_by_state(screenshot_status: Mapping[str, Any] | None) -> dict[str, str]:
+    if not isinstance(screenshot_status, Mapping):
+        return {}
+    checks = screenshot_status.get("checks")
+    if not isinstance(checks, list):
+        return {}
+    statuses: dict[str, str] = {}
+    for check in checks:
+        if not isinstance(check, Mapping):
+            continue
+        statuses[str(check.get("state", ""))] = str(check.get("status", ""))
+    return statuses
+
+
+def _role_pixel_evidence_for_asset(project: Path, source_screenshot: str, role: str) -> JsonDict | None:
+    if not source_screenshot or not role:
+        return None
+    sidecar = (project / source_screenshot).with_suffix(".json")
+    if not sidecar.is_file():
+        return None
+    try:
+        payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if not isinstance(payload, Mapping):
+        return None
+    role_pixel_evidence = payload.get("role_pixel_evidence")
+    if not isinstance(role_pixel_evidence, Mapping):
+        return None
+    evidence = role_pixel_evidence.get(role)
+    if not isinstance(evidence, Mapping):
+        return None
+    return dict(evidence)
 
 
 def _blender_script_exists(project: Path, asset_id: str) -> bool:

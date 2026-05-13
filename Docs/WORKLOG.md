@@ -12,6 +12,32 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 147: RKG Per-Asset Acceptance Reports
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** `accept-assets --json` çıktısı sadece workflow step'lerini değil, her asset'in hangi screenshot status ve hangi role-pixel evidence region ile kabul edildiğini de raporlamalı.
+
+**Yapılanlar:**
+
+- `execute_asset_acceptance_plan` başarı sonucuna `asset_reports` eklendi.
+- Her report `asset_id`, `role`, `source_state`, `source_screenshot`, `acceptance_screenshot`, `screenshot_status`, `role_pixel_evidence_status` ve sidecar'dan okunan `role_pixel_evidence` payload'unu taşır.
+- Tek asset planları ve çoklu asset planları aynı reporting helper'ı üzerinden desteklenir.
+- Missing/invalid sidecar durumları crash yerine `role_pixel_evidence_status: missing` raporlar.
+- Flappy dogfood `accept-assets --json` tekrar çalıştırıldı; `bird_player`, `pipe_gate`, `reef_lane` için `role_pixel_evidence_status: present` ve `screenshot_status: ok` döndü.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_assets_execution_reports_role_pixel_evidence_per_asset: first run failed as expected on missing asset_reports; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_assets_execution_reports_role_pixel_evidence_per_asset Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_assets_execution_captures_once_and_accepts_each_asset Tests.test_rkg_asset_acceptance.RkgAssetAcceptanceTests.test_accept_first_asset_execution_captures_copies_and_runs_acceptance_commands: ok
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-role-assets-v1/FlappyReefDemo --device booted --json: ok; result.asset_reports present for all 3 Flappy assets
+```
+
+**Öğrenme notu:**
+
+Asset acceptance artık "komutlar 0 döndü" seviyesinde kalmıyor. JSON result içindeki per-asset report, kabul kanıtını doğrudan okunur hale getiriyor: hangi source screenshot kullanıldı, screenshot verifier ne dedi, hangi role-pixel region asset'i kanıtladı.
+
 ### Sprint 146: RKG Runtime Role-Pixel Evidence
 
 **Durum:** Tamamlandı

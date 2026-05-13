@@ -12,6 +12,40 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 140: RKG Bottom Control Occlusion Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Generated oyunların screenshot QA'sında büyük alt kontrol/öğretici panellerinin gameplay alanını kapatmasını pixel-level semantic hata olarak yakalamak.
+
+**Yapılanlar:**
+
+- `qa-plan` `semantic_visual_contract` çıktısına alt bant eşiği eklendi:
+  - `bottom_band_fraction`
+  - `max_bottom_light_coverage`
+  - `bottom_light_luma_threshold`
+- `verify-screenshots`, ekranın alt yüzde 20'lik bandında fazla parlak panel coverage görürse `semantic_control_occlusion` dönüyor.
+- Kompakt alt kontrollerin geçmeye devam ettiğini kanıtlayan pozitif regression testi eklendi.
+- RKG mimari/game-factory/dogfood/handoff dokümanları yeni hata kodu ve kalan görsel QA boşluklarıyla güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_bottom_control_panel_occluding_gameplay Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_accepts_compact_bottom_controls_with_visible_gameplay Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture: first run failed as expected on old verifier/qa-plan contract; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_bottom_control_panel_occluding_gameplay Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_accepts_compact_bottom_controls_with_visible_gameplay Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture Tests.test_rkg_qa_plan.RkgQaPlanTests.test_custom_projectile_qa_plan_uses_adapter_specific_proof_and_launch_automation: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 254 tests
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+git diff --check: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: release-check ok; 254 tests
+```
+
+**Öğrenme notu:**
+
+Runtime visual bounds metadata "entity boş değil" iddiasını güçlendiriyor, ama UI kompozisyon hatasını tek başına yakalamıyor. Alt bant pixel coverage kapısı, Flappy gibi alt kontrolü olan oyunları kırmadan büyük beyaz panelin sahneyi kapatmasını ayıran ilk control-overlap guardrail oldu.
+
 ### Sprint 139: RKG Visual Bounds Snapshot Gate
 
 **Durum:** Tamamlandı

@@ -242,6 +242,15 @@ def _semantic_visual_grid_status(
         if light_coverage > max_top_light_coverage:
             return "semantic_debug_overlay"
 
+    bottom_fraction = _contract_float(contract, "bottom_band_fraction", 0.2)
+    max_bottom_light_coverage = _contract_float(contract, "max_bottom_light_coverage", 0.82)
+    bottom_light_luma_threshold = _contract_float(contract, "bottom_light_luma_threshold", 170.0)
+    bottom_samples = _samples_between_y_fractions(samples, height, 1.0 - bottom_fraction, 1.0)
+    if bottom_samples:
+        light_coverage = _luma_coverage(bottom_samples, bottom_light_luma_threshold)
+        if light_coverage > max_bottom_light_coverage:
+            return "semantic_control_occlusion"
+
     scene_top = _contract_float(contract, "scene_band_top_fraction", 0.24)
     scene_bottom = _contract_float(contract, "scene_band_bottom_fraction", 0.78)
     scene_samples = _samples_between_y_fractions(samples, height, scene_top, scene_bottom)

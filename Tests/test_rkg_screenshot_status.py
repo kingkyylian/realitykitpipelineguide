@@ -552,6 +552,50 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             self.assertFalse(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "semantic_debug_overlay")
 
+    def test_verify_screenshots_rejects_bottom_control_panel_occluding_gameplay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = []
+            for y in range(320):
+                if y < 88:
+                    rows.append([(10 + (x % 12), 12 + (y % 10), 16) for x in range(320)])
+                elif y < 224:
+                    rows.append([((x * 9) % 220, 38 + (y * 5) % 170, 42 + ((x + y) * 4) % 180) for x in range(320)])
+                else:
+                    rows.append([(232, 232, 232) for _ in range(320)])
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "semantic_control_occlusion")
+
+    def test_verify_screenshots_accepts_compact_bottom_controls_with_visible_gameplay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = []
+            for y in range(320):
+                if y < 88:
+                    rows.append([(10 + (x % 12), 12 + (y % 10), 16) for x in range(320)])
+                elif y < 288:
+                    rows.append([((x * 9) % 220, 38 + (y * 5) % 170, 42 + ((x + y) * 4) % 180) for x in range(320)])
+                else:
+                    rows.append([(232, 232, 232) for _ in range(320)])
+            self.write_png_rgb(project / "Docs" / "screenshots" / "gameplay_start.png", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(project / "Docs" / "screenshots" / "gameplay_start.scene.json")
+            plan = build_qa_plan(target_spec())
+            plan["steps"][0]["capture_path"] = "Docs/screenshots/gameplay_start.png"
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertTrue(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "ok")
+
     def test_verify_screenshots_accepts_semantically_varied_gameplay_capture(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp) / "RingDash"

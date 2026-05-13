@@ -51,6 +51,25 @@ class RkgArchetypeRuntimeTests(unittest.TestCase):
         self.assertIn("while state.opponentHealth > 0", rules)
         self.assertIn('next = SessionControl.markResult(next, event: "knockout")', rules)
 
+    def test_flappy_runtime_contract_is_exposed_outside_scaffold(self) -> None:
+        fields = archetype_state_fields("flappy_side_scroller")
+        rules = "\n".join(archetype_rule_members("flappy_side_scroller"))
+
+        self.assertIn("var birdY: Double = GameRules.flappyStartY", fields)
+        self.assertIn("var birdVelocity: Double = 0", fields)
+        self.assertIn("var obstacleX: Double = GameRules.flappyStartObstacleX", fields)
+        self.assertIn("var gapY: Double = GameRules.flappyStartGapY", fields)
+        self.assertIn("var pipesPassed: Int = 0", fields)
+        self.assertIn("var isCollision: Bool = false", fields)
+        self.assertIn("static let flappyGravity", rules)
+        self.assertIn("static func startFlappySession(sessionSeconds: Int) -> GameSessionState", rules)
+        self.assertIn("static func flapBird(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func advanceFlappyFrame(_ state: GameSessionState) -> GameSessionState", rules)
+        self.assertIn("static func hasFlappyCollision(birdY: Double, obstacleX: Double, gapY: Double) -> Bool", rules)
+        self.assertIn("static func flappyScreenshotSession(for screenshotState: ScreenshotState?", rules)
+        self.assertIn('case "near_gap":', rules)
+        self.assertIn('next = SessionControl.markResult(next, event: "collision")', rules)
+
     def test_stack_puzzle_runtime_contract_is_exposed_outside_scaffold(self) -> None:
         fields = archetype_state_fields("stack_puzzle")
         rules = "\n".join(archetype_rule_members("stack_puzzle"))

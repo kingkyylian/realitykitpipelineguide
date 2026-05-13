@@ -34,6 +34,7 @@ class RkgArchetypeTests(unittest.TestCase):
                 "stack_puzzle",
                 "wave_defense_lite",
                 "fighter_2_5d",
+                "flappy_side_scroller",
                 "custom_realitykit",
             ],
         )
@@ -59,6 +60,19 @@ class RkgArchetypeTests(unittest.TestCase):
         self.assertEqual(record["screenshot_states"], ["round_start", "mid_combo", "perfect_dodge", "knockout"])
         self.assertIn("state.comboCount > 0", record["screenshot_proofs"]["mid_combo"])
         self.assertIn("state.isKnockout == true", record["screenshot_proofs"]["knockout"])
+
+    def test_flappy_side_scroller_exposes_flight_roles_input_and_screenshot_proofs(self) -> None:
+        record = describe_archetype("flappy_side_scroller")
+
+        self.assertEqual(record["display_name"], "Flappy Side Scroller")
+        self.assertEqual(record["required_asset_roles"], ["player", "obstacle", "arena"])
+        self.assertIn("tap", record["input"])
+        self.assertEqual(
+            record["screenshot_states"],
+            ["gameplay_start", "mid_flight", "near_gap", "collision", "results"],
+        )
+        self.assertIn("state.birdY", record["screenshot_proofs"]["mid_flight"])
+        self.assertIn("state.isCollision == true", record["screenshot_proofs"]["collision"])
 
     def test_custom_realitykit_archetype_exposes_composable_surface(self) -> None:
         record = describe_archetype("custom_realitykit")

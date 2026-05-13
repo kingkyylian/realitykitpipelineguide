@@ -80,6 +80,26 @@ class RkgContentViewTests(unittest.TestCase):
         self.assertIn("state = GameRules.performPerfectDodge(state)", content)
         self.assertIn("state = GameRules.applyFighterDamage(state)", content)
 
+    def test_flappy_content_view_contract_is_outside_scaffold(self) -> None:
+        content = content_view_swift("Flappy Reef", spec_for("flappy_side_scroller"))
+
+        self.assertIn("@State private var state = GameRules.flappyScreenshotSession(", content)
+        self.assertIn("for: ScreenshotState.requested", content)
+        self.assertIn("fallback: GameSessionState()", content)
+        self.assertIn("SessionControl.isPlaying(state)", content)
+        self.assertIn("GameView(state: state)", content)
+        self.assertIn('Text("Height \\(Int(state.birdY * 100))")', content)
+        self.assertIn('Text("Pipes \\(state.pipesPassed)")', content)
+        self.assertIn('Text("Gap \\(Int(state.gapY * 100))")', content)
+        self.assertIn('Text("Velocity \\(Int(state.birdVelocity * 100))")', content)
+        self.assertIn("Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying))", content)
+        self.assertIn('Button("Tick")', content)
+        self.assertNotIn('Text("play the generated loop")', content)
+        self.assertIn("state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)", content)
+        self.assertIn("state = GameRules.flapBird(state)", content)
+        self.assertIn("state = GameRules.advanceFlappyFrame(state)", content)
+        self.assertIn("TapGesture().onEnded", content)
+
     def test_custom_realitykit_content_view_emits_game_shell_instead_of_dev_overlay(self) -> None:
         content = content_view_swift("Arc Volley", spec_for("custom_realitykit"))
 

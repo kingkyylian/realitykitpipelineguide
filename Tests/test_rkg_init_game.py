@@ -155,6 +155,40 @@ def fighter_spec() -> dict:
     return spec
 
 
+def flappy_spec() -> dict:
+    spec = valid_spec()
+    spec["game"]["id"] = "flappy_reef"
+    spec["game"]["display_name"] = "Flappy Reef"
+    spec["game"]["archetype"] = "flappy_side_scroller"
+    spec["game"]["input"] = "tap"
+    spec["game"]["session_seconds"] = 60
+    spec["loop"]["player_action"] = "tap to flap through scrolling pipe gaps"
+    spec["loop"]["fail_condition"] = "hit a pipe or leave the flight band"
+    spec["loop"]["scoring"] = {"hit": 10, "perfect": 25, "clear": 100}
+    spec["assets"] = {
+        "bird_player": {
+            "type": "gameplay_actor",
+            "role": "player",
+            "budget": "900 tris / 512 texture",
+            "fallback": "procedural_capsule",
+        },
+        "pipe_gate": {
+            "type": "prop",
+            "role": "obstacle",
+            "budget": "700 tris / 512 texture",
+            "fallback": "procedural_gate",
+        },
+        "reef_lane": {
+            "type": "environment",
+            "role": "arena",
+            "budget": "1200 tris / 512 texture",
+            "fallback": "procedural_arena",
+        },
+    }
+    spec["release"]["screenshots"] = ["gameplay_start", "mid_flight", "near_gap", "collision", "results"]
+    return spec
+
+
 def custom_racing_spec() -> dict:
     spec = valid_spec()
     spec["game"]["id"] = "desert_chase"
@@ -1017,6 +1051,75 @@ class RkgInitGameTests(unittest.TestCase):
             self.assertIn("playerEntity?.position.x = state.isDodging ? -0.50 : -0.35", scene_controller)
             self.assertIn("guardCueEntity?.isEnabled = state.guardMeter > 0", scene_controller)
             self.assertIn("private func opponentPosition(opponentHealth: Int, comboCount: Int) -> SIMD3<Float>", scene_controller)
+
+    def test_init_game_generates_flappy_state_rules_and_play_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, flappy_spec())
+            output = root / "FlappyReef"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "FlappyReef"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            input_intent = (source / "InputIntent.swift").read_text(encoding="utf-8")
+            screenshot_state = (source / "ScreenshotState.swift").read_text(encoding="utf-8")
+            state = (source / "GameState.swift").read_text(encoding="utf-8")
+            rules = (source / "GameRules.swift").read_text(encoding="utf-8")
+            self.assertIn("@State private var state = GameRules.flappyScreenshotSession(", content)
+            self.assertIn('Text("Height \\(Int(state.birdY * 100))")', content)
+            self.assertIn('Text("Pipes \\(state.pipesPassed)")', content)
+            self.assertIn('Text("Gap \\(Int(state.gapY * 100))")', content)
+            self.assertIn('Text("Velocity \\(Int(state.birdVelocity * 100))")', content)
+            self.assertIn('Button("Tick")', content)
+            self.assertIn("state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)", content)
+            self.assertIn("state = GameRules.flapBird(state)", content)
+            self.assertIn("state = GameRules.advanceFlappyFrame(state)", content)
+            self.assertIn("TapGesture().onEnded", content)
+            self.assertIn('static let primaryActionTitle = "Flap"', input_intent)
+            self.assertIn('case nearGap = "near_gap"', screenshot_state)
+            self.assertIn("var birdY: Double = GameRules.flappyStartY", state)
+            self.assertIn("var birdVelocity: Double = 0", state)
+            self.assertIn("var obstacleX: Double = GameRules.flappyStartObstacleX", state)
+            self.assertIn("var gapY: Double = GameRules.flappyStartGapY", state)
+            self.assertIn("var pipesPassed: Int = 0", state)
+            self.assertIn("var isCollision: Bool = false", state)
+            self.assertIn("static let flappyGravity", rules)
+            self.assertIn("static func startFlappySession(sessionSeconds: Int) -> GameSessionState", rules)
+            self.assertIn("static func flapBird(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func advanceFlappyFrame(_ state: GameSessionState) -> GameSessionState", rules)
+            self.assertIn("static func flappyScreenshotSession(for screenshotState: ScreenshotState?", rules)
+            self.assertIn('case "near_gap":', rules)
+
+    def test_init_game_binds_flappy_state_to_realitykit_scene(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = self.write_spec(root, flappy_spec())
+            output = root / "FlappyReef"
+
+            result = self.run_rkg(root, "init-game", str(spec_path), "--output", str(output))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            source = output / "Sources" / "FlappyReef"
+            content = (source / "ContentView.swift").read_text(encoding="utf-8")
+            game_view = (source / "GameView.swift").read_text(encoding="utf-8")
+            scene_controller = (source / "GameSceneController.swift").read_text(encoding="utf-8")
+            self.assertIn("GameView(state: state)", content)
+            self.assertIn("let state: GameSessionState", game_view)
+            self.assertIn("context.coordinator.controller.update(state: state)", game_view)
+            self.assertIn("private var birdEntity: Entity?", scene_controller)
+            self.assertIn("private var obstacleEntity: Entity?", scene_controller)
+            self.assertIn("private var arenaEntity: Entity?", scene_controller)
+            self.assertIn("birdEntity = birdPlayer", scene_controller)
+            self.assertIn("obstacleEntity = pipeGate", scene_controller)
+            self.assertIn("arenaEntity = reefLane", scene_controller)
+            self.assertIn("func update(state: GameSessionState)", scene_controller)
+            self.assertIn("birdEntity?.position = birdPosition(birdY: state.birdY)", scene_controller)
+            self.assertIn("obstacleEntity?.position = obstaclePosition(obstacleX: state.obstacleX, gapY: state.gapY)", scene_controller)
+            self.assertIn("obstacleEntity?.scale = state.isCollision ? [1.18, 1.18, 1.18] : [1, 1, 1]", scene_controller)
+            self.assertIn("private func birdPosition(birdY: Double) -> SIMD3<Float>", scene_controller)
+            self.assertIn("private func obstaclePosition(obstacleX: Double, gapY: Double) -> SIMD3<Float>", scene_controller)
 
     def test_init_game_generates_lane_dodger_state_and_rules(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -29,6 +29,21 @@ def projectile_idea() -> dict:
     }
 
 
+def flappy_idea() -> dict:
+    return {
+        "idea": {
+            "title": "Flappy Reef",
+            "player_action": "tap to flap through scrolling pipe gaps and survive",
+            "differentiator": "fixed side-view rhythm with gravity, gaps, collision, and score proof",
+            "first_playable_assets": ["bird_player", "pipe_gate", "reef_lane"],
+            "video_hook": "a thirty-second clip shows flap, mid-flight, gap threading, collision, and results",
+            "app_review_risk": "low",
+            "monetization": "paid",
+            "scope_flags": [],
+        }
+    }
+
+
 class RkgStartGameTests(unittest.TestCase):
     def run_rkg(self, cwd: Path, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -47,6 +62,16 @@ class RkgStartGameTests(unittest.TestCase):
         self.assertEqual(payload["input"], "drag")
         self.assertEqual(payload["systems"], ["projectile", "shooting", "score"])
         self.assertIn("projectile", payload["reason"])
+
+    def test_recommend_start_from_flappy_idea_selects_native_side_scroller(self) -> None:
+        payload = recommend_start_from_idea(flappy_idea())
+
+        self.assertEqual(payload["title"], "Flappy Reef")
+        self.assertEqual(payload["archetype"], "flappy_side_scroller")
+        self.assertEqual(payload["camera"], "fixed_non_ar")
+        self.assertEqual(payload["input"], "tap")
+        self.assertEqual(payload["systems"], [])
+        self.assertIn("flappy", payload["reason"])
 
     def test_start_game_scores_idea_writes_spec_project_and_qa_plan(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

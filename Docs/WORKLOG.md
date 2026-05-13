@@ -12,6 +12,47 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 136: RKG Native Flappy Side Scroller
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Row Fish Row/collector benzeri custom skeleton'ın ötesine geçip Flappy Bird tarzı daha spesifik bir oyun türünü native archetype olarak üretebilmek: gravity/flap, scrolling obstacle gap, collision/result, score, screenshot states ve simulator evidence.
+
+**Yapılanlar:**
+
+- `flappy_side_scroller` native archetype registry kaydı eklendi.
+- `rkg new-spec flappy_side_scroller` artık `bird_player`, `pipe_gate`, `reef_lane` rollerini ve beş release screenshot state'ini üretiyor.
+- Generated Swift runtime'a `birdY`, `birdVelocity`, `obstacleX`, `gapY`, `pipesPassed`, `isCollision` state alanları ve `startFlappySession`, `flapBird`, `advanceFlappyFrame`, `hasFlappyCollision`, `flappyScreenshotSession` rules eklendi.
+- Generated `ContentView` Flap/Tick/Reset kontrolü, compact HUD ve screenshot-state seeding ile üretildi.
+- Generated `GameSceneController` bird/obstacle/arena role binding'i state'e bağlı RealityKit transformlarına taşıyor.
+- `rkg start-game` flappy/flap/bird/pipe/gap fikirlerini native `flappy_side_scroller` archetype'a yönlendiriyor.
+- `WorldRig.swift` generator'ı düzeltildi: projectile-only state referansları artık projectile custom skeleton dışındaki generated oyunlarda üretilmiyor. Bu düzeltme Flappy build sırasında yakalandı.
+- Simulator screenshot evidence kök repo altına kopyalandı:
+  - `Docs/screenshots/rkg_flappy_gameplay_start.jpg`
+  - `Docs/screenshots/rkg_flappy_mid_flight.jpg`
+  - `Docs/screenshots/rkg_flappy_near_gap.jpg`
+  - `Docs/screenshots/rkg_flappy_collision.jpg`
+  - `Docs/screenshots/rkg_flappy_results.jpg`
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_archetypes Tests.test_rkg_archetype_runtime Tests.test_rkg_content_views Tests.test_rkg_new_spec Tests.test_rkg_start_game Tests.test_rkg_scaffold_generators Tests.test_rkg_init_game: first run failed as expected on missing flappy registry/runtime/content/spec/start routing
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_world_rig_generator_omits_projectile_state_for_non_projectile_games Tests.test_rkg_scaffold_generators.RkgScaffoldGeneratorTests.test_world_rig_generator_keeps_projectile_feedback_for_projectile_games: first run failed as expected on old WorldRig signature
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_archetypes Tests.test_rkg_archetype_runtime Tests.test_rkg_content_views Tests.test_rkg_new_spec Tests.test_rkg_start_game Tests.test_rkg_scaffold_generators Tests.test_rkg_init_game: ok; 75 tests
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 248 tests
+rtk ./.venv/bin/python Tools/rkg.py new-spec flappy_side_scroller --title "Flappy Reef" --output Build/rkg-flappy/FlappySpec.json: ok
+rtk ./.venv/bin/python Tools/rkg.py init-game Build/rkg-flappy/FlappySpec.json --output Build/rkg-flappy/FlappyReef --force: ok
+rtk ./.venv/bin/python Tools/rkg.py verify-game Build/rkg-flappy/FlappyReef: ok; xcodebuild release-check ok
+rtk xcrun simctl boot FF329D84-0179-49E2-AFC4-12D4935845FC: ok
+rtk ./.venv/bin/python Tools/rkg.py capture-screenshots Build/rkg-flappy/FlappyReef --device FF329D84-0179-49E2-AFC4-12D4935845FC --json: ok; 5 screenshots captured
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy/FlappyReef --json: ok; 5 checks
+```
+
+**Öğrenme notu:**
+
+Row Fish Row tarzı collect/timer oyunlar mevcut `custom_realitykit` collector adapter ile compile eden prototip çıkarabiliyor. Flappy Bird tarzı oyun için generic `physics,collision,score` yeterli değildi; native archetype gerekti. Bu sprint RKG'nin "biraz kompleks ama küçük" oyunları üretebildiğini gösterdi, fakat hâlâ shipping oyun değil: level çeşitliliği, game feel, animation polish, audio/haptics ve text/mesh visibility QA sıradaki kalite katmanları.
+
 ### Sprint 135: RKG Acceptance Runner Product Hardening
 
 **Durum:** Tamamlandı

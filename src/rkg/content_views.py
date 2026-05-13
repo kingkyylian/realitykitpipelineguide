@@ -25,6 +25,8 @@ def content_view_swift(display_name: str, spec: Mapping[str, Any]) -> str:
         return _stack_puzzle_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "fighter_2_5d":
         return _fighter_content_view_swift(title, subtitle, player_action)
+    if str(game["archetype"]) == "flappy_side_scroller":
+        return _flappy_content_view_swift(title, subtitle, player_action)
     if str(game["archetype"]) == "custom_realitykit":
         return _custom_realitykit_content_view_swift(title, subtitle, player_action)
     return _generic_content_view_swift(title, subtitle, player_action)
@@ -675,6 +677,113 @@ struct ContentView: View {{
             return
         }}
         state = GameRules.performPerfectDodge(state)
+    }}
+}}
+"""
+
+
+def _flappy_content_view_swift(title: str, subtitle: str, player_action: str) -> str:
+    return f"""import SwiftUI
+
+struct ContentView: View {{
+    @State private var state = GameRules.flappyScreenshotSession(
+        for: ScreenshotState.requested,
+        fallback: GameSessionState()
+    )
+
+    private var isPlaying: Bool {{
+        SessionControl.isPlaying(state)
+    }}
+
+    var body: some View {{
+        ZStack(alignment: .top) {{
+            GameView(state: state)
+                .ignoresSafeArea()
+
+            VStack(spacing: 8) {{
+                HStack {{
+                    VStack(alignment: .leading, spacing: 2) {{
+                        Text({title})
+                            .font(.headline)
+                        Text({subtitle})
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }}
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {{
+                        Text("Score \\(state.score)")
+                            .font(.headline.monospacedDigit())
+                        Text("Height \\(Int(state.birdY * 100))")
+                            .font(.caption.monospacedDigit())
+                    }}
+                }}
+
+                HStack(spacing: 12) {{
+                    Text("Pipes \\(state.pipesPassed)")
+                        .font(.caption.monospacedDigit())
+                    Text("Gap \\(Int(state.gapY * 100))")
+                        .font(.caption.monospacedDigit())
+                    Text("Velocity \\(Int(state.birdVelocity * 100))")
+                        .font(.caption.monospacedDigit())
+                    Spacer()
+                    Text(FeedbackState.message(for: state))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }}
+
+                if !SessionControl.isResult(state) {{
+                    HStack(spacing: 8) {{
+                        Spacer()
+                        Button(InputIntent.primaryButtonTitle(isPlaying: isPlaying)) {{
+                            flapFlappy()
+                        }}
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        Button("Tick") {{
+                            tickFlappy()
+                        }}
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        Button(InputIntent.resetTitle) {{
+                            state = SessionControl.reset()
+                        }}
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }}
+                    .font(.caption.weight(.semibold))
+                    .minimumScaleFactor(0.85)
+                }}
+
+                if SessionControl.isResult(state) {{
+                    ResultView(state: state) {{
+                        state = SessionControl.reset()
+                    }}
+                }}
+            }}
+            .padding()
+            .background(.thinMaterial)
+            .gesture(
+                TapGesture().onEnded {{
+                    flapFlappy()
+                }}
+            )
+        }}
+    }}
+
+    private func flapFlappy() {{
+        if !isPlaying {{
+            state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.flapBird(state)
+    }}
+
+    private func tickFlappy() {{
+        if !isPlaying {{
+            state = GameRules.startFlappySession(sessionSeconds: state.sessionSeconds)
+            return
+        }}
+        state = GameRules.advanceFlappyFrame(state)
     }}
 }}
 """

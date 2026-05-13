@@ -142,6 +142,15 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn('static let primaryActionTitle = "Dodge"', swift)
         self.assertIn("static func primaryButtonTitle(isPlaying: Bool) -> String", swift)
 
+    def test_input_intent_generator_emits_flappy_primary_button_title(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_input_intent_swift"))
+        spec = scene_spec()
+        spec["game"]["archetype"] = "flappy_side_scroller"
+
+        swift = scaffold._input_intent_swift(spec)
+
+        self.assertIn('static let primaryActionTitle = "Flap"', swift)
+
     def test_result_view_generator_uses_shared_reset_title(self) -> None:
         self.assertTrue(hasattr(scaffold, "_result_view_swift"))
 
@@ -170,6 +179,30 @@ class RkgScaffoldGeneratorTests(unittest.TestCase):
         self.assertIn("static func updateIdleMotion(anchor: AnchorEntity, time: Float)", swift)
         self.assertIn("let laneName = \"rkg|world=lane_\\(index)\"", swift)
         self.assertIn("wave(time * 1.6)", swift)
+
+    def test_world_rig_generator_omits_projectile_state_for_non_projectile_games(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_world_rig_swift"))
+        spec = scene_spec()
+        spec["game"]["archetype"] = "flappy_side_scroller"
+
+        swift = scaffold._world_rig_swift(spec)
+
+        self.assertIn("struct ProjectileFeedbackStyle", swift)
+        self.assertIn("static func updateIdleMotion(anchor: AnchorEntity, time: Float)", swift)
+        self.assertNotIn("state.targetLane", swift)
+        self.assertNotIn("state.projectileInFlight", swift)
+
+    def test_world_rig_generator_keeps_projectile_feedback_for_projectile_games(self) -> None:
+        self.assertTrue(hasattr(scaffold, "_world_rig_swift"))
+        spec = scene_spec()
+        spec["game"]["archetype"] = "custom_realitykit"
+        spec["game"]["systems"] = ["projectile", "shooting", "score"]
+
+        swift = scaffold._world_rig_swift(spec)
+
+        self.assertIn("static func updateProjectileFeedback(anchor: AnchorEntity, state: GameSessionState", swift)
+        self.assertIn("state.targetLane", swift)
+        self.assertIn("state.projectileInFlight", swift)
 
 
 if __name__ == "__main__":

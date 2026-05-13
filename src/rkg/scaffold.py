@@ -48,7 +48,7 @@ def init_game(spec: Mapping[str, Any], output: Path, *, force: bool = False) -> 
     _write_text(output / "Sources" / swift_name / "CameraRig.swift", camera_rig_swift(spec))
     _write_text(output / "Sources" / swift_name / "InputController.swift", input_controller_swift(spec))
     _write_text(output / "Sources" / swift_name / "SystemFlags.swift", system_flags_swift(spec))
-    _write_text(output / "Sources" / swift_name / "WorldRig.swift", _world_rig_swift())
+    _write_text(output / "Sources" / swift_name / "WorldRig.swift", _world_rig_swift(spec))
     _write_text(output / "Sources" / swift_name / "GameRules.swift", _game_rules_swift(spec))
     _write_text(output / "Sources" / swift_name / "AssetLoader.swift", _asset_loader_swift())
     _write_text(output / "Sources" / swift_name / "FallbackFactory.swift", _fallback_factory_swift())
@@ -331,6 +331,7 @@ def _primary_action_title(archetype_id: str) -> str:
         "stack_puzzle": "Place",
         "wave_defense_lite": "Fire",
         "fighter_2_5d": "Attack",
+        "flappy_side_scroller": "Flap",
     }.get(archetype_id, "Start")
 
 
@@ -514,8 +515,9 @@ enum FallbackFactory {
 """
 
 
-def _world_rig_swift() -> str:
-    return """import Foundation
+def _world_rig_swift(spec: Mapping[str, Any] | None = None) -> str:
+    projectile_feedback = _world_rig_projectile_feedback_swift() if _world_rig_includes_projectile_feedback(spec) else ""
+    swift = """import Foundation
 import RealityKit
 import UIKit
 
@@ -550,33 +552,7 @@ enum WorldRig {
         addProjectileFeedback(to: root)
     }
 
-    static func updateProjectileFeedback(anchor: AnchorEntity, state: GameSessionState, style: ProjectileFeedbackStyle) {
-        let targetX = Float(GameRules.clampedProjectileLane(state.targetLane) - 1) * 0.45
-        if let targetFrame = anchor.findEntity(named: targetFrameName) as? ModelEntity {
-            targetFrame.position.x = targetX
-            let color = state.lastProjectileHit ? style.hitTargetColor : style.idleTargetColor
-            targetFrame.model?.materials = [SimpleMaterial(color: color, roughness: 0.42, isMetallic: false)]
-        }
-
-        if let hitPulse = anchor.findEntity(named: hitPulseName) {
-            hitPulse.isEnabled = state.lastProjectileHit
-            hitPulse.position = [targetX, 0.16, -1.31]
-            let scale = state.lastProjectileHit ? Float(1.0 + Double(state.projectileHits) * 0.08) : 0.2
-            hitPulse.scale = [scale, scale, scale]
-        }
-
-        if let trail = anchor.findEntity(named: projectileTrailName) as? ModelEntity {
-            trail.isEnabled = state.projectileInFlight || state.lastProjectileHit
-            trail.position = [
-                Float(GameRules.clampedProjectileLane(state.projectileLane) - 1) * 0.45,
-                0.13,
-                -1.01
-            ]
-            trail.scale = [0.55, 1.0, state.projectileInFlight ? 1.45 : 0.65]
-            trail.model?.materials = [SimpleMaterial(color: style.trailColor, roughness: 0.30, isMetallic: false)]
-        }
-    }
-
+__PROJECTILE_FEEDBACK_METHOD__
     static func updateIdleMotion(anchor: AnchorEntity, time: Float) {
         guard let root = anchor.findEntity(named: rootName) else {
             return
@@ -689,6 +665,52 @@ enum WorldRig {
     }
 }
 """
+    return swift.replace("__PROJECTILE_FEEDBACK_METHOD__", projectile_feedback)
+
+
+def _world_rig_includes_projectile_feedback(spec: Mapping[str, Any] | None) -> bool:
+    if spec is None:
+        return True
+    game = spec.get("game")
+    if not isinstance(game, Mapping):
+        return False
+    if str(game.get("archetype")) != "custom_realitykit":
+        return False
+    systems = game.get("systems")
+    if not isinstance(systems, list):
+        return False
+    return bool({str(system) for system in systems} & {"projectile", "shooting"})
+
+
+def _world_rig_projectile_feedback_swift() -> str:
+    return """    static func updateProjectileFeedback(anchor: AnchorEntity, state: GameSessionState, style: ProjectileFeedbackStyle) {
+        let targetX = Float(GameRules.clampedProjectileLane(state.targetLane) - 1) * 0.45
+        if let targetFrame = anchor.findEntity(named: targetFrameName) as? ModelEntity {
+            targetFrame.position.x = targetX
+            let color = state.lastProjectileHit ? style.hitTargetColor : style.idleTargetColor
+            targetFrame.model?.materials = [SimpleMaterial(color: color, roughness: 0.42, isMetallic: false)]
+        }
+
+        if let hitPulse = anchor.findEntity(named: hitPulseName) {
+            hitPulse.isEnabled = state.lastProjectileHit
+            hitPulse.position = [targetX, 0.16, -1.31]
+            let scale = state.lastProjectileHit ? Float(1.0 + Double(state.projectileHits) * 0.08) : 0.2
+            hitPulse.scale = [scale, scale, scale]
+        }
+
+        if let trail = anchor.findEntity(named: projectileTrailName) as? ModelEntity {
+            trail.isEnabled = state.projectileInFlight || state.lastProjectileHit
+            trail.position = [
+                Float(GameRules.clampedProjectileLane(state.projectileLane) - 1) * 0.45,
+                0.13,
+                -1.01
+            ]
+            trail.scale = [0.55, 1.0, state.projectileInFlight ? 1.45 : 0.65]
+            trail.model?.materials = [SimpleMaterial(color: style.trailColor, roughness: 0.30, isMetallic: false)]
+        }
+    }
+
+"""
 
 
 def _runtime_scene_snapshot_swift() -> str:
@@ -766,6 +788,8 @@ def _game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
         return _stack_puzzle_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "fighter_2_5d":
         return _fighter_game_scene_controller_swift(spec)
+    if str(spec["game"]["archetype"]) == "flappy_side_scroller":
+        return _flappy_game_scene_controller_swift(spec)
     if str(spec["game"]["archetype"]) == "custom_realitykit":
         return custom_realitykit_game_scene_controller_swift(spec)
     entity_lines = "\n\n".join(_runtime_entity_swift(entity) for entity in runtime_entities_for(spec))
@@ -1065,6 +1089,58 @@ final class GameSceneController {{
 """
 
 
+def _flappy_game_scene_controller_swift(spec: Mapping[str, Any]) -> str:
+    entity_lines = _scene_entity_setup_lines(
+        spec,
+        [
+            ("birdEntity", {"player"}),
+            ("obstacleEntity", {"obstacle", "hazard"}),
+            ("arenaEntity", {"arena", "environment"}),
+        ],
+    )
+    return f"""import RealityKit
+
+final class GameSceneController {{
+    private let anchor = AnchorEntity(world: .zero)
+    private var birdEntity: Entity?
+    private var obstacleEntity: Entity?
+    private var arenaEntity: Entity?
+
+    func install(into view: ARView) {{
+{entity_lines}
+
+        view.scene.addAnchor(anchor)
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
+    }}
+
+    func update(state: GameSessionState) {{
+        birdEntity?.position = birdPosition(birdY: state.birdY)
+        birdEntity?.scale = state.isCollision ? [0.78, 0.78, 0.78] : [1, 1, 1]
+        obstacleEntity?.position = obstaclePosition(obstacleX: state.obstacleX, gapY: state.gapY)
+        obstacleEntity?.scale = state.isCollision ? [1.18, 1.18, 1.18] : [1, 1, 1]
+        arenaEntity?.position.z = -0.08 - Float(state.pipesPassed % 4) * 0.02
+        RuntimeSceneSnapshotWriter.write(state: ScreenshotState.requested, anchor: anchor)
+    }}
+
+    private func birdPosition(birdY: Double) -> SIMD3<Float> {{
+        [-0.42, yPosition(forBirdY: birdY), -0.82]
+    }}
+
+    private func obstaclePosition(obstacleX: Double, gapY: Double) -> SIMD3<Float> {{
+        [xPosition(forObstacleX: obstacleX), yPosition(forBirdY: gapY), -0.92]
+    }}
+
+    private func xPosition(forObstacleX value: Double) -> Float {{
+        Float((value - 0.5) * 1.65)
+    }}
+
+    private func yPosition(forBirdY value: Double) -> Float {{
+        Float((value - 0.5) * 1.10)
+    }}
+}}
+"""
+
+
 def _game_view_swift(spec: Mapping[str, Any]) -> str:
     if str(spec["game"]["archetype"]) in {
         "target_shooter",
@@ -1073,6 +1149,7 @@ def _game_view_swift(spec: Mapping[str, Any]) -> str:
         "wave_defense_lite",
         "stack_puzzle",
         "fighter_2_5d",
+        "flappy_side_scroller",
         "custom_realitykit",
     }:
         return _state_bound_game_view_swift()

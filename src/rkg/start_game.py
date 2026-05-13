@@ -37,6 +37,15 @@ def recommend_start_from_idea(payload: Mapping[str, Any]) -> JsonDict:
             systems=[],
             reason="fighter keywords map to the native fighter_2_5d archetype",
         )
+    if _matches(text, ["flappy", "flap", "bird", "pipe", "gap", "side-view", "side scroller"]):
+        return _recommendation(
+            title=title,
+            archetype="flappy_side_scroller",
+            camera="fixed_non_ar",
+            input_model="tap",
+            systems=[],
+            reason="flappy keywords map to the native flappy_side_scroller archetype",
+        )
     if _matches(text, ["race", "racing", "lap", "drift", "track", "vehicle", "car", "chase"]):
         return _recommendation(
             title=title,
@@ -107,6 +116,8 @@ def _spec_from_recommendation(recommendation: Mapping[str, Any], payload: Mappin
     title = str(recommendation["title"])
     if archetype == "fighter_2_5d":
         spec = build_spec_template("fighter_2_5d", title)
+    elif archetype == "flappy_side_scroller":
+        spec = build_spec_template("flappy_side_scroller", title)
     else:
         spec = build_game_template(
             title,

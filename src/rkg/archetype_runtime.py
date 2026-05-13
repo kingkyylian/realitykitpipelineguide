@@ -46,6 +46,15 @@ def archetype_state_fields(archetype_id: str) -> list[str]:
             "var isDodging: Bool = false",
             "var isKnockout: Bool = false",
         ]
+    if archetype_id == "flappy_side_scroller":
+        return [
+            "var birdY: Double = GameRules.flappyStartY",
+            "var birdVelocity: Double = 0",
+            "var obstacleX: Double = GameRules.flappyStartObstacleX",
+            "var gapY: Double = GameRules.flappyStartGapY",
+            "var pipesPassed: Int = 0",
+            "var isCollision: Bool = false",
+        ]
     if archetype_id == "custom_realitykit":
         return custom_realitykit_state_fields()
     return []
@@ -370,6 +379,110 @@ def archetype_rule_members(archetype_id: str) -> list[str]:
             state = recordFighterAttack(state)
         }
         return state
+    default:
+        return fallback
+    }
+}""",
+        ]
+    if archetype_id == "flappy_side_scroller":
+        return [
+            "static let flappyStartY = 0.52",
+            "static let flappyStartObstacleX = 1.0",
+            "static let flappyStartGapY = 0.54",
+            "static let flappyGravity = -0.040",
+            "static let flappyImpulse = 0.180",
+            "static let flappyObstacleSpeed = 0.150",
+            "static let flappyGapHalfHeight = 0.180",
+            "static let flappyBirdX = 0.25",
+            """static func clampedBirdY(_ value: Double) -> Double {
+    min(max(value, 0.08), 0.92)
+}""",
+            """static func nextFlappyGap(after pipesPassed: Int) -> Double {
+    let gaps = [0.36, 0.58, 0.44, 0.68, 0.50]
+    return gaps[pipesPassed % gaps.count]
+}""",
+            """static func hasFlappyCollision(birdY: Double, obstacleX: Double, gapY: Double) -> Bool {
+    let hitFlightBand = birdY <= 0.08 || birdY >= 0.92
+    let nearObstacle = obstacleX <= flappyBirdX + 0.11 && obstacleX >= flappyBirdX - 0.11
+    let outsideGap = abs(birdY - gapY) > flappyGapHalfHeight
+    return hitFlightBand || (nearObstacle && outsideGap)
+}""",
+            """static func startFlappySession(sessionSeconds: Int) -> GameSessionState {
+    var state = GameSessionState()
+    state.phase = .playing
+    state.sessionSeconds = sessionSeconds
+    state.birdY = flappyStartY
+    state.birdVelocity = 0
+    state.obstacleX = flappyStartObstacleX
+    state.gapY = flappyStartGapY
+    state.pipesPassed = 0
+    state.isCollision = false
+    state.lastEvent = "ready"
+    return state
+}""",
+            """static func flapBird(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        next = startFlappySession(sessionSeconds: next.sessionSeconds)
+    }
+    next.birdVelocity = flappyImpulse
+    next.lastEvent = "flap"
+    return next
+}""",
+            """static func advanceFlappyFrame(_ state: GameSessionState) -> GameSessionState {
+    var next = state
+    if next.phase != .playing {
+        return startFlappySession(sessionSeconds: next.sessionSeconds)
+    }
+    next.elapsedSeconds += 1
+    next.birdVelocity += flappyGravity
+    next.birdY = clampedBirdY(next.birdY + next.birdVelocity)
+    next.obstacleX -= flappyObstacleSpeed
+    if next.obstacleX < -0.16 {
+        next.pipesPassed += 1
+        next.score = next.pipesPassed * hitScore
+        next.obstacleX = flappyStartObstacleX
+        next.gapY = nextFlappyGap(after: next.pipesPassed)
+        next.lastEvent = "gate cleared"
+    } else {
+        next.lastEvent = "flying"
+    }
+    if hasFlappyCollision(birdY: next.birdY, obstacleX: next.obstacleX, gapY: next.gapY) {
+        next.isCollision = true
+        next = SessionControl.markResult(next, event: "collision")
+    } else if hasSessionEnded(elapsedSeconds: next.elapsedSeconds, sessionSeconds: next.sessionSeconds) {
+        next = SessionControl.markResult(next, event: "session complete")
+    }
+    return next
+}""",
+            """static func flappyScreenshotSession(for screenshotState: ScreenshotState?, fallback: GameSessionState) -> GameSessionState {
+    switch screenshotState?.rawValue {
+    case "gameplay_start":
+        return startFlappySession(sessionSeconds: fallback.sessionSeconds)
+    case "mid_flight":
+        var state = startFlappySession(sessionSeconds: fallback.sessionSeconds)
+        state = flapBird(state)
+        return advanceFlappyFrame(state)
+    case "near_gap":
+        var state = startFlappySession(sessionSeconds: fallback.sessionSeconds)
+        state.birdY = 0.58
+        state.birdVelocity = 0.04
+        state.obstacleX = flappyBirdX + 0.08
+        state.gapY = 0.58
+        state.lastEvent = "threading gap"
+        return state
+    case "collision":
+        var state = startFlappySession(sessionSeconds: fallback.sessionSeconds)
+        state.birdY = 0.24
+        state.obstacleX = flappyBirdX
+        state.gapY = 0.72
+        state.isCollision = true
+        return SessionControl.markResult(state, event: "collision")
+    case "results":
+        var state = startFlappySession(sessionSeconds: fallback.sessionSeconds)
+        state.pipesPassed = 3
+        state.score = state.pipesPassed * hitScore
+        return SessionControl.markResult(state, event: "session complete")
     default:
         return fallback
     }

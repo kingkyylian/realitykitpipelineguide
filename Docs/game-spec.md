@@ -79,6 +79,7 @@ Use `rkg new-spec` when starting from zero instead of hand-writing `GameSpec.jso
 
 ```bash
 python3 Tools/rkg.py new-spec fighter_2_5d --title "Neon Ring Duel" --output GameSpec.json
+python3 Tools/rkg.py new-spec flappy_side_scroller --title "Flappy Reef" --output GameSpec.json
 python3 Tools/rkg.py validate-spec GameSpec.json
 ```
 
@@ -207,6 +208,57 @@ release:
     - mid_combo
     - perfect_dodge
     - knockout
+```
+
+## Flappy Side Scroller Example
+
+`flappy_side_scroller` is the native Flappy-like archetype. It requires `player`, `obstacle`, and `arena` roles, generates tap-to-flap gravity state, scrolling obstacle/gap state, collision/result proof, and launch-state screenshot seeding for `gameplay_start`, `mid_flight`, `near_gap`, `collision`, and `results`.
+
+```yaml
+game:
+  id: flappy_reef
+  display_name: Flappy Reef
+  archetype: flappy_side_scroller
+  session_seconds: 60
+  camera: fixed_non_ar
+  input: tap
+  monetization: paid
+
+loop:
+  player_action: tap to flap through scrolling pipe gaps
+  fail_condition: hit a pipe or leave the flight band
+  scoring:
+    hit: 10
+    perfect: 25
+    clear: 100
+
+assets:
+  bird_player:
+    type: gameplay_actor
+    role: player
+    budget: "900 tris / 512 texture"
+    fallback: procedural_capsule
+  pipe_gate:
+    type: prop
+    role: obstacle
+    budget: "700 tris / 512 texture"
+    fallback: procedural_gate
+  reef_lane:
+    type: environment
+    role: arena
+    budget: "1200 tris / 512 texture"
+    fallback: procedural_arena
+
+release:
+  devices:
+    - iPhone 15
+    - iPad
+  screenshots:
+    - gameplay_start
+    - mid_flight
+    - near_gap
+    - collision
+    - results
 ```
 
 ## Why Fallbacks Are Required

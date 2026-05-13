@@ -44,6 +44,35 @@ class RkgNewSpecTests(unittest.TestCase):
             self.assertEqual(spec["assets"]["duel_arena"]["role"], "arena")
             self.assertEqual(spec["release"]["screenshots"], ["round_start", "mid_combo", "perfect_dodge", "knockout"])
 
+    def test_new_spec_writes_valid_flappy_game_spec(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            spec_path = root / "GameSpec.json"
+
+            result = self.run_rkg(
+                root,
+                "new-spec",
+                "flappy_side_scroller",
+                "--title",
+                "Flappy Reef",
+                "--output",
+                str(spec_path),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            spec = json.loads(spec_path.read_text(encoding="utf-8"))
+            self.assertEqual(spec["game"]["id"], "flappy_reef")
+            self.assertEqual(spec["game"]["display_name"], "Flappy Reef")
+            self.assertEqual(spec["game"]["archetype"], "flappy_side_scroller")
+            self.assertEqual(spec["game"]["input"], "tap")
+            self.assertEqual(spec["assets"]["bird_player"]["role"], "player")
+            self.assertEqual(spec["assets"]["pipe_gate"]["role"], "obstacle")
+            self.assertEqual(spec["assets"]["reef_lane"]["role"], "arena")
+            self.assertEqual(
+                spec["release"]["screenshots"],
+                ["gameplay_start", "mid_flight", "near_gap", "collision", "results"],
+            )
+
     def test_new_spec_refuses_unknown_archetype(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

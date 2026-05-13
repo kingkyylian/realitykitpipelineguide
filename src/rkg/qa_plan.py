@@ -44,6 +44,7 @@ def qa_steps_for(spec: Mapping[str, Any], archetype: Mapping[str, Any]) -> list[
                 "sidecar_path": f"Docs/screenshots/{state_name}.json",
                 "scene_snapshot_path": f"Docs/screenshots/{state_name}.scene.json",
                 "automation": _capture_automation(str(spec["game"]["archetype"]), state_name),
+                "role_visibility_contract": _role_visibility_contract(str(spec["game"]["archetype"]), state_name),
                 "semantic_visual_contract": _semantic_visual_contract(str(spec["game"]["archetype"]), state_name),
             }
         )
@@ -88,6 +89,12 @@ def _capture_automation(archetype_id: str, state: str) -> str:
     if archetype_id in {"fighter_2_5d", "custom_realitykit"}:
         return f"launch_arg --rkg-screenshot-state {state}"
     return "manual_capture"
+
+
+def _role_visibility_contract(_archetype_id: str, _state: str) -> JsonDict:
+    return {
+        "min_visual_extent": 0.04,
+    }
 
 
 def _semantic_visual_contract(archetype_id: str, state: str) -> JsonDict:

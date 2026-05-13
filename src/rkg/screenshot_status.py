@@ -141,6 +141,9 @@ def _scene_snapshot_status(
     roles = payload.get("roles")
     if not isinstance(roles, list):
         return "invalid_scene_snapshot"
+    visibility_contract = step.get("role_visibility_contract")
+    if not isinstance(visibility_contract, Mapping):
+        visibility_contract = {}
     actual_roles: set[str] = set()
     enabled_roles: set[str] = set()
     visible_roles: set[str] = set()
@@ -155,7 +158,7 @@ def _scene_snapshot_status(
         actual_roles.add(role)
         if role_record["is_enabled"]:
             enabled_roles.add(role)
-            if _scene_role_record_has_measurable_visual_bounds(role_record):
+            if _scene_role_record_has_measurable_visual_bounds(role_record, visibility_contract):
                 visible_roles.add(role)
     if not expected_roles.issubset(actual_roles):
         return "scene_role_mismatch"
@@ -189,14 +192,22 @@ def _scene_role_record_has_valid_visibility_metadata(role_record: Mapping[str, A
     return all(_is_non_negative_finite_number(extents.get(axis)) for axis in ("x", "y", "z"))
 
 
-def _scene_role_record_has_measurable_visual_bounds(role_record: Mapping[str, Any]) -> bool:
+def _scene_role_record_has_measurable_visual_bounds(
+    role_record: Mapping[str, Any],
+    visibility_contract: Mapping[str, Any],
+) -> bool:
     visual_bounds = role_record.get("visual_bounds")
     if not isinstance(visual_bounds, Mapping):
         return False
     extents = visual_bounds.get("extents")
     if not isinstance(extents, Mapping):
         return False
-    return max(float(extents[axis]) for axis in ("x", "y", "z")) > 0.001
+    has_contract_min = isinstance(visibility_contract.get("min_visual_extent"), (int, float))
+    min_visual_extent = _contract_float(visibility_contract, "min_visual_extent", 0.001)
+    max_extent = max(float(extents[axis]) for axis in ("x", "y", "z"))
+    if has_contract_min:
+        return max_extent >= min_visual_extent
+    return max_extent > min_visual_extent
 
 
 def _is_finite_number(value: object) -> bool:

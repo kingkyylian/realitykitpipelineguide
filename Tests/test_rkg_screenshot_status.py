@@ -113,11 +113,13 @@ class RkgScreenshotStatusTests(unittest.TestCase):
         roles: list[str] | None = None,
         disabled_roles: list[str] | None = None,
         zero_bounds_roles: list[str] | None = None,
+        tiny_bounds_roles: list[str] | None = None,
     ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         role_values = roles or ["target", "arena"]
         disabled = set(disabled_roles or [])
         zero_bounds = set(zero_bounds_roles or [])
+        tiny_bounds = set(tiny_bounds_roles or [])
         payload = {
             "schema_version": 1,
             "state": state,
@@ -134,6 +136,8 @@ class RkgScreenshotStatusTests(unittest.TestCase):
                         "extents": (
                             {"x": 0.0, "y": 0.0, "z": 0.0}
                             if role in zero_bounds
+                            else {"x": 0.012, "y": 0.011, "z": 0.01}
+                            if role in tiny_bounds
                             else {"x": 0.42, "y": 0.18, "z": 0.12}
                         ),
                     },
@@ -429,6 +433,26 @@ class RkgScreenshotStatusTests(unittest.TestCase):
             self.write_scene_snapshot(
                 project / "Docs" / "screenshots" / "gameplay_start.scene.json",
                 zero_bounds_roles=["target"],
+            )
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "scene_role_not_visible")
+
+    def test_verify_screenshots_rejects_runtime_scene_snapshot_tiny_visual_bounds_for_visible_role(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(
+                project / "Docs" / "screenshots" / "gameplay_start.scene.json",
+                tiny_bounds_roles=["target"],
             )
             plan = build_qa_plan(target_spec())
 

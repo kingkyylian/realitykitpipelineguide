@@ -171,6 +171,7 @@ class RkgQaPlanTests(unittest.TestCase):
         self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["max_top_light_coverage"], 0.34)
         self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["max_bottom_light_coverage"], 0.82)
         self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["max_center_light_coverage"], 0.88)
+        self.assertEqual(payload["steps"][2]["role_visibility_contract"]["min_visual_extent"], 0.04)
         self.assertEqual(payload["steps"][2]["semantic_visual_contract"]["min_scene_luma_span"], 18)
 
     def test_fighter_qa_plan_exposes_launch_state_automation(self) -> None:

@@ -12,6 +12,38 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 142: RKG Minimum Role Footprint Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Runtime scene-role kanıtını "entity var ve bounds sıfır değil" seviyesinden bir adım ileri taşımak: beklenen visible role entity'leri anlamlı minimum visual extent taşımıyorsa screenshot QA fail etmeli.
+
+**Yapılanlar:**
+
+- `qa-plan` screenshot adımlarına `role_visibility_contract` eklendi.
+- İlk contract alanı `min_visual_extent: 0.04`.
+- `verify-screenshots`, enabled expected role entity'sinin `visual_bounds.extents` maksimumu bu eşiğin altında kalırsa `scene_role_not_visible` dönüyor.
+- Eski `qa-plan --json` payload'ları için verifier fallback'i `0.001` olarak korundu.
+- Tiny bounds regression testi eklendi; `0.012` gibi ölçülebilir ama anlamsız küçük role footprint artık reddediliyor.
+- RKG mimari/game-factory/dogfood/handoff dokümanları role footprint gate'i ve kalan pixel-level mesh visibility boşluğu ile güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_tiny_visual_bounds_for_visible_role Tests.test_rkg_qa_plan.RkgQaPlanTests.test_build_qa_plan_sequences_screenshot_proofs_for_capture: first run failed as expected on old verifier/qa-plan contract; then ok
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+rtk node -e "JSON.parse(require('fs').readFileSync('Tools/asset_manifest.json','utf8')); console.log('manifest ok')": manifest ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 257 tests
+git diff --check: ok
+rtk xcodebuild -quiet -project RealityKitPipelineDemo.xcodeproj -scheme RealityKitPipelineDemo -destination generic/platform=iOS\ Simulator -derivedDataPath Build/DerivedData build: xcodebuild: ok
+rtk ./.venv/bin/python Tools/rkp.py release-check: release-check ok; 257 tests
+```
+
+**Öğrenme notu:**
+
+Bu hâlâ gerçek screen-space projection değil; role entity'nin piksellerde nerede ve kaç piksel kapladığını kanıtlamıyor. Ama microscopic runtime role binding'i artık "visible" diye geçemiyor. Bir sonraki QA katmanı, runtime metadata ile screenshot pixel sampling'i bağlayıp role-to-pixel visibility kanıtı üretmek olmalı.
+
 ### Sprint 141: RKG Center Modal Occlusion Gate
 
 **Durum:** Tamamlandı

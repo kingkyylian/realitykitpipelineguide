@@ -201,7 +201,7 @@ The state-bound scene generators share one entity setup helper for the repeated 
 | `rkg plan-game GameSpec.yaml` | Print files/modules/assets/screenshots that `init-game` will generate. | Implemented; does not write files. |
 | `rkg qa-plan GameSpec.yaml` | Print ordered screenshot capture steps from `screenshot_proofs`. | Text and `--json`; includes screenshot, sidecar, scene snapshot paths, semantic visual contract thresholds, and custom RealityKit proof text is adapter-specific when systems select racing, projectile, shooter, or collector. |
 | `rkg capture-screenshots <dir>` | Generate when needed, build, install, launch screenshot states, and save simulator captures. | Runs `xcodegen generate` when `project.yml` exists, drives `xcrun simctl`, writes JPEG captures, JSON sidecars, and runtime `.scene.json` role snapshots copied from the app container. |
-| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, readable dimensions, sidecar metadata, runtime scene-role snapshot metadata including enabled visible roles with measurable visual bounds, blank/solid PNG/JPEG evidence, duplicate visual evidence across states, and first-pass semantic visual contract failures. |
+| `rkg verify-screenshots <dir>` | Verify captured screenshot evidence against a generated project or `qa-plan --json` payload. | Checks file presence, nonzero size, JPEG/PNG header, readable dimensions, sidecar metadata, runtime scene-role snapshot metadata including enabled visible roles with minimum visual bounds, blank/solid PNG/JPEG evidence, duplicate visual evidence across states, and first-pass semantic visual contract failures. |
 | `rkg accept-first-asset <dir>` | Build, capture, copy screenshot evidence, accept, and release-check the first gameplay-relevant generated asset. | Text and `--json`; `--dry-run` prints the workflow, `--asset-id` overrides role selection, `--source-state` overrides the screenshot state used as acceptance evidence, and execution dispatches local `rkp`/`rkg` steps through workspace Python modules. |
 | `rkg accept-assets <dir>` | Build, capture once, copy screenshot evidence, accept, and release-check multiple generated assets. | Text and `--json`; `--dry-run` prints the workflow, repeated `--asset-id` limits the asset subset, one capture/verify pass feeds all acceptance screenshots, and execution dispatches local `rkp`/`rkg` steps through workspace Python modules. |
 | `rkg init-game GameSpec.yaml --output <dir>` | Generate project skeleton from registry. | Refuses non-empty output unless `--force`. |
@@ -224,7 +224,7 @@ Current `verify-screenshots` behavior:
 - Reports `missing`, `not_file`, `empty`, `invalid_image`, `invalid_dimensions`, `missing_sidecar`, `invalid_sidecar`, `role_evidence_mismatch`, `missing_scene_snapshot`, `invalid_scene_snapshot`, `scene_role_mismatch`, `scene_role_not_visible`, `blank_or_solid`, `duplicate_visual_evidence`, `semantic_debug_overlay`, `semantic_control_occlusion`, `semantic_center_occlusion`, `semantic_flat_scene`, `semantic_scene_too_dark`, or `ok`.
 - Accepts JPEG and PNG image headers only when the file carries readable dimensions of at least 300x300 pixels.
 - Requires a JSON sidecar next to every valid planned screenshot. The sidecar must match the QA plan game id, state, automation hint, visible roles, and point at a runtime scene snapshot.
-- Requires `Docs/screenshots/<state>.scene.json` runtime evidence copied from the generated app container. The snapshot must match the state and include the expected asset roles bound in the running RealityKit scene. Each expected role must have an enabled `rkg|...` entity, finite `position.x/y/z` metadata, and `visual_bounds.center/extents` metadata. Disabled expected roles or zero visual bounds fail as `scene_role_not_visible`.
+- Requires `Docs/screenshots/<state>.scene.json` runtime evidence copied from the generated app container. The snapshot must match the state and include the expected asset roles bound in the running RealityKit scene. Each expected role must have an enabled `rkg|...` entity, finite `position.x/y/z` metadata, and `visual_bounds.center/extents` metadata that meets the QA plan's `role_visibility_contract.min_visual_extent`. Disabled expected roles, zero visual bounds, or microscopic bounds fail as `scene_role_not_visible`.
 - For 8-bit RGB/RGBA PNG captures, reconstructs filtered scanlines, samples pixels, and rejects near-solid images as `blank_or_solid`.
 - On macOS, uses `sips` to rasterize JPEG captures into the same sampler. A malformed dimension-bearing JPEG is `invalid_image`; a near-solid JPEG is `blank_or_solid`.
 - Applies the QA plan's `semantic_visual_contract` after metadata checks. Current contract checks top-band light coverage, bottom-band control-panel coverage, center-band modal coverage, scene luma span, and scene bright-pixel ratio.
@@ -298,6 +298,9 @@ Current `qa-plan --json` shape:
       "sidecar_path": "Docs/screenshots/gameplay_start.json",
       "scene_snapshot_path": "Docs/screenshots/gameplay_start.scene.json",
       "automation": "manual_capture",
+      "role_visibility_contract": {
+        "min_visual_extent": 0.04
+      },
       "semantic_visual_contract": {
         "top_band_fraction": 0.24,
         "max_top_light_coverage": 0.34,

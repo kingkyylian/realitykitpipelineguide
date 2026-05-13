@@ -27,6 +27,9 @@ PALETTES = {
 }
 
 ARCHETYPE_KEYWORDS: dict[str, list[str]] = {
+    "flappy_bird": ["bird_player", "bird player", "flappy_bird", "flappy bird"],
+    "flappy_gate": ["pipe_gate", "pipe gate", "gap gate", "flappy_gate", "flappy gate"],
+    "flappy_reef": ["reef_lane", "reef lane", "flappy_reef", "flappy reef lane"],
     "drone":      ["drone", "flying", "quadcopter", "rotor", "hover"],
     "tower":      ["tower", "turret", "pillar", "beacon", "post"],
     "crate":      ["crate", "box", "container", "pickup", "supply"],
@@ -37,7 +40,19 @@ ARCHETYPE_KEYWORDS: dict[str, list[str]] = {
     "arena":      ["arena", "floor", "lane", "track", "environment"],
 }
 
-_ARCHETYPE_PRIORITY = ["drone", "tower", "crate", "projectile", "target", "weapon", "player", "arena"]
+_ARCHETYPE_PRIORITY = [
+    "flappy_bird",
+    "flappy_gate",
+    "flappy_reef",
+    "drone",
+    "tower",
+    "crate",
+    "projectile",
+    "target",
+    "weapon",
+    "player",
+    "arena",
+]
 
 
 def infer_palette(prompt: str, archetype: str | None = None) -> tuple[str, tuple[float, ...], tuple[float, ...]]:
@@ -47,6 +62,12 @@ def infer_palette(prompt: str, archetype: str | None = None) -> tuple[str, tuple
             return name, colors[0], colors[1]
     if archetype in {"player", "projectile"}:
         return "blue", PALETTES["blue"][0], PALETTES["blue"][1]
+    if archetype == "flappy_bird":
+        return "yellow", PALETTES["yellow"][0], PALETTES["orange"][1]
+    if archetype == "flappy_gate":
+        return "green", PALETTES["green"][0], PALETTES["green"][1]
+    if archetype == "flappy_reef":
+        return "blue", PALETTES["blue"][0], PALETTES["green"][1]
     if archetype in {"weapon", "arena"}:
         return "gray", PALETTES["gray"][0], PALETTES["gray"][1]
     return "red", PALETTES["red"][0], PALETTES["red"][1]
@@ -154,6 +175,41 @@ def make_texture():
             elif ARCHETYPE == "crate":
                 in_seam = (x % 128) < 4 or (y % 128) < 4
                 color = (0.06, 0.06, 0.06, 1.0) if in_seam else PRIMARY
+            elif ARCHETYPE == "flappy_bird":
+                belly = radius < 0.20 and v < 0.58
+                wing = 0.26 < u < 0.58 and 0.33 < v < 0.64 and radius < 0.36
+                eye = 0.61 < u < 0.68 and 0.60 < v < 0.68
+                beak = u > 0.70 and abs(v - 0.56) < (u - 0.70) * 0.55
+                if eye:
+                    color = (0.03, 0.035, 0.04, 1.0)
+                elif beak:
+                    color = (1.0, 0.42, 0.10, 1.0)
+                elif belly:
+                    color = SECONDARY
+                elif wing:
+                    color = (0.95, 0.54, 0.12, 1.0)
+                else:
+                    color = PRIMARY
+            elif ARCHETYPE == "flappy_gate":
+                pipe_body = u < 0.28 or u > 0.72
+                lip = (0.20 < u < 0.36 or 0.64 < u < 0.80) and (0.30 < v < 0.38 or 0.62 < v < 0.70)
+                seam = int(v * 12) % 3 == 0
+                if lip:
+                    color = SECONDARY
+                elif pipe_body:
+                    color = (0.07, 0.44, 0.20, 1.0) if seam else PRIMARY
+                else:
+                    color = (0.03, 0.12, 0.13, 1.0)
+            elif ARCHETYPE == "flappy_reef":
+                wave = math.sin(u * math.pi * 8.0 + v * math.pi * 2.0)
+                coral = (0.10 < u < 0.22 and v < 0.28) or (0.78 < u < 0.90 and v < 0.30)
+                lane = abs(v - 0.5) < 0.025 or abs(v - 0.34) < 0.015 or abs(v - 0.66) < 0.015
+                if coral:
+                    color = (1.0, 0.38, 0.32, 1.0)
+                elif lane:
+                    color = SECONDARY
+                else:
+                    color = (0.05 + wave * 0.02, 0.18 + wave * 0.04, 0.26 + wave * 0.05, 1.0)
             elif ARCHETYPE == "player" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_actor"):
                 helmet = radius < 0.18
                 stripe = abs(u - 0.5) < 0.045 or (0.16 < v < 0.24)
@@ -387,8 +443,74 @@ def make_arena_parts():
     return parts
 
 
+def make_flappy_bird_parts():
+    parts = []
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.16, location=(0, 0, 0.22))
+    body = bpy.context.active_object
+    body.scale = (1.22, 0.72, 0.88)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(body)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=8, radius=0.08, location=(-0.045, -0.10, 0.23))
+    wing = bpy.context.active_object
+    wing.scale = (1.15, 0.28, 0.72)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(wing)
+    bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=0.045, radius2=0.0, depth=0.14, location=(0.17, 0, 0.24))
+    beak = bpy.context.active_object
+    beak.rotation_euler[1] = math.pi / 2
+    parts.append(beak)
+    for y in (-0.055, 0.055):
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=8, ring_count=4, radius=0.018, location=(0.105, y, 0.285))
+        parts.append(bpy.context.active_object)
+    return parts
+
+
+def make_flappy_gate_parts():
+    parts = []
+    for x in (-0.24, 0.24):
+        for z in (-0.34, 0.34):
+            bpy.ops.mesh.primitive_cylinder_add(vertices=18, radius=0.075, depth=0.46, location=(x, 0, z))
+            pipe = bpy.context.active_object
+            parts.append(pipe)
+            lip_z = z - 0.23 if z < 0 else z + 0.23
+            bpy.ops.mesh.primitive_cylinder_add(vertices=18, radius=0.105, depth=0.055, location=(x, 0, lip_z))
+            lip = bpy.context.active_object
+            parts.append(lip)
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0))
+    gap_witness = bpy.context.active_object
+    gap_witness.scale = (0.018, 0.018, 0.28)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    parts.append(gap_witness)
+    return parts
+
+
+def make_flappy_reef_parts():
+    parts = []
+    mesh = make_quad_mesh(2.2, 1.2, vertical=False)
+    water = bpy.data.objects.new(f"{{ASSET_ID}}_water_lane", mesh)
+    bpy.context.collection.objects.link(water)
+    parts.append(water)
+    for x in (-0.85, -0.58, 0.62, 0.88):
+        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=0.045, radius2=0.014, depth=0.18, location=(x, -0.38, 0.09))
+        coral = bpy.context.active_object
+        parts.append(coral)
+    for y in (-0.42, 0.42):
+        bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, y, 0.035))
+        rail = bpy.context.active_object
+        rail.scale = (1.08, 0.018, 0.025)
+        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+        parts.append(rail)
+    return parts
+
+
 def make_asset(material):
-    if ARCHETYPE == "drone":
+    if ARCHETYPE == "flappy_bird":
+        obj = join_and_uv(make_flappy_bird_parts())
+    elif ARCHETYPE == "flappy_gate":
+        obj = join_and_uv(make_flappy_gate_parts())
+    elif ARCHETYPE == "flappy_reef":
+        obj = join_and_uv(make_flappy_reef_parts())
+    elif ARCHETYPE == "drone":
         obj = join_and_uv(make_drone_parts())
     elif ARCHETYPE == "tower":
         obj = join_and_uv(make_tower_parts())

@@ -420,6 +420,18 @@ class RkpPackageTests(unittest.TestCase):
         self.assertEqual(prompt_asset.infer_archetype("weapon role weapon_proxy for Shard Volley"), "weapon")
         self.assertEqual(prompt_asset.infer_archetype("arena role environment for Shard Volley"), "arena")
         self.assertEqual(prompt_asset.infer_archetype("projectile role projectile for Shard Volley"), "projectile")
+        self.assertEqual(
+            prompt_asset.infer_archetype(
+                "arena_space arena role environment for Shard Volley; fallback procedural_arena"
+            ),
+            "arena",
+        )
+        self.assertEqual(
+            prompt_asset.infer_archetype(
+                "arena_space arena role environment for Flappy Reef Demo; fallback procedural_arena"
+            ),
+            "arena",
+        )
 
         script = prompt_asset.blender_template(
             "player_proxy",
@@ -435,6 +447,42 @@ class RkpPackageTests(unittest.TestCase):
         self.assertIn('elif ARCHETYPE == "player" or (ARCHETYPE is None and ASSET_TYPE == "gameplay_actor"):', script)
         self.assertIn('elif ARCHETYPE == "weapon" or ASSET_TYPE == "weapon_proxy":', script)
         self.assertIn('elif ARCHETYPE == "arena" or ASSET_TYPE == "environment":', script)
+
+    def test_template_generator_supports_flappy_role_archetypes(self) -> None:
+        from rkp import prompt_asset
+
+        self.assertEqual(
+            prompt_asset.infer_archetype(
+                "bird_player player role gameplay_actor for Flappy Reef Demo; fallback procedural_capsule"
+            ),
+            "flappy_bird",
+        )
+        self.assertEqual(
+            prompt_asset.infer_archetype(
+                "pipe_gate obstacle role prop for Flappy Reef Demo; fallback procedural_gate"
+            ),
+            "flappy_gate",
+        )
+        self.assertEqual(
+            prompt_asset.infer_archetype(
+                "reef_lane arena role environment for Flappy Reef Demo; fallback procedural_arena"
+            ),
+            "flappy_reef",
+        )
+
+        script = prompt_asset.blender_template(
+            "pipe_gate",
+            "prop",
+            "pipe_gate obstacle role prop for Flappy Reef Demo; fallback procedural_gate",
+            "flappy_gate",
+        )
+
+        self.assertIn("def make_flappy_bird_parts():", script)
+        self.assertIn("def make_flappy_gate_parts():", script)
+        self.assertIn("def make_flappy_reef_parts():", script)
+        self.assertIn('if ARCHETYPE == "flappy_bird":', script)
+        self.assertIn('elif ARCHETYPE == "flappy_gate":', script)
+        self.assertIn('elif ARCHETYPE == "flappy_reef":', script)
 
     def test_make_asset_meshy_uses_configured_asset_path_and_refine_quality(self) -> None:
         from rkp import cli

@@ -12,6 +12,48 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 145: RKG Flappy Role-Specific Asset Templates
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Prompt'tan asset üretimi tarafında Flappy demo kalitesini yükseltmek: `bird_player`, `pipe_gate`, `reef_lane` artık generic player/prop/arena taslaklarına değil, Flappy-specific procedural template'lere düşmeli.
+
+**Yapılanlar:**
+
+- RKG asset pipeline prompt'ları artık asset id ile başlıyor; örnek: `pipe_gate obstacle role prop ...`.
+- RKP `prompt_asset` inference katmanına Flappy-specific archetype'lar eklendi:
+  - `flappy_bird`
+  - `flappy_gate`
+  - `flappy_reef`
+- Template generator'a bu üç archetype için özel texture branch'leri ve Blender mesh parçaları eklendi.
+- Fresh Flappy dogfood project `Build/rkg-flappy-role-assets-v1/FlappyReefDemo` üretildi.
+- `accept-assets` ile üç asset yeniden build/inspect/capture/accept edildi.
+- Public `Docs/screenshots/rkg_flappy_demo_*.jpg` evidence seti yeni role-specific asset run'ından yenilendi.
+- `Docs/rkg-flappy-comprehensive-demo.md` asset tablo ve öğrenme notları yeni archetype'lara göre güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkp_package.RkpPackageTests.test_template_generator_supports_flappy_role_archetypes: first run failed as expected on generic player inference; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_start_game.RkgStartGameTests.test_start_game_asset_prompts_include_asset_id_for_role_specific_generation Tests.test_rkg_start_game.RkgStartGameTests.test_start_game_scores_idea_writes_spec_project_and_qa_plan: first run failed as expected on prompts without asset id; then ok
+rtk ./.venv/bin/python Tools/rkg.py start-game Build/rkg-flappy-comprehensive-v1/idea.json --output Build/rkg-flappy-role-assets-v1/FlappyReefDemo --force --json: ok; prompts include bird_player/pipe_gate/reef_lane
+rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-role-assets-v1/FlappyReefDemo --device booted --json: ok; 3 assets accepted
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-role-assets-v1/FlappyReefDemo --json: ok; 5 checks
+sips -g pixelWidth -g pixelHeight Docs/screenshots/rkg_flappy_demo_gameplay_start.jpg Docs/screenshots/rkg_flappy_demo_mid_flight.jpg Docs/screenshots/rkg_flappy_demo_near_gap.jpg Docs/screenshots/rkg_flappy_demo_collision.jpg Docs/screenshots/rkg_flappy_demo_results.jpg: 1206x2622
+```
+
+**Asset inspect sonuçları:**
+
+```text
+bird_player: flappy_bird, 878 / 900 triangles, 512 base color, UV st present
+pipe_gate: flappy_gate, 556 / 700 triangles, 512 base color, UV st present
+reef_lane: flappy_reef, 122 / 1200 triangles, 512 base color, UV st present
+```
+
+**Öğrenme notu:**
+
+Kaliteyi artıran küçük ama önemli bağ asset id'nin prompt'a girmesi oldu. Role tek başına `player` veya `arena` dediğinde generator doğru domain objesini bilemez; `bird_player`, `pipe_gate`, `reef_lane` gibi id'ler template seçiminde doğrudan ürün niyetini taşıyor.
+
 ### Sprint 144: RKG Flappy Comprehensive Demo Dogfood
 
 **Durum:** Tamamlandı

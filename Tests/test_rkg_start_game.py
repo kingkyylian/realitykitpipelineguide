@@ -113,7 +113,7 @@ class RkgStartGameTests(unittest.TestCase):
                             "--type",
                             "gameplay_target",
                             "--prompt",
-                            "target role gameplay_target for Shard Volley; budget 700 tris / 512 texture; fallback procedural_rings",
+                            "target_proxy target role gameplay_target for Shard Volley; budget 700 tris / 512 texture; fallback procedural_rings",
                         ],
                     },
                     {"step": "build_asset", "command": ["rkp", "build-asset", "target_proxy"]},
@@ -137,6 +137,25 @@ class RkgStartGameTests(unittest.TestCase):
             self.assertEqual(spec["game"]["systems"], ["projectile", "shooting", "score"])
             self.assertTrue((output / "Sources" / "ShardVolley" / "RuntimeSceneSnapshot.swift").exists())
             self.assertTrue((output / "Docs" / "store" / "screenshot-qa.md").exists())
+
+    def test_start_game_asset_prompts_include_asset_id_for_role_specific_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            idea = root / "idea.json"
+            output = root / "FlappyReefDemo"
+            idea.write_text(json.dumps(flappy_idea(), indent=2) + "\n", encoding="utf-8")
+
+            result = self.run_rkg(root, "start-game", str(idea), "--output", str(output), "--json")
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            tasks_by_id = {task["asset_id"]: task for task in payload["asset_pipeline"]["tasks"]}
+            bird_prompt = tasks_by_id["bird_player"]["commands"][0]["command"][-1]
+            pipe_prompt = tasks_by_id["pipe_gate"]["commands"][0]["command"][-1]
+            reef_prompt = tasks_by_id["reef_lane"]["commands"][0]["command"][-1]
+            self.assertIn("bird_player player role gameplay_actor", bird_prompt)
+            self.assertIn("pipe_gate obstacle role prop", pipe_prompt)
+            self.assertIn("reef_lane arena role environment", reef_prompt)
 
     def test_start_game_refuses_rejected_idea_without_writing_project(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

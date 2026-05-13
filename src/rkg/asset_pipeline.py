@@ -21,7 +21,7 @@ def _asset_task(asset_id: str, asset: Mapping[str, Any], spec: Mapping[str, Any]
     asset_type = str(asset.get("type") or "prop")
     role = str(asset.get("role") or asset_type)
     screenshot_path = f"Docs/screenshots/{asset_id}_imported.jpg"
-    prompt = _asset_prompt(role, asset_type, asset, spec)
+    prompt = _asset_prompt(asset_id, role, asset_type, asset, spec)
     return {
         "asset_id": asset_id,
         "role": role,
@@ -44,9 +44,9 @@ def _asset_task(asset_id: str, asset: Mapping[str, Any], spec: Mapping[str, Any]
     }
 
 
-def _asset_prompt(role: str, asset_type: str, asset: Mapping[str, Any], spec: Mapping[str, Any]) -> str:
+def _asset_prompt(asset_id: str, role: str, asset_type: str, asset: Mapping[str, Any], spec: Mapping[str, Any]) -> str:
     game = spec["game"]
     budget = str(asset.get("budget") or "1500 tris / 512 texture")
     fallback = str(asset.get("fallback") or "procedural_fallback")
     title = str(game["display_name"])
-    return f"{role} role {asset_type} for {title}; budget {budget}; fallback {fallback}"
+    return f"{asset_id} {role} role {asset_type} for {title}; budget {budget}; fallback {fallback}"

@@ -35,6 +35,12 @@ rtk ./.venv/bin/python Tools/rkg.py accept-assets Build/rkg-flappy-comprehensive
 
 The `start-game` run scored the idea at `100/pass`, routed it to `flappy_side_scroller`, emitted a five-step QA plan, and produced three RKP asset tasks. During this run a QA-plan gap was fixed: Flappy screenshot states now use `launch_arg --rkg-screenshot-state <state>` instead of `manual_capture`.
 
+The follow-up role-asset pass tightened prompt-to-asset quality. RKG asset pipeline prompts now include the asset id, so RKP can infer Flappy-specific template archetypes instead of falling back to generic player/arena/prop drafts:
+
+- `bird_player` -> `flappy_bird`
+- `pipe_gate` -> `flappy_gate`
+- `reef_lane` -> `flappy_reef`
+
 ## Screenshot Evidence
 
 | State | Public evidence |
@@ -51,11 +57,11 @@ All five generated screenshots were captured at `1206x2622` and passed `verify-s
 
 | Asset | Role | Inspect result | Public evidence |
 | --- | --- | --- | --- |
-| `bird_player` | `player` | 296 / 900 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_bird_player_imported.jpg` |
-| `pipe_gate` | `obstacle` | 2 / 700 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_pipe_gate_imported.jpg` |
-| `reef_lane` | `arena` | 50 / 1200 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_reef_lane_imported.jpg` |
+| `bird_player` | `player` | `flappy_bird`; 878 / 900 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_bird_player_imported.jpg` |
+| `pipe_gate` | `obstacle` | `flappy_gate`; 556 / 700 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_pipe_gate_imported.jpg` |
+| `reef_lane` | `arena` | `flappy_reef`; 122 / 1200 triangles, 512 base color, UV present | `Docs/screenshots/rkg_flappy_demo_reef_lane_imported.jpg` |
 
-`accept-assets` completed `make-asset`, `build-asset`, `inspect-usdz`, one screenshot capture pass, screenshot verification, evidence copy, `accept-asset` for all three assets, and `rkp release-check --assets`.
+`accept-assets` completed build/inspect for all three assets, one screenshot capture pass, screenshot verification, evidence copy, `accept-asset` for all three assets, and `rkp release-check --assets`.
 
 ## Verification Result
 
@@ -63,7 +69,7 @@ All five generated screenshots were captured at `1206x2622` and passed `verify-s
 rkg verify-game: ok
 rkg capture-screenshots --device booted --json: ok; 5 screenshots
 rkg verify-screenshots --json: ok; 5 checks
-rkg accept-assets --device booted --json: ok; 18 workflow steps
+rkg accept-assets --device booted --json: ok; 15 completed workflow steps; generated flappy_bird/flappy_gate/flappy_reef drafts
 rkp release-check --assets from generated project: ok
 ```
 

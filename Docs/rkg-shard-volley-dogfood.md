@@ -74,7 +74,7 @@ The follow-up QA slice closed three of the gaps from this run:
 - `verify-screenshots` rejects valid-dimensional PNG evidence that is visually blank or near-solid via `blank_or_solid`, and generated custom overlays use smaller controls/padding for screenshot readability.
 - `verify-screenshots` also samples JPEG evidence through `sips`, rejects malformed dimension-bearing JPEG files as `invalid_image`, rejects blank/solid JPEG captures, and rejects duplicate visual evidence across release states as `duplicate_visual_evidence`.
 - `capture-screenshots` now writes screenshot sidecars, and `verify-screenshots` requires those sidecars to match the planned game id, state, automation hint, and visible roles.
-- Generated apps now write runtime scene-role snapshots during screenshot launches; `capture-screenshots` copies them as `Docs/screenshots/<state>.scene.json`, and `verify-screenshots` requires the expected roles to appear in that running RealityKit scene metadata.
+- Generated apps now write runtime scene-role snapshots during screenshot launches; `capture-screenshots` copies them as `Docs/screenshots/<state>.scene.json`, and `verify-screenshots` requires the expected roles to appear as enabled, positioned `rkg|...` entities in that running RealityKit scene metadata.
 - `start-game` now closes the manual orchestration gap by scoring an idea, choosing camera/input/systems, writing the GameSpec, scaffolding the project, and returning the QA plan in one command.
 - `start-game --json` now returns `asset_pipeline.tasks`, which maps every generated asset brief to ordered RKP command arrays: `make-asset`, `build-asset`, `inspect-usdz --json`, and `accept-asset --screenshot`.
 - One emitted `asset_pipeline` task was dogfooded through RKP acceptance: `target_proxy` was built as `Assets/Imported/target_proxy.usdz`, inspected, loaded into the generated app screenshot flow, accepted with `Docs/screenshots/target_proxy_imported.jpg`, and verified by `rkp release-check --assets`.
@@ -89,7 +89,7 @@ The follow-up QA slice closed three of the gaps from this run:
 
 ## Remaining Gaps For A Comprehensive Tool
 
-1. Screenshot verification has a first semantic visual contract. It now catches blank/solid PNG/JPEG evidence, duplicate state captures, missing/mismatched sidecars, declared-role metadata mismatches, missing/mismatched runtime scene-role snapshots, debug-overlay-like top panels, flat scene bands, and too-dark scene bands, but it still does not prove via pixels that each declared mesh is visible or that overlay text does not overlap.
+1. Screenshot verification has a first semantic visual contract. It now catches blank/solid PNG/JPEG evidence, duplicate state captures, missing/mismatched sidecars, declared-role metadata mismatches, missing/mismatched runtime scene-role snapshots, disabled expected scene roles, malformed role position metadata, debug-overlay-like top panels, flat scene bands, and too-dark scene bands. It still does not prove via pixels that each declared mesh is visible or that overlay text does not overlap.
 2. Generated UI now has a first game-shell pass for `custom_realitykit`, but broader iPhone/iPad layout review and targeted text-overlap/control-overlap checks are still needed before any shipping claim.
 3. Generated fallback art is useful for proof, but not enough for production. The full demo now has imported first-pass player, arena, weapon, projectile, and target assets, and fallback composition is less noisy, but VFX, animation, silhouette readability, and broader product polish still need dedicated passes.
 4. Adapter conflict rules need more coverage. `score` overlapping with collector was one example; future shared systems like `physics`, `timer`, `health`, or `enemy_ai` need explicit ownership rules.
@@ -102,5 +102,5 @@ The follow-up QA slice closed three of the gaps from this run:
 
 The next highest-value RKG slice is stricter visual QA plus richer feedback polish:
 
-- Extend screenshot QA from first semantic contracts toward text-overlap, target visibility, and control-panel overlap checks.
+- Extend screenshot QA from runtime scene-role visibility metadata toward pixel-level text-overlap, target visibility, and control-panel overlap checks.
 - Continue the demo polish pass: stronger hit VFX, launch/charge animation, sound/haptics hooks, and screenshot semantic checks for asset visibility.

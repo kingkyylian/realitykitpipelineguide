@@ -111,9 +111,11 @@ class RkgScreenshotStatusTests(unittest.TestCase):
         *,
         state: str = "gameplay_start",
         roles: list[str] | None = None,
+        disabled_roles: list[str] | None = None,
     ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         role_values = roles or ["target", "arena"]
+        disabled = set(disabled_roles or [])
         payload = {
             "schema_version": 1,
             "state": state,
@@ -123,7 +125,7 @@ class RkgScreenshotStatusTests(unittest.TestCase):
                     "role": role,
                     "fallback": "procedural_proxy",
                     "entity_name": f"rkg|asset={role}_proxy|role={role}|fallback=procedural_proxy",
-                    "is_enabled": True,
+                    "is_enabled": role not in disabled,
                     "position": {"x": 0.0, "y": 0.0, "z": -0.85},
                 }
                 for role in role_values
@@ -298,6 +300,67 @@ class RkgScreenshotStatusTests(unittest.TestCase):
 
             self.assertFalse(payload["ok"])
             self.assertEqual(payload["checks"][0]["status"], "scene_role_mismatch")
+
+    def test_verify_screenshots_rejects_runtime_scene_snapshot_disabled_visible_role(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_scene_snapshot(
+                project / "Docs" / "screenshots" / "gameplay_start.scene.json",
+                disabled_roles=["target"],
+            )
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "scene_role_not_visible")
+
+    def test_verify_screenshots_rejects_runtime_scene_snapshot_invalid_role_position(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp) / "RingDash"
+            rows = [
+                [((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256) for x in range(320)]
+                for y in range(320)
+            ]
+            self.write_jpeg_rgb(project / "Docs" / "screenshots" / "gameplay_start.jpg", rows)
+            self.write_sidecar(project / "Docs" / "screenshots" / "gameplay_start.json")
+            self.write_json(
+                project / "Docs" / "screenshots" / "gameplay_start.scene.json",
+                {
+                    "schema_version": 1,
+                    "state": "gameplay_start",
+                    "roles": [
+                        {
+                            "asset_id": "target_proxy",
+                            "role": "target",
+                            "fallback": "procedural_proxy",
+                            "entity_name": "rkg|asset=target_proxy|role=target|fallback=procedural_proxy",
+                            "is_enabled": True,
+                            "position": {"x": "offscreen", "y": 0.0, "z": -0.85},
+                        },
+                        {
+                            "asset_id": "arena_proxy",
+                            "role": "arena",
+                            "fallback": "procedural_proxy",
+                            "entity_name": "rkg|asset=arena_proxy|role=arena|fallback=procedural_proxy",
+                            "is_enabled": True,
+                            "position": {"x": 0.0, "y": 0.0, "z": -0.85},
+                        },
+                    ],
+                },
+            )
+            plan = build_qa_plan(target_spec())
+
+            payload = build_screenshot_status(project, plan)
+
+            self.assertFalse(payload["ok"])
+            self.assertEqual(payload["checks"][0]["status"], "invalid_scene_snapshot")
 
     def test_verify_screenshots_rejects_sidecar_role_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -12,6 +12,35 @@ Bu dosya projenin ortak çalışma defteri. Her yeni işe başlamadan önce bura
 
 ## Current Sprint
 
+### Sprint 138: RKG Scene Role Visibility Gate
+
+**Durum:** Tamamlandı
+**Tarih:** 2026-05-13
+**Amaç:** Screenshot QA'nın runtime scene-role kanıtını daha ciddi hale getirmek: rol adı snapshot'ta geçiyor diye kabul etmeyip beklenen rollerin enabled entity ve geçerli pozisyon metadata'sı taşımasını zorunlu kılmak.
+
+**Yapılanlar:**
+
+- `verify-screenshots`, runtime scene snapshot içindeki her role kaydı için `rkg|...` entity adı, boolean `is_enabled`, ve finite `position.x/y/z` doğruluyor.
+- Beklenen rol snapshot'ta var ama disabled ise yeni `scene_role_not_visible` statüsü dönüyor.
+- Bozuk pozisyon veya visibility metadata'sı `invalid_scene_snapshot` olarak reddediliyor.
+- Screenshot QA dokümanları bu yeni metadata kapısını ve kalan pixel-level görünürlük/text-overlap boşluğunu ayıracak şekilde güncellendi.
+
+**Verification:**
+
+```text
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_disabled_visible_role Tests.test_rkg_screenshot_status.RkgScreenshotStatusTests.test_verify_screenshots_rejects_runtime_scene_snapshot_invalid_role_position: first run failed as expected on old verifier; then ok
+rtk ./.venv/bin/python -m unittest Tests.test_rkg_screenshot_status: ok; 19 tests
+rtk ./.venv/bin/python Tools/rkg.py verify-screenshots Build/rkg-flappy-auto/FlappyReefAuto --json: ok; 5 checks
+rtk ./.venv/bin/python -m ruff check src/rkg src/rkp Tests: ok
+git diff --check: ok
+rtk ./.venv/bin/python -m unittest discover -s Tests: ok; 250 tests
+rtk ./.venv/bin/python Tools/rkp.py release-check: ok
+```
+
+**Öğrenme notu:**
+
+Scene-role snapshot yalnızca rol setini kanıtlarsa yeterli değil; disabled veya bozuk pozisyonlu entity de "rol var" diye geçebiliyor. Bu hâlâ pixel/OCR tabanlı görünürlük testi değil, ama generated app'in çalışan RealityKit scene graph'ında beklenen rol entity'lerinin aktif ve konumlanmış olduğunu daha net kanıtlıyor.
+
 ### Sprint 137: RKG Flappy Auto Loop Polish
 
 **Durum:** Tamamlandı
